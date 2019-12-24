@@ -78,8 +78,6 @@ function menuNewAgent()
 
    sheet.insertColumns(1, 23);
    sheet.setColumnWidths(1, 49, sheet.getRowHeight(1));
-   sheet.getRange(1, 1, 1, 1).insertCheckboxes();
-   sheet.getRange(riHeaders, 1, 1, 1).setValue(' MESSAGES');
 
    try
       {
@@ -98,6 +96,7 @@ function menuNewAgent()
             case 'freeze':
                var qrFrozenRows = agentInstructions[++iAgentInstruction] >>> 0;
                var riHeaders = qrFrozenRows;
+               sheet.insertRowsBefore(1, qrFrozenRows);
                sheet.setFrozenRows(qrFrozenRows);
                var mrMaxRows = sheet.getMaxRows();
                var riFirstRowToDelete = riHeaders + 2;
@@ -105,6 +104,8 @@ function menuNewAgent()
                mrMaxRows = riFirstRowToDelete - 1;
                sheet.getRange(1, 1, mrMaxRows, 49).setFontColor('#00ff00').setBackground('black').setFontFamily('Courier New').setVerticalAlignment('top');
                sheet.getRange(1, 1, 1, 49).setBackground('#434343');
+               sheet.getRange(riHeaders, 1, 1, 1).setValue(' MESSAGES');
+               agent = new Agent(sheet, {verbose: true});
                break;
 
             case 'name':
