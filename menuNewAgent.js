@@ -28,7 +28,7 @@ function menuNewAgent()
       //agent.writeMetadata('agentInstructions', agentInstructions);
 
       var dirty = {};
-      var inputFromName = {};
+      var fieldFromName = {};
       var toggleFromName = {};
 
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
@@ -105,11 +105,11 @@ function menuNewAgent()
                break;
 
             case 'reboot':
-               if (dirty.hasOwnProperty('inputFromName'))
+               if (dirty.hasOwnProperty('fieldFromName'))
                   {
-                  agent.verbose(function () { return ['saving inputFromName', inputFromName]; });
-                  agent.writeMetadata('inputFromName', inputFromName);
-                  delete dirty.inputFromName;
+                  agent.verbose(function () { return ['saving fieldFromName', fieldFromName]; });
+                  agent.writeMetadata('fieldFromName', fieldFromName);
+                  delete dirty.fieldFromName;
                   }
                if (dirty.hasOwnProperty('toggleFromName'))
                   {
@@ -121,26 +121,27 @@ function menuNewAgent()
                agent = agent.reboot();
                break;
 
-            case 'input':
-               dirty.inputFromName = true;
-               (function (input)
+            case 'field':
+               dirty.fieldFromName = true;
+               (function (field)
                   {
-                  if (!input.hasOwnProperty('h'))
+                  if (!field.hasOwnProperty('h'))
                      {
-                     input.h = 1;
+                     field.h = 1;
                      }
-                  inputFromName[input.k] = input;
-                  agent.log('+input: ' + input.k, input.r, input.c, input.h, input.w);
-                  var range = sheet.getRange(input.r, input.c, input.h, input.w);
+                  fieldFromName[field.k] = field;
+                  agent.log('+field: ' + field.k, field.r, field.c, field.h, field.w);
+                  var range = sheet.getRange(field.r, field.c, field.h, field.w);
                   range.merge()
                         .setFontColor('white')
                         .setBackground('#073763')
-                        .setHorizontalAlignment(input.h === 1 ? 'center' : 'left')
-                        .setVerticalAlignment(input.h === 1 ? 'middle' : 'top')
+                        .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
+                        .setVerticalAlignment(field.h === 1 ? 'middle' : 'top')
                         .setBorder(true, true, true, true, false, false, '#efefef', SpreadsheetApp.BorderStyle.SOLID);
-                  if (input.hasOwnProperty('v'))
+                  if (field.hasOwnProperty('v'))
                      {
-                     range.setValue(input.v);
+                     self_.verbose(function () { return 'setting field value ' + field.v; });
+                     range.setValue(field.v);
                      }
                   })(agentInstructions[++iAgentInstruction]);
                break;

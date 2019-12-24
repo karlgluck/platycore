@@ -2,7 +2,6 @@
 function Agent (sheet_, options_)
    {
    var self_ = this;
-
    options_ = options_ || {};
 
    var metadataFromKey_ = {};

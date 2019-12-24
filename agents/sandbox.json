@@ -1,19 +1,18 @@
 [
             "name",  "sandbox",
           "freeze",  12,
+            "eval",  "agent.log('Hello, world!')",
             "info",  "this sandbox is just for testing random stuff!",
           "toggle", {"r": 1, "c": 1, "k":"EN"},
           "toggle", {"r": 1, "c": 3, "k":"ON", "v": true},
           "toggle", {"r":12, "c": 5, "k":"TEST 1"},
           "toggle", {"r":12, "c": 9, "k":"ALBACORE"},
           "toggle", {"r":12, "c":14, "k":"HELLO"},
-          "reboot",
-            "eval",  "agent.writeToggle('HELLO', true)",
-            "eval",  "agent.log('Hello, world!')",
        "uninstall",  [
                      ],
-          "reboot",
+            "eval",  "agent.writeToggle('HELLO', true)",
            "range",  {"r":3, "c":2, "t": "every"},
            "input",  {"r":1, "c":5, "w": 5, "k": "LOCKED", "v": "now"},
+            "eval",  "agent.writeToggle('ON', false)",
           "reboot"
 ]
