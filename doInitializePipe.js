@@ -63,19 +63,26 @@ function getTriggerCount (val)
 //       }
 //    }
 
+function menuUninstallAgent()
+   {
+   var agent = new Agent(SpreadsheetApp.getActiveSheet());
+   agent.uninstall();
+   }
+
 function menuNewAgent()
    {
 
    var spreadsheet = SpreadsheetApp.getActive();
 
-   var sheet = spreadsheet.getSheetByName('New Sheet');
+   var sheet = spreadsheet.getSheetByName('New Agent');
    if (!!sheet)
       {
       spreadsheet.deleteSheet(sheet);
       }
-   sheet = spreadsheet.insertSheet('New Sheet', spreadsheet.getActiveSheet().getIndex());
+   sheet = spreadsheet.insertSheet('New Agent', spreadsheet.getActiveSheet().getIndex());
    sheet.activate();
 
+   sheet.addDeveloperMetadata('platycoreAgent', '{}');
    sheet.insertColumns(1, 23);
    sheet.setColumnWidths(1, 49, sheet.getRowHeight(1));
 
@@ -87,6 +94,7 @@ function menuNewAgent()
       var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
       agent.info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
+      //agent.writeMetadata('platycoreAgent',{key:'value'});
       //agent.writeMetadata('agentInstructions', agentInstructions);
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
          {
@@ -99,7 +107,7 @@ function menuNewAgent()
                sheet.insertRowsBefore(1, qrFrozenRows);
                sheet.setFrozenRows(qrFrozenRows);
                var mrMaxRows = sheet.getMaxRows();
-               var riFirstRowToDelete = Math.min(riHeaders + 2, sheet.getLastRow() + 1);
+               var riFirstRowToDelete = Math.max(riHeaders + 2, sheet.getLastRow() + 1);
                sheet.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
                mrMaxRows = riFirstRowToDelete - 1;
                sheet.getRange(1, 1, mrMaxRows, 49).setFontColor('#00ff00').setBackground('black').setFontFamily('Courier New').setVerticalAlignment('top');
@@ -124,6 +132,12 @@ function menuNewAgent()
                eval(code);
                break;
 
+            case 'uninstall':
+               var script = agentInstructions[++iAgentInstruction].join('\n');
+               agent.writeMetadata('uninstall', script);
+               agent = agent.reboot();
+               break;
+
             case 'toggleFromName':
                var toggleFromName = agentInstructions[++iAgentInstruction];
                Object.keys(toggleFromName).forEach(function (kToggle)
@@ -143,14 +157,12 @@ function menuNewAgent()
                      }
                   agent.log('+toggle: ' + kToggle + ' (' + toggleText + ')', eToggle.r, eToggle.c, eToggle.w);
                   var checkboxRange = sheet.getRange(eToggle.r, eToggle.c).insertCheckboxes();
-                  if (!!eToggle.v)
-                     {
-                     checkboxRange.setValue(true);
-                     }
                   eToggle.onColor = checkboxRange.getFontColor();
                   eToggle.offColor = checkboxRange.getBackground();
-                  if (eToggle.onColor === '#00ff00') delete eToggle.onColor;
-                  if (eToggle.offColor === '#000000') delete eToggle.offColor;
+                  if (eToggle.v)
+                     {
+                     checkboxRange.setValue(true).setFontColor(eToggle.offColor).setBackground(eToggle.onColor);
+                     }
                   if (qcColumns > 0)
                      {
                      var range = sheet.getRange(eToggle.r, eToggle.c+1, 1, qcColumns).mergeAcross();
@@ -162,7 +174,13 @@ function menuNewAgent()
                         {
                         range.setValue(toggleText);
                         }
+                     if (eToggle.v)
+                        {
+                        range.setFontColor(eToggle.offColor).setBackground(eToggle.onColor);
+                        }
                      }
+                  if (eToggle.onColor === '#00ff00') delete eToggle.onColor;
+                  if (eToggle.offColor === '#000000') delete eToggle.offColor;
                   });
                agent.writeMetadata('toggleFromName', toggleFromName);
                agent = agent.reboot();
@@ -194,11 +212,26 @@ function Agent (sheet_, options_)
       {
       return new Agent(sheet_, options_);
       };
-
-   this.becomeActive = function ()
+   
+   this.uninstall = function ()
       {
-
-      };
+      if (metadataFromKey_.hasOwnProperty('uninstall'))
+         {
+         if (isVerbose_())
+            {
+            writeOutput_([metadataFromKey_.uninstall]);
+            }
+         try
+            {
+            eval(metadataFromKey_.uninstall);
+            }
+         catch (e)
+            {
+            }
+         }
+      sheet_.getParent().deleteSheet(sheet_);
+      sheet_ = null;
+      }
 
    this.writeMetadata = function (key, value)
       {
@@ -339,4 +372,9 @@ function Agent (sheet_, options_)
          writeOutput_(['metadata: ' + k + ' = ' + v]);
          }
       });
+   
+   if (!metadataFromKey_.hasOwnProperty('platycoreAgent'))
+      {
+      throw "not a platycore agent sheet";
+      }
    }

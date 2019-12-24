@@ -4,10 +4,11 @@
             "info",  "this sandbox is just for testing random stuff!",
   "toggleFromName",  {
                      "EN":       {"r": 1, "c":1},
-                     "ACTIVE":   {"r": 1, "c":3, "v":1},
                      "TEST 1":   {"r":12, "c":5},
                      "ALBACORE": {"r":12, "c":9},
                      "HELLO":    {"r":12, "c":14}
                      },
-            "eval",  "agent.writeToggle('HELLO', true)"
+            "eval",  "agent.writeToggle('HELLO', true)",
+       "uninstall",  [
+                     ]
 ]
