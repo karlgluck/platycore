@@ -2,6 +2,10 @@
 /*
 
 
+next up: use conditional format rules to apply formatting to toggles
+   ( since I got it working for input boxes so easily! )
+
+
 
 so from here, we move into expanding the "language" of the agent build script:
 - add the ability to add input boxes

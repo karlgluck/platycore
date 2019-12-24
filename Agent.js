@@ -59,15 +59,17 @@ function Agent (sheet_, options_)
 
    var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
       {
-      eRule.gasConditionalFormatRule = eRule;
-      eRule.ranges = eRule.getRanges().map(function (eRange)
-         {
-         return {
-            r: eRange.getRow(),
-            c: eRange.getColumn(),
-            gasRange: eRange,
-         }
-         })
+      return{
+            gasConditionalFormatRule: eRule,
+            ranges: eRule.getRanges().map(function (eRange)
+               {
+               return{
+                     r: eRange.getRow(),
+                     c: eRange.getColumn(),
+                     gasRange: eRange,
+                     }
+               })
+            }
       });
 
    var getConditionalFormatRuleByRange = function (range)
@@ -147,6 +149,11 @@ function Agent (sheet_, options_)
          }
       input.hasBeenRead = true;
       return input.value;
+      };
+
+   
+   this.writeField = function (name, value)
+      {
       };
 
    var mcColumns_ = sheet_.getMaxColumns();
