@@ -105,7 +105,7 @@ function menuNewAgent()
                sheet.getRange(1, 1, mrMaxRows, 49).setFontColor('#00ff00').setBackground('black').setFontFamily('Courier New').setVerticalAlignment('top');
                sheet.getRange(1, 1, 1, 49).setBackground('#434343');
                sheet.getRange(riHeaders, 1, 1, 1).setValue(' MESSAGES');
-               agent = new Agent(sheet, {verbose: true});
+               agent = agent.reboot();
                break;
 
             case 'name':
@@ -161,6 +161,7 @@ function menuNewAgent()
                         }
                      }
                   });
+               agent = agent.reboot();
                break;
             }
          }
@@ -184,6 +185,11 @@ function Agent (sheet_, options_)
    options_ = options_ || {};
 
    var metadataFromKey_ = {};
+
+   this.reboot = function ()
+      {
+      return new Agent(sheet_, options_);
+      }
 
    this.writeMetadata = function (key, value)
       {
@@ -283,7 +289,7 @@ function Agent (sheet_, options_)
    // writes debug text to the output log for this sheet
    this.log = function (message)
       {
-      writeOutput_(arguments);
+      writeOutput_(arguments).setFontColor('#00ff00').setBackground('black');
       };
    
    // writes an informational message to the output log for this sheet
