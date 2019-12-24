@@ -35,15 +35,16 @@ function triggerPipeLaunch()
       if (isEnabled && isPipe && isStarting)
          {
          range.setValues([[true, 'EN', false]]);
-         var pipe = new Pipe(eSheet);
-         pipe.log('pipe online');
+         var agent = new Agent(eSheet);
+         agent.log('agent online');
          return;
          }
       }
    }
 
-function menuNew()
+function menuNewAgent()
    {
+
    var spreadsheet = SpreadsheetApp.getActive();
 
    var sheet = spreadsheet.getSheetByName('New Sheet');
@@ -57,12 +58,6 @@ function menuNew()
    const qrFrozenRows = 12;
 
    var riHeaders = qrFrozenRows;
-/*
-   sheet.setFrozenRows(qrFrozenRows);
-   sheet.getRange(riHeaders, 1, 1, 4).setValues([headers]);
-   sheet.getRange(riHeaders, headers.length, sheet.getMaxRows()-riHeaders, qcColumns - headers.length).mergeAcross();
-   sheet.deleteColumns(qcColumns, sheet.getMaxColumns() - qcColumns + 1);
-*/
 
    sheet.setFrozenRows(qrFrozenRows);
    sheet.insertColumns(1, 23);
@@ -77,18 +72,17 @@ function menuNew()
    sheet.getRange(riHeaders, 1, 1, 1).setValue(' MESSAGES');
    sheet.getRange(1, 8).setFormula('=getTriggerCount()');
 
-   var pipe = new Pipe(sheet, {verbose: true});
-   pipe.info('Bringing the sheet online...');
+   var agent = new Agent(sheet, {verbose: true});
+   var urlAgentConfig = 'https://raw.githubusercontent.com/karlgluck/platycore/master/agents/sandbox.json';
+   agent.info('Fetching ' + urlAgentConfig);
+   var jsonAgentConfig = UrlFetchApp.fetch(urlAgentConfig).getContentText();
+   agent.info('jsonAgentConfig', jsonAgentConfig);
+   var agentConfig = JSON.parse(jsonAgentConfig);
+   agent.info('Building agent "' + agentConfig.name + '"');
 
    try
       {
-      var toggleFromName = {
-         'EN': {r:1, c:1},
-         'TEST 1': {r:12, c:5},
-         'ALBACORE': {r:12, c:9},
-         'HELLO': {r:12, c:14},
-         'LAUNCH': {r:1, c:3, f:'=PIPE_LAUNCH($A$1,$C$1)', w:5},
-      };
+      var toggleFromName = agentConfig.toggleFromName;
       Object.keys(toggleFromName).forEach(function (kToggle)
          {
          var eToggle = toggleFromName[kToggle];
@@ -104,7 +98,7 @@ function menuNew()
             qcColumns = columnsFromLetters[Math.min(columnsFromLetters.length-1, toggleText.length)];
             eToggle.w = qcColumns + 1;
             }
-         pipe.log('+toggle: ' + kToggle + ' (' + toggleText + ')', eToggle.r, eToggle.c, eToggle.w);
+         agent.log('+toggle: ' + kToggle + ' (' + toggleText + ')', eToggle.r, eToggle.c, eToggle.w);
          var checkboxRange = sheet.getRange(eToggle.r, eToggle.c).insertCheckboxes();
          eToggle.onColor = checkboxRange.getFontColor();
          eToggle.offColor = checkboxRange.getBackground();
@@ -115,7 +109,7 @@ function menuNew()
             var range = sheet.getRange(eToggle.r, eToggle.c+1, 1, qcColumns).mergeAcross();
             if (eToggle.hasOwnProperty('f'))
                {
-               pipe.log('setting formula ' + eToggle.f);
+               agent.log('setting formula ' + eToggle.f);
                range.setFormula(eToggle.f);
                }
             else
@@ -124,26 +118,26 @@ function menuNew()
                }
             }
          });
-      pipe.writeMetadata('toggleFromName', toggleFromName);
+      agent.writeMetadata('toggleFromName', toggleFromName);
       }
    catch (e)
       {
-      pipe.error('exception during toggle layout', e, e.stack);
+      agent.error('exception during toggle layout', e, e.stack);
       throw e;
       }
 
    try
       {
-      pipe = new Pipe(sheet, {verbose: true});
-      pipe.log('Rebooted. Starting self-test...');
-      pipe.writeToggle('EN', true);
-      pipe.log('verify EN toggle ON: ', pipe.readToggle('EN') ? 'ON' : 'OFF');
-      pipe.writeToggle('EN', false);
-      pipe.log('verify EN toggle OFF: ', pipe.readToggle('EN') ? 'ON' : 'OFF');
+      agent = new Agent(sheet, {verbose: true});
+      agent.log('Rebooted. Starting self-test...');
+      agent.writeToggle('EN', true);
+      agent.log('verify EN toggle ON: ', agent.readToggle('EN') ? 'ON' : 'OFF');
+      agent.writeToggle('EN', false);
+      agent.log('verify EN toggle OFF: ', agent.readToggle('EN') ? 'ON' : 'OFF');
       }
    catch (e)
       {
-      pipe.error('exception during post-toggle boot', e, e.stack);
+      agent.error('exception during post-toggle boot', e, e.stack);
       throw e;
       }
 
@@ -153,7 +147,7 @@ function menuNew()
    var nextColumn = 5;
    var writeColumn = function (name)
       {
-      pipe.log('Adding logging flag "' + name + '"');
+      agent.log('Adding logging flag "' + name + '"');
       sheet.getRange(riHeaders, nextColumn + 0, 1, 1).insertCheckboxes();
       sheet.getRange(riHeaders, nextColumn + 1, 1, 1).setValue(name);
       nextColumn += columnsFromLetters[name.length];
@@ -164,9 +158,9 @@ function menuNew()
    writeColumn('ENBL');
    */
 
-   var pipe = new Pipe(sheet);
-   pipe.log('Hello, World!');
-   pipe.info('pipe.info example');
+   var agent = new Agent(sheet);
+   agent.log('Hello, World!');
+   agent.info('agent.info example');
 
 /*
    if (12 > qrFrozenRows)
@@ -182,7 +176,7 @@ function getRangeNote(r,c)
    return SpreadsheetApp.getActiveSheet().getRange(r,c).getNote();
    }
 
-function Pipe (sheet_, options_)
+function Agent (sheet_, options_)
    {
 
    options_ = options_ || {};

@@ -3,8 +3,6 @@ function onOpen()
    {
    var ui = SpreadsheetApp.getUi();
    ui.createMenu("Platycore")
-         .addItem("New", "menuNew")
-         .addSeparator()
-         .addItem("")
+         .addItem("New Agent", "menuNewAgent")
          .addToUi();
    }
