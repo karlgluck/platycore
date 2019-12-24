@@ -198,7 +198,7 @@ function Agent (sheet_, options_)
             {
             output = [output];
             }
-         console.log(output);
+         console.log.apply(console, output);
          writeOutput_(output).setFontColor('#b6d7a8').setBackground('black');
          }
       };
@@ -206,28 +206,28 @@ function Agent (sheet_, options_)
    // writes debug text to the output log for this sheet
    this.log = function (message)
       {
-      console.log(arguments);
+      console.log.apply(console, arguments);
       writeOutput_(arguments).setFontColor('#00ff00').setBackground('black');
       };
    
    // writes an informational message to the output log for this sheet
    this.info = function (message)
       {
-      console.info(arguments);
+      console.info.apply(console, arguments);
       writeOutput_(arguments).setFontColor('white').setBackground('black');
       };
    
    // writes a warning to the output log for this sheet
    this.warn = function (message)
       {
-      console.warn(arguments);
+      console.warn.apply(console, arguments);
       writeOutput_(arguments).setFontColor('yellow').setBackground('#38340a');
       };
 
    // writes an error message to the output log for this sheet
    this.error = function (message)
       {
-      console.error(arguments);
+      console.error.apply(console, arguments);
       writeOutput_(arguments).setFontColor('red').setBackground('#3d0404');
       };
 

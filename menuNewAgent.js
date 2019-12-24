@@ -106,7 +106,7 @@ function menuNewAgent()
                break;
 
             case 'reboot':
-            agent.log('rebooting...');
+               agent.log('rebooting...');
                if (dirty.hasOwnProperty('fieldFromName'))
                   {
                   agent.verbose(function () { return ['saving fieldFromName', fieldFromName]; });

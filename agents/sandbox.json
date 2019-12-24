@@ -14,6 +14,5 @@
            "range",  {"r":3, "c":2, "t": "every"},
            "field",  {"r":1, "c":5, "w": 5, "k": "LOCKED", "value": "now"},
             "eval",  "agent.writeToggle('ON', false)",
-            "eval",  "agent.writeField('ON', false)",
           "reboot"
 ]
