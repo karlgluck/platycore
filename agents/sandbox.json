@@ -10,5 +10,6 @@
                      },
             "eval",  "agent.writeToggle('HELLO', true)",
        "uninstall",  [
-                     ]
+                     ],
+           "range",  {"r":3, "c":2, "t": "every" }
 ]

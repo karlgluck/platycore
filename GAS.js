@@ -10,5 +10,4 @@ GAS_deleteTriggerByName = function (functionName)
          ScriptApp.deleteTrigger(eTrigger);
          }
       }
-   return ScriptApp.getProjectTriggers().length;
    }
