@@ -119,7 +119,9 @@ function menuNewAgent()
                break;
 
             case 'eval':
-               eval(agentInstructions[++iAgentInstruction]);
+               var code = agentInstructions[++iAgentInstruction];
+               agent.log(code);
+               eval(code);
                break;
 
             case 'toggleFromName':
@@ -281,7 +283,7 @@ function Agent (sheet_, options_)
    // writes debug text to the output log for this sheet
    this.log = function (message)
       {
-      writeOutput_(arguments).setFontColor('#ffffff').setBackground('black');
+      writeOutput_(arguments);
       };
    
    // writes an informational message to the output log for this sheet
