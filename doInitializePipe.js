@@ -99,7 +99,7 @@ function menuNewAgent()
                sheet.insertRowsBefore(1, qrFrozenRows);
                sheet.setFrozenRows(qrFrozenRows);
                var mrMaxRows = sheet.getMaxRows();
-               var riFirstRowToDelete = riHeaders + 2;
+               var riFirstRowToDelete = Math.min(riHeaders + 2, sheet.getLastRow() + 1);
                sheet.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
                mrMaxRows = riFirstRowToDelete - 1;
                sheet.getRange(1, 1, mrMaxRows, 49).setFontColor('#00ff00').setBackground('black').setFontFamily('Courier New').setVerticalAlignment('top');
@@ -126,7 +126,6 @@ function menuNewAgent()
 
             case 'toggleFromName':
                var toggleFromName = agentInstructions[++iAgentInstruction];
-               agent.writeMetadata('toggleFromName', toggleFromName);
                Object.keys(toggleFromName).forEach(function (kToggle)
                   {
                   var eToggle = toggleFromName[kToggle];
@@ -161,6 +160,7 @@ function menuNewAgent()
                         }
                      }
                   });
+               agent.writeMetadata('toggleFromName', toggleFromName);
                agent = agent.reboot();
                break;
             }
