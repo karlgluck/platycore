@@ -1,5 +1,6 @@
 [
 "name", "sandbox",
+"freeze", 12,
 "info", "this sandbox is just for testing random stuff!",
 "toggleFromName",
    {

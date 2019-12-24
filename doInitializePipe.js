@@ -76,22 +76,10 @@ function menuNewAgent()
    sheet = spreadsheet.insertSheet('New Sheet', spreadsheet.getActiveSheet().getIndex());
    sheet.activate();
 
-   const qrFrozenRows = 12;
-
-   var riHeaders = qrFrozenRows;
-
-   sheet.setFrozenRows(qrFrozenRows);
    sheet.insertColumns(1, 23);
    sheet.setColumnWidths(1, 49, sheet.getRowHeight(1));
-   var mrMaxRows = sheet.getMaxRows();
-   var riFirstRowToDelete = riHeaders + 2;
-   sheet.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
-   mrMaxRows = riFirstRowToDelete - 1;
-   sheet.getRange(1, 1, mrMaxRows, 49).setFontColor('#00ff00').setBackground('black').setFontFamily('Courier New').setVerticalAlignment('top');
-   sheet.getRange(1, 1, 1, 49).setBackground('#434343');
    sheet.getRange(1, 1, 1, 1).insertCheckboxes();
    sheet.getRange(riHeaders, 1, 1, 1).setValue(' MESSAGES');
-   sheet.getRange(1, 8).setFormula('=getTriggerCount()');
 
    try
       {
@@ -101,12 +89,24 @@ function menuNewAgent()
       var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
       agent.info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
-      agent.writeMetadata('agentConfig', agentConfig);
+      agent.writeMetadata('agentInstructions', agentInstructions);
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
          {
          var eAgentInstruction = agentInstructions[iAgentInstruction];
          switch (eAgentInstruction)
             {
+            case 'freeze':
+               var qrFrozenRows = agentInstructions[++iAgentInstruction] >>> 0;
+               var riHeaders = qrFrozenRows;
+               sheet.setFrozenRows(qrFrozenRows);
+               var mrMaxRows = sheet.getMaxRows();
+               var riFirstRowToDelete = riHeaders + 2;
+               sheet.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
+               mrMaxRows = riFirstRowToDelete - 1;
+               sheet.getRange(1, 1, mrMaxRows, 49).setFontColor('#00ff00').setBackground('black').setFontFamily('Courier New').setVerticalAlignment('top');
+               sheet.getRange(1, 1, 1, 49).setBackground('#434343');
+               break;
+
             case 'name':
                var name = agentInstructions[++iAgentInstruction];
                agent.writeMetadata('name', name);
@@ -119,6 +119,7 @@ function menuNewAgent()
 
             case 'toggleFromName':
                var toggleFromName = agentInstructions[++iAgentInstruction];
+               agent.writeMetadata('toggleFromName', toggleFromName);
                Object.keys(toggleFromName).forEach(function (kToggle)
                   {
                   var eToggle = toggleFromName[kToggle];
@@ -205,7 +206,7 @@ function Agent (sheet_, options_)
 
    var toggleFromNameP_ = function (name)
       {
-      var rvToggle = metadataFromKey_.agentConfig.toggleFromName[name];
+      var rvToggle = metadataFromKey_.toggleFromName[name];
       if (!rvToggle)
          {
          throw 'no toggle named "' + name + '"';
