@@ -120,6 +120,7 @@ function menuNewAgent()
                   }
                if (dirty.hasOwnProperty('conditionalFormatRules'))
                   {
+                  agent.verbose(function () { return ['saving conditionalFormatRules', toggleFromName]; });
                   sheet.setConditionalFormatRules(conditionalFormatRules);
                   delete dirty.conditionalFormatRules;
                   }

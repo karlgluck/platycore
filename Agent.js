@@ -273,6 +273,7 @@ function Agent (sheet_, options_)
 
    var isVerbose_ = function ()
       {
+      return true;
       var rvVerbose = false;
       if (options_.hasOwnProperty('verbose'))
          {
