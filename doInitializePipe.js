@@ -118,6 +118,10 @@ function menuNewAgent()
                agent.info(agentInstructions[++iAgentInstruction]);
                break;
 
+            case 'eval':
+               eval(agentInstructions[++iAgentInstruction]);
+               break;
+
             case 'toggleFromName':
                var toggleFromName = agentInstructions[++iAgentInstruction];
                agent.writeMetadata('toggleFromName', toggleFromName);
@@ -164,27 +168,6 @@ function menuNewAgent()
       agent.error('exception during agent initialization', e, e.stack);
       return;
       }
-
-
-   // try
-   //    {
-   //    agent = new Agent(sheet, {verbose: true});
-   //    agent.log('Rebooted. Starting self-test...');
-   //    agent.writeToggle('EN', true);
-   //    agent.log('verify EN toggle ON: ', agent.readToggle('EN') ? 'ON' : 'OFF');
-   //    agent.writeToggle('EN', false);
-   //    agent.log('verify EN toggle OFF: ', agent.readToggle('EN') ? 'ON' : 'OFF');
-   //    }
-   // catch (e)
-   //    {
-   //    agent.error('exception during post-toggle boot', e, e.stack);
-   //    return;
-   //    }
-
-
-   var agent = new Agent(sheet);
-   agent.log('Hello, World!');
-   agent.info('agent.info example');
 
    }
 
