@@ -26,6 +26,10 @@ function menuNewAgent()
       var agentInstructions = JSON.parse(jsonAgentInstructions);
       //agent.writeMetadata('platycoreAgent',{key:'value'});
       //agent.writeMetadata('agentInstructions', agentInstructions);
+
+      var dirty = {};
+      var toggleFromName = {};
+
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
          {
          var eAgentInstruction = agentInstructions[iAgentInstruction];
@@ -98,7 +102,63 @@ function menuNewAgent()
                agent = agent.reboot();
                break;
 
+            case 'reboot':
+               if (dirty.hasOwnProperty('toggleFromName'))
+                  {
+                  agent.writeMetadata('toggleFromName', toggleFromName);
+                  delete dirty.toggleFromName;
+                  }
+               agent = agent.reboot();
+               break;
+
+            case 'toggle':
+               dirty[toggleFromName] = true;
+               (function (toggle)
+                  {
+                  toggleFromName[toggle.k] = toggle;
+                  var columnsFromLetters = [0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6];
+                  var toggleText = toggle.t || toggle.f || toggle.k;
+                  var qcColumns;
+                  if (toggle.hasOwnProperty('w'))
+                     {
+                     qcColumns = toggle.w - 1;
+                     }
+                  else
+                     {
+                     qcColumns = columnsFromLetters[Math.min(columnsFromLetters.length-1, toggleText.length)];
+                     toggle.w = qcColumns + 1;
+                     }
+                  agent.log('+toggle: ' + toggle.k + ' (' + toggleText + ')', toggle.r, toggle.c, toggle.w);
+                  var checkboxRange = sheet.getRange(toggle.r, toggle.c).insertCheckboxes();
+                  toggle.onColor = checkboxRange.getFontColor();
+                  toggle.offColor = checkboxRange.getBackground();
+                  if (toggle.v)
+                     {
+                     checkboxRange.setValue(true).setFontColor(toggle.offColor).setBackground(toggle.onColor);
+                     }
+                  if (qcColumns > 0)
+                     {
+                     var range = sheet.getRange(toggle.r, toggle.c+1, 1, qcColumns).mergeAcross();
+                     if (toggle.hasOwnProperty('f'))
+                        {
+                        range.setFormula(toggle.f);
+                        }
+                     else
+                        {
+                        range.setValue(toggleText);
+                        }
+                     if (toggle.v)
+                        {
+                        range.setFontColor(toggle.offColor).setBackground(toggle.onColor);
+                        }
+                     }
+                  if (toggle.onColor === '#00ff00') delete toggle.onColor;
+                  if (toggle.offColor === '#000000') delete toggle.offColor;
+                  })(agentInstructions[++iAgentInstruction]);
+               break;
+
             case 'toggleFromName':
+               dirty[toggleFromName] = true;
                var toggleFromName = agentInstructions[++iAgentInstruction];
                Object.keys(toggleFromName).forEach(function (kToggle)
                   {

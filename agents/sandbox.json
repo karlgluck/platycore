@@ -2,14 +2,16 @@
             "name",  "sandbox",
           "freeze",  12,
             "info",  "this sandbox is just for testing random stuff!",
-  "toggleFromName",  {
-                     "EN":       {"r": 1, "c":1},
-                     "TEST 1":   {"r":12, "c":5},
-                     "ALBACORE": {"r":12, "c":9},
-                     "HELLO":    {"r":12, "c":14}
-                     },
+          "toggle", {"r": 1, "c": 1, "k":"EN"},
+          "toggle", {"r":12, "c": 5, "k":"TEST 1"},
+          "toggle", {"r":12, "c": 9, "k":"ALBACORE"},
+          "toggle", {"r":12, "c":14, "k":"HELLO"},
+          "reboot",
             "eval",  "agent.writeToggle('HELLO', true)",
        "uninstall",  [
                      ],
-           "range",  {"r":3, "c":2, "t": "every" }
+          "reboot",
+           "range",  {"r":3, "c":2, "t": "every" },
+           "input",  {},
+          "reboot"
 ]
