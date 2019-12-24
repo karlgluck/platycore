@@ -37,7 +37,7 @@ function Agent (sheet_, options_)
       {
       if (!metadataFromKey_.hasOwnProperty('toggleFromName') || !metadataFromKey_.toggleFromName.hasOwnProperty(name))
          {
-         return { hasBeenRead: true, isOn: false };
+         return { hasBeenRead: true, isOn: false, r:1, c:49 };
          }
       return metadataFromKey_.toggleFromName[name];
       };
@@ -198,6 +198,7 @@ function Agent (sheet_, options_)
             {
             output = [output];
             }
+         console.log(output);
          writeOutput_(output).setFontColor('#b6d7a8').setBackground('black');
          }
       };
@@ -273,7 +274,6 @@ function Agent (sheet_, options_)
 
    var isVerbose_ = function ()
       {
-      return true;
       var rvVerbose = false;
       if (options_.hasOwnProperty('verbose'))
          {
