@@ -126,8 +126,8 @@ function menuNewAgent()
                (function (input)
                   {
                   inputFromName[input.k] = input;
-                  agent.log('+input: ' + input.k, input.r, input.c, intput.w);
-                  var range = sheet_.getRange(input.r, input.c, 1, input.w);
+                  agent.log('+input: ' + input.k, input.r, input.c, input.w);
+                  var range = sheet.getRange(input.r, input.c, 1, input.w);
                   range.mergeAcross()
                         .setFontColor('white')
                         .setBackground('#073763')
@@ -178,6 +178,7 @@ function menuNewAgent()
                      }
                   if (toggle.onColor === '#00ff00') delete toggle.onColor;
                   if (toggle.offColor === '#000000') delete toggle.offColor;
+                  delete toggle.k;
                   })(agentInstructions[++iAgentInstruction]);
                break;
             } // switch agent instruction

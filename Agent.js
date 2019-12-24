@@ -36,12 +36,11 @@ function Agent (sheet_, options_)
 
    var toggleFromNameP_ = function (name)
       {
-      var rvToggle = metadataFromKey_.toggleFromName[name];
-      if (!rvToggle)
+      if (!metadataFromKey_.hasOwnProperty('toggleFromName') || !metadataFromKey_.toggleFromName.hasOwnProperty(name))
          {
-         throw 'no toggle named "' + name + '"';
+         return { hasBeenRead: true, isOn: false };
          }
-      return rvToggle;
+      return metadataFromKey_.toggleFromName[name];
       }
 
    var syncToggle_ = function (toggle, range)
@@ -89,7 +88,7 @@ function Agent (sheet_, options_)
          }
       toggle.isOn = isOn;
       sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(isOn);
-      syncToggle_(sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
+      syncToggle_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
       };
    
 
@@ -216,7 +215,7 @@ function Agent (sheet_, options_)
       throw "not a platycore agent sheet";
       }
 
-   var isOn_ = self.peekToggleP('ON');
+   var isOn_ = self_.peekToggleP('ON');
    var isThisOn_ = !!options_.forceThisOn;
 
 

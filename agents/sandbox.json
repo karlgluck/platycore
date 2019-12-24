@@ -3,7 +3,7 @@
           "freeze",  12,
             "info",  "this sandbox is just for testing random stuff!",
           "toggle", {"r": 1, "c": 1, "k":"EN"},
-          "toggle", {"r": 1, "c": 3, "k":"ON"},
+          "toggle", {"r": 1, "c": 3, "k":"ON", "v": true},
           "toggle", {"r":12, "c": 5, "k":"TEST 1"},
           "toggle", {"r":12, "c": 9, "k":"ALBACORE"},
           "toggle", {"r":12, "c":14, "k":"HELLO"},
