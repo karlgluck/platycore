@@ -37,7 +37,7 @@ function Agent (sheet_, options_)
       {
       if (!metadataFromKey_.hasOwnProperty('toggleFromName') || !metadataFromKey_.toggleFromName.hasOwnProperty(name))
          {
-         return { hasBeenRead: true, isOn: false, r:1, c:49 };
+         return { hasBeenRead: true, isOn: false, r:1, c:49, w:1, t:'' };
          }
       return metadataFromKey_.toggleFromName[name];
       };

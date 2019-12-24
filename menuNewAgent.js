@@ -106,6 +106,7 @@ function menuNewAgent()
                break;
 
             case 'reboot':
+            agent.log('rebooting...');
                if (dirty.hasOwnProperty('fieldFromName'))
                   {
                   agent.verbose(function () { return ['saving fieldFromName', fieldFromName]; });
@@ -140,6 +141,7 @@ function menuNewAgent()
                   agent.log('+field: ' + field.k, field.r, field.c, field.h, field.w);
                   var range = sheet.getRange(field.r, field.c, field.h, field.w);
                   range.merge()
+                        .setValue(field.value)
                         .setFontColor('#434343')
                         .setBackground('#ff9900')
                         .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
@@ -147,12 +149,12 @@ function menuNewAgent()
                         .setBorder(true, true, true, true, false, false, '#efefef', SpreadsheetApp.BorderStyle.SOLID);
                   conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
                      .setRanges([range])
-                     .whenTextEqualTo(input.value)
+                     .whenTextEqualTo(field.value)
                      .setFontColor('white')
                      .setBackground('#073763'));
                   if (field.hasOwnProperty('value'))
                      {
-                     self_.verbose(function () { return 'setting field value ' + field.value; });
+                     agent.verbose(function () { return 'setting field value ' + field.value; });
                      range.setValue(field.value);
                      delete field.value;
                      }
