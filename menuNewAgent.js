@@ -125,13 +125,23 @@ function menuNewAgent()
                dirty.inputFromName = true;
                (function (input)
                   {
+                  if (!input.hasOwnProperty('h'))
+                     {
+                     input.h = 1;
+                     }
                   inputFromName[input.k] = input;
-                  agent.log('+input: ' + input.k, input.r, input.c, input.w);
-                  var range = sheet.getRange(input.r, input.c, 1, input.w);
-                  range.mergeAcross()
+                  agent.log('+input: ' + input.k, input.r, input.c, input.h, input.w);
+                  var range = sheet.getRange(input.r, input.c, input.h, input.w);
+                  range.merge()
                         .setFontColor('white')
                         .setBackground('#073763')
+                        .setHorizontalAlignment(input.h === 1 ? 'center' : 'left')
+                        .setVerticalAlignment(input.h === 1 ? 'middle' : 'top')
                         .setBorder(true, true, true, true, false, false, '#efefef', SpreadsheetApp.BorderStyle.SOLID);
+                  if (input.hasOwnProperty('v'))
+                     {
+                     range.setValue(input.v);
+                     }
                   })(agentInstructions[++iAgentInstruction]);
                break;
 

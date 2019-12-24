@@ -14,6 +14,6 @@
                      ],
           "reboot",
            "range",  {"r":3, "c":2, "t": "every"},
-           "input",  {"r":1, "c":5, "w": 5, "k": "LOCKED"},
+           "input",  {"r":1, "c":5, "w": 5, "k": "LOCKED", "v": "now"},
           "reboot"
 ]
