@@ -87,7 +87,7 @@ function menuNewAgent()
       var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
       agent.info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
-      agent.writeMetadata('agentInstructions', agentInstructions);
+      //agent.writeMetadata('agentInstructions', agentInstructions);
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
          {
          var eAgentInstruction = agentInstructions[iAgentInstruction];
@@ -143,6 +143,10 @@ function menuNewAgent()
                      }
                   agent.log('+toggle: ' + kToggle + ' (' + toggleText + ')', eToggle.r, eToggle.c, eToggle.w);
                   var checkboxRange = sheet.getRange(eToggle.r, eToggle.c).insertCheckboxes();
+                  if (!!eToggle.v)
+                     {
+                     checkboxRange.setValue(true);
+                     }
                   eToggle.onColor = checkboxRange.getFontColor();
                   eToggle.offColor = checkboxRange.getBackground();
                   if (eToggle.onColor === '#00ff00') delete eToggle.onColor;
@@ -189,7 +193,12 @@ function Agent (sheet_, options_)
    this.reboot = function ()
       {
       return new Agent(sheet_, options_);
-      }
+      };
+
+   this.becomeActive = function ()
+      {
+
+      };
 
    this.writeMetadata = function (key, value)
       {
