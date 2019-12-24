@@ -1,11 +1,11 @@
-{
-"name": "sandbox",
-"toggleFromName":
+[
+"name", "sandbox",
+"info", "this sandbox is just for testing random stuff!",
+"toggleFromName",
    {
    "EN": {"r":1, "c":1},
    "TEST 1": {"r":12, "c":5},
    "ALBACORE": {"r":12, "c":9},
-   "HELLO": {"r":12, "c":14},
-   "LAUNCH": {"r":1, "c":3, "f":"=PIPE_LAUNCH($A$1,$C$1)", "w":5}
+   "HELLO": {"r":12, "c":14}
    }
-}
+]

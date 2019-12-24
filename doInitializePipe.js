@@ -4,43 +4,64 @@ function getTriggerCount (val)
    return ScriptApp.getProjectTriggers().length;
    }
 
-function PIPE_LAUNCH(isEnabled, isLaunched)
-   {
-   if (isLaunched)
-      {
-      if (!isEnabled)
-         {
-         return '❌ set EN';
-         }
-      ScriptApp.newTrigger('triggerPipeLaunch').timeBased().after(100).create();
-      var triggerCount = ScriptApp.getProjectTriggers().length;
-      return '(' + triggerCount + ' pending)';
-      }
-   return 'LAUNCH';
-   }
+// var getPipeLaunchFormula = function (toggleFromName)
+//    {
+//    Object.keys(toggleFromName).map(function (kToggle)
+//       {
+//       var eToggle = toggleFromName[kToggle];
+//       if (eToggle.c > 25)
+//          {
+//          throw 'unable to configure anything past column 25 because we need to convert column index to letters past Z';
+//          }
+//       return eToggle.v + ',$' + String.fromCharCode(65 + eToggle.c + 1) + '$' + eToggle.r;
+//       })
+//       .join(',');
+//    return '=PIPE_LAUNCH($A$1,'
+//    }
 
-function triggerPipeLaunch()
-   {
-   GAS_deleteTriggerByName('triggerPipeLaunch');
-   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-   var sheets = spreadsheet.getSheets();
-   for (var iSheet = 0, nSheetCount = sheets.length; iSheet < nSheetCount; ++iSheet)
-      {
-      var eSheet = sheets[iSheet];
-      var range = eSheet.getRange(1, 1, 1, 3);
-      var signature = range.getValues()[0];
-      var isEnabled = signature[0] === true;
-      var isPipe = signature[1] === 'EN';
-      var isStarting = signature[2] === true;
-      if (isEnabled && isPipe && isStarting)
-         {
-         range.setValues([[true, 'EN', false]]);
-         var agent = new Agent(eSheet);
-         agent.log('agent online');
-         return;
-         }
-      }
-   }
+// function PIPE_LAUNCH(isEnabled)
+//    {
+//    for (var iArgument = 1, iPair = 0, nArgumentCount = arguments.length; iArgument < nArgumentCount; iArgument += 2, ++iPair)
+//       {
+//       if (arguments[iArgument] != arguments[iArgument+1])
+//          {
+//          ScriptApp.newTrigger('triggerPipeLaunch').timeBased().after(100).create();
+//          var triggerCount = ScriptApp.getProjectTriggers().length;
+//          return '(' + triggerCount + ' pending)';
+//          }
+//       }
+//    if (isLaunched)
+//       {
+//       if (!isEnabled)
+//          {
+//          return '❌ set EN';
+//          }
+//       }
+//    return 'LAUNCH';
+//    }
+
+// function triggerPipeLaunch()
+//    {
+//    GAS_deleteTriggerByName('triggerPipeLaunch');
+//    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+//    var sheets = spreadsheet.getSheets();
+//    for (var iSheet = 0, nSheetCount = sheets.length; iSheet < nSheetCount; ++iSheet)
+//       {
+//       var eSheet = sheets[iSheet];
+//       var range = eSheet.getRange(1, 1, 1, 3);
+//       var signature = range.getValues()[0];
+//       var isEnabled = signature[0] === true;
+//       var isPipe = signature[1] === 'EN';
+//       var isStarting = signature[2] === true;
+//       if (isEnabled && isPipe && isStarting)
+//          {
+//          range.setValues([[true, 'EN', false]]);
+//          var agent = new Agent(eSheet);
+//          agent.log('agent online');
+//          return;
+//          }
+//       }
+//    }
 
 function menuNewAgent()
    {
@@ -72,116 +93,108 @@ function menuNewAgent()
    sheet.getRange(riHeaders, 1, 1, 1).setValue(' MESSAGES');
    sheet.getRange(1, 8).setFormula('=getTriggerCount()');
 
-   var agent = new Agent(sheet, {verbose: true});
-   var urlAgentConfig = 'https://raw.githubusercontent.com/karlgluck/platycore/master/agents/sandbox.json';
-   agent.info('Fetching ' + urlAgentConfig);
-   var jsonAgentConfig = UrlFetchApp.fetch(urlAgentConfig).getContentText();
-   agent.info('jsonAgentConfig', jsonAgentConfig);
-   var agentConfig = JSON.parse(jsonAgentConfig);
-   agent.info('Building agent "' + agentConfig.name + '"');
-
    try
       {
-      var toggleFromName = agentConfig.toggleFromName;
-      Object.keys(toggleFromName).forEach(function (kToggle)
+      var agent = new Agent(sheet, {verbose: true});
+      var urlAgentInstructions = 'https://raw.githubusercontent.com/karlgluck/platycore/master/agents/sandbox.json';
+      agent.info('Fetching ' + urlAgentInstructions);
+      var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
+      agent.info('jsonAgentInstructions', jsonAgentInstructions);
+      var agentInstructions = JSON.parse(jsonAgentInstructions);
+      agent.writeMetadata('agentConfig', agentConfig);
+      for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
          {
-         var eToggle = toggleFromName[kToggle];
-         var columnsFromLetters = [0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6];
-         var toggleText = eToggle.t || eToggle.f || kToggle;
-         var qcColumns;
-         if (eToggle.hasOwnProperty('w'))
+         var eAgentInstruction = agentInstructions[iAgentInstruction];
+         switch (eAgentInstruction)
             {
-            qcColumns = eToggle.w - 1;
+            case 'name':
+               var name = agentInstructions[++iAgentInstruction];
+               agent.writeMetadata('name', name);
+               agent.info('Building agent "' + name + '"');
+               break;
+
+            case 'info':
+               agent.info(agentInstructions[++iAgentInstruction]);
+               break;
+
+            case 'toggleFromName':
+               var toggleFromName = agentInstructions[++iAgentInstruction];
+               Object.keys(toggleFromName).forEach(function (kToggle)
+                  {
+                  var eToggle = toggleFromName[kToggle];
+                  var columnsFromLetters = [0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6];
+                  var toggleText = eToggle.t || eToggle.f || kToggle;
+                  var qcColumns;
+                  if (eToggle.hasOwnProperty('w'))
+                     {
+                     qcColumns = eToggle.w - 1;
+                     }
+                  else
+                     {
+                     qcColumns = columnsFromLetters[Math.min(columnsFromLetters.length-1, toggleText.length)];
+                     eToggle.w = qcColumns + 1;
+                     }
+                  agent.log('+toggle: ' + kToggle + ' (' + toggleText + ')', eToggle.r, eToggle.c, eToggle.w);
+                  var checkboxRange = sheet.getRange(eToggle.r, eToggle.c).insertCheckboxes();
+                  eToggle.onColor = checkboxRange.getFontColor();
+                  eToggle.offColor = checkboxRange.getBackground();
+                  if (eToggle.onColor === '#00ff00') delete eToggle.onColor;
+                  if (eToggle.offColor === '#000000') delete eToggle.offColor;
+                  if (qcColumns > 0)
+                     {
+                     var range = sheet.getRange(eToggle.r, eToggle.c+1, 1, qcColumns).mergeAcross();
+                     if (eToggle.hasOwnProperty('f'))
+                        {
+                        range.setFormula(eToggle.f);
+                        }
+                     else
+                        {
+                        range.setValue(toggleText);
+                        }
+                     }
+                  });
+               break;
             }
-         else
-            {
-            qcColumns = columnsFromLetters[Math.min(columnsFromLetters.length-1, toggleText.length)];
-            eToggle.w = qcColumns + 1;
-            }
-         agent.log('+toggle: ' + kToggle + ' (' + toggleText + ')', eToggle.r, eToggle.c, eToggle.w);
-         var checkboxRange = sheet.getRange(eToggle.r, eToggle.c).insertCheckboxes();
-         eToggle.onColor = checkboxRange.getFontColor();
-         eToggle.offColor = checkboxRange.getBackground();
-         if (eToggle.onColor === '#00ff00') delete eToggle.onColor;
-         if (eToggle.offColor === '#000000') delete eToggle.offColor;
-         if (qcColumns > 0)
-            {
-            var range = sheet.getRange(eToggle.r, eToggle.c+1, 1, qcColumns).mergeAcross();
-            if (eToggle.hasOwnProperty('f'))
-               {
-               agent.log('setting formula ' + eToggle.f);
-               range.setFormula(eToggle.f);
-               }
-            else
-               {
-               range.setValue(toggleText);
-               }
-            }
-         });
-      agent.writeMetadata('toggleFromName', toggleFromName);
+         }
       }
    catch (e)
       {
-      agent.error('exception during toggle layout', e, e.stack);
-      throw e;
-      }
-
-   try
-      {
-      agent = new Agent(sheet, {verbose: true});
-      agent.log('Rebooted. Starting self-test...');
-      agent.writeToggle('EN', true);
-      agent.log('verify EN toggle ON: ', agent.readToggle('EN') ? 'ON' : 'OFF');
-      agent.writeToggle('EN', false);
-      agent.log('verify EN toggle OFF: ', agent.readToggle('EN') ? 'ON' : 'OFF');
-      }
-   catch (e)
-      {
-      agent.error('exception during post-toggle boot', e, e.stack);
-      throw e;
+      agent.error('exception during agent initialization', e, e.stack);
+      return;
       }
 
 
-   /*var columnsFromLetters = [1, 2, 2, 3, 3, 4, 4, 4, 5, 5, 5, 6, 6, 6, 7];
-   
-   var nextColumn = 5;
-   var writeColumn = function (name)
-      {
-      agent.log('Adding logging flag "' + name + '"');
-      sheet.getRange(riHeaders, nextColumn + 0, 1, 1).insertCheckboxes();
-      sheet.getRange(riHeaders, nextColumn + 1, 1, 1).setValue(name);
-      nextColumn += columnsFromLetters[name.length];
-      };
-   writeColumn('TEST 1');
-   writeColumn('TESTINGY');
-   writeColumn('YES INDEED');
-   writeColumn('ENBL');
-   */
+   // try
+   //    {
+   //    agent = new Agent(sheet, {verbose: true});
+   //    agent.log('Rebooted. Starting self-test...');
+   //    agent.writeToggle('EN', true);
+   //    agent.log('verify EN toggle ON: ', agent.readToggle('EN') ? 'ON' : 'OFF');
+   //    agent.writeToggle('EN', false);
+   //    agent.log('verify EN toggle OFF: ', agent.readToggle('EN') ? 'ON' : 'OFF');
+   //    }
+   // catch (e)
+   //    {
+   //    agent.error('exception during post-toggle boot', e, e.stack);
+   //    return;
+   //    }
+
 
    var agent = new Agent(sheet);
    agent.log('Hello, World!');
    agent.info('agent.info example');
 
-/*
-   if (12 > qrFrozenRows)
-      {
-      spreadsheet.toast('Add at least 12 frozen rows');
-      return;
-      }
-*/
    }
 
-function getRangeNote(r,c)
-   {
-   return SpreadsheetApp.getActiveSheet().getRange(r,c).getNote();
-   }
+// function getRangeNote(r,c)
+//    {
+//    return SpreadsheetApp.getActiveSheet().getRange(r,c).getNote();
+//    }
 
 function Agent (sheet_, options_)
    {
 
    options_ = options_ || {};
-
-   //var verbose_ = options_.verbose || false;
 
    var metadataFromKey_ = {};
 
@@ -192,7 +205,7 @@ function Agent (sheet_, options_)
 
    var toggleFromNameP_ = function (name)
       {
-      var rvToggle = metadataFromKey_.toggleFromName[name];
+      var rvToggle = metadataFromKey_.agentConfig.toggleFromName[name];
       if (!rvToggle)
          {
          throw 'no toggle named "' + name + '"';
