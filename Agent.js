@@ -44,13 +44,18 @@ function Agent (sheet_, options_)
       return rvToggle;
       }
 
+   var syncToggle_ = function (toggle, range)
+      {
+      range.setBackground(toggle.isOn ? (toggle.onColor || '#00ff00') : (toggle.offColor || '#000000')).setFontColor(toggle.isOn ? (toggle.offColor || '#000000') : (toggle.onColor || '#00ff00'));
+      return range;
+      };
+
    this.readToggle = function (name)
       {
       var toggle = toggleFromNameP_(name);
       if (!toggle.hasOwnProperty('hasBeenRead'))
          {
-         var range = sheet_.getRange(toggle.r, toggle.c, 1, toggle.w);
-         range.setBackground(toggle.isOn ? (toggle.onColor || '#00ff00') : (toggle.offColor || '#000000')).setFontColor(toggle.isOn ? (toggle.offColor || '#000000') : (toggle.onColor || '#00ff00'));
+         syncToggle_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
          }
       toggle.hasBeenRead = true;
       if (toggle.hasOwnProperty('isOn'))
@@ -84,7 +89,7 @@ function Agent (sheet_, options_)
          }
       toggle.isOn = isOn;
       sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(isOn);
-      sheet_.getRange(toggle.r, toggle.c, 1, toggle.w).setBackground(isOn ? (toggle.onColor || '#00ff00') : (toggle.offColor || '#000000')).setFontColor(isOn ? (toggle.offColor || '#000000') : (toggle.onColor || '#00ff00'));
+      syncToggle_(sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
       };
    
 
@@ -109,6 +114,10 @@ function Agent (sheet_, options_)
 
    var writeOutputNormal_ = function (args)
       {
+      if (!isThisOn_)
+         {
+         return sheet_.getRange(1, 49);
+         }
       var nArgCount = Math.min(args.length, startsFromArgCount.length - 1);
       var starts = startsFromArgCount[nArgCount];
       var counts = countsFromArgCount[nArgCount];
@@ -128,7 +137,12 @@ function Agent (sheet_, options_)
       {
       if (isVerbose_())
          {
-         writeOutput_(callback()).setFontColor('#b6d7a8').setBackground('black');
+         var output = callback();
+         if (!Array.isArray(output))
+            {
+            output = [output];
+            }
+         writeOutput_(output).setFontColor('#b6d7a8').setBackground('black');
          }
       };
    
@@ -156,6 +170,29 @@ function Agent (sheet_, options_)
       writeOutput_(arguments).setFontColor('red').setBackground('#3d0404');
       };
 
+   this.turnOn = function (timeoutInMillis)
+      {
+      var lock = LockService.getDocumentLock();
+      lock.waitLock(timeoutInMillis || 1000);
+      var toggle = toggleFromNameP_('ON');
+      var range = sheet_.getRange(toggle.r, toggle.c, 1, toggle.w);
+      var notTooLongSinceLastLocked = true;
+      var isOn = !!range.getValue() && (notTooLongSinceLastLocked);
+      var retval = !isOn;
+      if (retval)
+         {
+         toggle.isOn = true;
+         sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(true);
+         syncToggle_(toggle, range);
+         }
+      lock.releaseLock();
+      return retval;
+      };
+
+   this.turnOff = function ()
+      {
+      }
+
    var isVerbose_ = function ()
       {
       var rvVerbose = false;
@@ -178,4 +215,9 @@ function Agent (sheet_, options_)
       {
       throw "not a platycore agent sheet";
       }
+
+   var isOn_ = self.peekToggleP('ON');
+   var isThisOn_ = !!options_.forceThisOn;
+
+
    }

@@ -17,6 +17,8 @@ make sure that EVERYTHING cleans up after itself on its output:
 
    I think agent logs get trimmed by another guess-scheduled longer-running job 
 
+also, use the FCC rule: functions should accept whatever noise is provided to them and not produce noise themselves
+
 
 */
 

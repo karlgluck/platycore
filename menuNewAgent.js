@@ -18,7 +18,7 @@ function menuNewAgent()
 
    try
       {
-      var agent = new Agent(sheet, {verbose: true});
+      var agent = new Agent(sheet, {verbose: true, forceThisOn: true});
       var urlAgentInstructions = 'https://raw.githubusercontent.com/karlgluck/platycore/master/agents/sandbox.json';
       agent.info('Fetching ' + urlAgentInstructions);
       var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
@@ -28,6 +28,7 @@ function menuNewAgent()
       //agent.writeMetadata('agentInstructions', agentInstructions);
 
       var dirty = {};
+      var inputFromName = {};
       var toggleFromName = {};
 
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
@@ -37,6 +38,7 @@ function menuNewAgent()
             {
             case 'freeze':
                var qrFrozenRows = agentInstructions[++iAgentInstruction] >>> 0;
+               agent.verbose(function () { return 'freezing ' + qrFrozenRows + ' rows'; });
                var riHeaders = qrFrozenRows;
                sheet.insertRowsBefore(1, qrFrozenRows);
                sheet.setFrozenRows(qrFrozenRows);
@@ -103,16 +105,38 @@ function menuNewAgent()
                break;
 
             case 'reboot':
+               if (dirty.hasOwnProperty('inputFromName'))
+                  {
+                  agent.verbose(function () { return ['saving inputFromName', inputFromName]; });
+                  agent.writeMetadata('inputFromName', inputFromName);
+                  delete dirty.inputFromName;
+                  }
                if (dirty.hasOwnProperty('toggleFromName'))
                   {
+                  agent.verbose(function () { return ['saving toggleFromName', toggleFromName]; });
                   agent.writeMetadata('toggleFromName', toggleFromName);
                   delete dirty.toggleFromName;
                   }
+               agent.verbose(function () { return 'reboot'; });
                agent = agent.reboot();
                break;
 
+            case 'input':
+               dirty.inputFromName = true;
+               (function (input)
+                  {
+                  inputFromName[input.k] = input;
+                  agent.log('+input: ' + input.k, input.r, input.c, intput.w);
+                  var range = sheet_.getRange(input.r, input.c, 1, input.w);
+                  range.mergeAcross()
+                        .setFontColor('white')
+                        .setBackground('#073763')
+                        .setBorder(true, true, true, true, false, false, '#efefef', SpreadsheetApp.BorderStyle.SOLID);
+                  })(agentInstructions[++iAgentInstruction]);
+               break;
+
             case 'toggle':
-               dirty[toggleFromName] = true;
+               dirty.toggleFromName = true;
                (function (toggle)
                   {
                   toggleFromName[toggle.k] = toggle;
@@ -156,57 +180,8 @@ function menuNewAgent()
                   if (toggle.offColor === '#000000') delete toggle.offColor;
                   })(agentInstructions[++iAgentInstruction]);
                break;
-
-            case 'toggleFromName':
-               dirty[toggleFromName] = true;
-               var toggleFromName = agentInstructions[++iAgentInstruction];
-               Object.keys(toggleFromName).forEach(function (kToggle)
-                  {
-                  var eToggle = toggleFromName[kToggle];
-                  var columnsFromLetters = [0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6];
-                  var toggleText = eToggle.t || eToggle.f || kToggle;
-                  var qcColumns;
-                  if (eToggle.hasOwnProperty('w'))
-                     {
-                     qcColumns = eToggle.w - 1;
-                     }
-                  else
-                     {
-                     qcColumns = columnsFromLetters[Math.min(columnsFromLetters.length-1, toggleText.length)];
-                     eToggle.w = qcColumns + 1;
-                     }
-                  agent.log('+toggle: ' + kToggle + ' (' + toggleText + ')', eToggle.r, eToggle.c, eToggle.w);
-                  var checkboxRange = sheet.getRange(eToggle.r, eToggle.c).insertCheckboxes();
-                  eToggle.onColor = checkboxRange.getFontColor();
-                  eToggle.offColor = checkboxRange.getBackground();
-                  if (eToggle.v)
-                     {
-                     checkboxRange.setValue(true).setFontColor(eToggle.offColor).setBackground(eToggle.onColor);
-                     }
-                  if (qcColumns > 0)
-                     {
-                     var range = sheet.getRange(eToggle.r, eToggle.c+1, 1, qcColumns).mergeAcross();
-                     if (eToggle.hasOwnProperty('f'))
-                        {
-                        range.setFormula(eToggle.f);
-                        }
-                     else
-                        {
-                        range.setValue(toggleText);
-                        }
-                     if (eToggle.v)
-                        {
-                        range.setFontColor(eToggle.offColor).setBackground(eToggle.onColor);
-                        }
-                     }
-                  if (eToggle.onColor === '#00ff00') delete eToggle.onColor;
-                  if (eToggle.offColor === '#000000') delete eToggle.offColor;
-                  });
-               agent.writeMetadata('toggleFromName', toggleFromName);
-               agent = agent.reboot();
-               break;
-            }
-         }
+            } // switch agent instruction
+         } // for each agent instruction
       }
    catch (e)
       {
