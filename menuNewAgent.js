@@ -30,6 +30,7 @@ function menuNewAgent()
       var dirty = {};
       var fieldFromName = {};
       var toggleFromName = {};
+      var conditionalFormatRules = [];
 
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
          {
@@ -117,6 +118,11 @@ function menuNewAgent()
                   agent.writeMetadata('toggleFromName', toggleFromName);
                   delete dirty.toggleFromName;
                   }
+               if (dirty.hasOwnProperty('conditionalFormatRules'))
+                  {
+                  sheet.setConditionalFormatRules(conditionalFormatRules);
+                  delete dirty.conditionalFormatRules;
+                  }
                agent.verbose(function () { return 'reboot'; });
                agent = agent.reboot();
                break;
@@ -133,15 +139,21 @@ function menuNewAgent()
                   agent.log('+field: ' + field.k, field.r, field.c, field.h, field.w);
                   var range = sheet.getRange(field.r, field.c, field.h, field.w);
                   range.merge()
-                        .setFontColor('white')
-                        .setBackground('#073763')
+                        .setFontColor('#434343')
+                        .setBackground('#ff9900')
                         .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
                         .setVerticalAlignment(field.h === 1 ? 'middle' : 'top')
                         .setBorder(true, true, true, true, false, false, '#efefef', SpreadsheetApp.BorderStyle.SOLID);
-                  if (field.hasOwnProperty('v'))
+                  conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+                     .setRanges([range])
+                     .whenTextEqualTo(input.value)
+                     .setFontColor('white')
+                     .setBackground('#073763'));
+                  if (field.hasOwnProperty('value'))
                      {
-                     self_.verbose(function () { return 'setting field value ' + field.v; });
-                     range.setValue(field.v);
+                     self_.verbose(function () { return 'setting field value ' + field.value; });
+                     range.setValue(field.value);
+                     delete field.value;
                      }
                   })(agentInstructions[++iAgentInstruction]);
                break;
@@ -182,9 +194,10 @@ function menuNewAgent()
                         {
                         range.setValue(toggleText);
                         }
-                     if (toggle.v)
+                     if (toggle.hasOwnProperty('isOn'))
                         {
                         range.setFontColor(toggle.offColor).setBackground(toggle.onColor);
+                        delete toggle.isOn;
                         }
                      }
                   if (toggle.onColor === '#00ff00') delete toggle.onColor;
