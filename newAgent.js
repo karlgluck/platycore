@@ -3,15 +3,20 @@ function newAgent (urlAgentInstructions)
 
    var spreadsheet = SpreadsheetApp.getActive();
 
-   var sheet = spreadsheet.getSheetByName('New Agent');
+   var sheetName = 'New Agent';
+
+   var sheet = spreadsheet.getSheetByName(sheetName);
    if (!!sheet)
       {
       spreadsheet.deleteSheet(sheet);
       }
-   sheet = spreadsheet.insertSheet('New Agent', spreadsheet.getActiveSheet().getIndex());
+   sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
    sheet.activate();
-
-   sheet.addDeveloperMetadata('platycoreAgent', '{}');
+   var memory = {
+      sheetName: sheetName,
+      sheetId: sheet.getSheetId(),
+      urlAgentInstructions: urlAgentInstructions
+      };
    sheet.insertColumns(1, 23);
    sheet.setColumnWidths(1, 49, sheet.getRowHeight(1));
 
@@ -22,8 +27,6 @@ function newAgent (urlAgentInstructions)
       var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
       agent.info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
-      //agent.writeMetadata('platycoreAgent',{key:'value'});
-      //agent.writeMetadata('agentInstructions', agentInstructions);
 
       var dirty = {};
       var fieldFromName = {};
@@ -45,7 +48,12 @@ function newAgent (urlAgentInstructions)
                var riFirstRowToDelete = Math.max(riHeaders + 2, sheet.getLastRow() + 1);
                sheet.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
                mrMaxRows = riFirstRowToDelete - 1;
-               sheet.getRange(1, 1, mrMaxRows, 49).setFontColor('#00ff00').setBackground('black').setFontFamily('Courier New').setVerticalAlignment('top');
+               sheet.getRange(1, 1, mrMaxRows, 49)
+                     .setFontColor('#00ff00')
+                     .setBackground('black')
+                     .setFontFamily('Courier New')
+                     .setVerticalAlignment('top')
+                     .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
                sheet.getRange(1, 1, 1, 49).setBackground('#434343');
                sheet.getRange(riHeaders, 1, 1, 1).setValue(' MESSAGES');
                agent = agent.reboot();
@@ -141,23 +149,58 @@ function newAgent (urlAgentInstructions)
                   var range = sheet.getRange(field.r, field.c, field.h, field.w);
                   range.merge()
                         .setValue(field.value)
-                        .setFontColor('#434343')
-                        .setBackground('#ff9900')
+                        .setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
                         .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
-                        .setVerticalAlignment(field.h === 1 ? 'middle' : 'top')
-                        .setBorder(true, true, true, true, false, false, '#efefef', SpreadsheetApp.BorderStyle.SOLID);
-                  conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
-                     .setRanges([range])
-                     .whenTextEqualTo(field.value)
-                     .setFontColor('white')
-                     .setBackground('#073763'));
+                        .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
+                  if (field.isReadonly)
+                     {
+                     range.setFontColor(field.hasOwnProperty('fg') ? field.fg : '#2a2a2a');
+                     }
+                  else
+                     {
+                     var fontColor = field.hasOwnProperty('fg') ? field.fg : range.getFontColor();
+                     range.setFontColor('#ff00ff');
+                     conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+                           .setRanges([range])
+                           .whenTextEqualTo(field.value)
+                           .setFontColor(fontColor));
+                     }
                   if (field.hasOwnProperty('value'))
                      {
                      agent.verbose(function () { return 'setting field value ' + field.value; });
                      range.setValue(field.value);
-                     delete field.value;
                      }
                   })(agentInstructions[++iAgentInstruction]);
+               break;
+
+            case 'go':
+               (function (go)
+                  {
+                  var toggles = Object.keys(toggleFromName).map(function (kName)
+                     {
+                     var eToggle = toggleFromName[kName];
+                     return "NE(" + GAS_A1AddressFromCoordinates(eToggle.r, eToggle.c) + (!!eToggle.isOn ? ",TRUE)" : ",FALSE)");
+                     });
+                  var fields = Object.keys(fieldFromName).map(function (kName)
+                     {
+                     var eField = fieldFromName[kName];
+                     return "NE(" + GAS_A1AddressFromCoordinates(eField.r, eField.c) + ',"' + String(eField.value).replace('"', '""') + '")';
+                     });
+                  var range = sheet.getRange(go.r, go.c);
+                  range.setFormula('=OR(' + toggles.concat(fields).join(',') + ')');
+                  sheet.getRange(go.r, go.c+1, 1, 2).mergeAcross().setValue('GO');
+                  memory.irGo = go.r;
+                  memory.icGo = go.c;
+                  toggleFromName['GO'] = { r: go.r, c: go.c, w: 3, h: 1, t: 'GO', isReadonly: true };
+                  })(agentInstructions[++iAgentInstruction]);
+               break;
+
+            case 'onRun':
+               var runScript = agentInstructions[++iAgentInstruction];
+               break;
+
+            case 'toast':
+               spreadsheet.toast(agentInstructions[++iAgentInstruction]);
                break;
 
             case 'toggle':
@@ -165,50 +208,61 @@ function newAgent (urlAgentInstructions)
                (function (toggle)
                   {
                   toggleFromName[toggle.k] = toggle;
-                  var columnsFromLetters = [0, 1, 1, 2, 2, 3, 3, 3, 4, 4, 4, 5, 5, 5, 6];
-                  var toggleText = toggle.t || toggle.f || toggle.k;
-                  var qcColumns;
-                  if (toggle.hasOwnProperty('w'))
-                     {
-                     qcColumns = toggle.w - 1;
-                     }
-                  else
-                     {
-                     qcColumns = columnsFromLetters[Math.min(columnsFromLetters.length-1, toggleText.length)];
-                     toggle.w = qcColumns + 1;
-                     }
-                  agent.log('+toggle: ' + toggle.k + ' (' + toggleText + ')', toggle.r, toggle.c, toggle.w);
+                  var toggleText = toggle.t || toggle.k;
+                  toggle.isReadonly = !!toggle.isReadonly;
+                  toggle.isOn = !!toggle.isOn;
+                  agent.log('+toggle: ' + toggle.k + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
                   var checkboxRange = sheet.getRange(toggle.r, toggle.c).insertCheckboxes();
-                  toggle.onColor = checkboxRange.getFontColor();
-                  toggle.offColor = checkboxRange.getBackground();
-                  if (toggle.v)
+                  if (toggle.isReadonly)
                      {
-                     checkboxRange.setValue(true).setFontColor(toggle.offColor).setBackground(toggle.onColor);
+                     checkboxRange.setFormula(toggle.isOn ? '=TRUE' : '=FALSE');
                      }
+                     else
+                     {
+                     checkboxRange.setValue(toggle.isOn);
+                     }
+                  var qcColumns = toggle.w - 1;
                   if (qcColumns > 0)
                      {
-                     var range = sheet.getRange(toggle.r, toggle.c+1, 1, qcColumns).mergeAcross();
-                     if (toggle.hasOwnProperty('f'))
-                        {
-                        range.setFormula(toggle.f);
-                        }
-                     else
-                        {
-                        range.setValue(toggleText);
-                        }
-                     if (toggle.hasOwnProperty('isOn'))
-                        {
-                        range.setFontColor(toggle.offColor).setBackground(toggle.onColor);
-                        delete toggle.isOn;
-                        }
+                     sheet.getRange(toggle.r, toggle.c+1, 1, qcColumns).mergeAcross().setValue(toggleText);
                      }
-                  if (toggle.onColor === '#00ff00') delete toggle.onColor;
-                  if (toggle.offColor === '#000000') delete toggle.offColor;
+                  var range = sheet.getRange(toggle.r, toggle.c, 1, toggle.w);
+                  if (toggle.hasOwnProperty('fg'))
+                     {
+                     range.setFontColor(toggle.fg); // explicit foreground color
+                     delete toggle.fg;
+                     }
+                  else if (toggle.isReadonly)
+                     {
+                     range.setFontColor('#999999'); // readonly
+                     }
+                  if (toggle.hasOwnProperty('bg'))
+                     {
+                     range.setBackground(toggle.bg);
+                     delete toggle.bg;
+                     }
+                  if (!toggle.isReadonly)
+                     {
+                     conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+                           .setRanges([range])
+                           .whenFormulaSatisfied((toggle.isOn ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinates(toggle.r, toggle.c) + ')')
+                           .setFontColor('#ff00ff')
+                           );
+                     }
                   delete toggle.k;
                   })(agentInstructions[++iAgentInstruction]);
                break;
             } // switch agent instruction
          } // for each agent instruction
+
+
+         var properties = PropertiesService.getDocumentProperties();
+         var platycore = JSON.parse(properties.getProperty('platycore'));
+         platycore.agentMemories.push({
+            sheetId: sheet.getSheetId(),
+            isEnabled: false
+         });
+         properties.setProperty(JSON.stringify(platycore));
       }
    catch (e)
       {
@@ -219,5 +273,11 @@ function newAgent (urlAgentInstructions)
       spreadsheet.toast(e + ' ' + e.stack);
       return;
       }
-
+   finally
+      {
+      PropertiesService.getDocumentProperties().setProperty(
+            'platycoreAgent' + memory.sheetId,
+            JSON.stringify(memory)
+            );
+      }
    }

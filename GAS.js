@@ -11,3 +11,36 @@ GAS_deleteTriggerByName = function (functionName)
          }
       }
    }
+
+
+function GAS_A1AddressFromCoordinates (irRow, icColumn)
+   {
+   var iLetter, rvColumnLetters = '$';
+   while (icColumn > 0)
+      {
+      iLetter = (icColumn - 1) % 26;
+      rvColumnLetters = String.fromCharCode(65 + iLetter) + rvColumnLetters;
+      icColumn = (icColumn - iLetter - 1) / 26;
+      }
+   return rvColumnLetters + '$' + (irRow >>> 0).toString();
+   }
+
+function GAS_updateConditionalFormatRule (sheet, irRow, icColumn, wcWidth, hrHeight, callback)
+   {
+   wcWidth = wcWidth || 1;
+   hrHeight = hrHeight || 1;
+   var shouldCreateRule = true;
+   var rules = sheet.getConditionalFormatRules().map(function (eRule)
+      {
+      if (eRule.getRanges().some(function (eRange) { return eRange.getRow() === irRow && eRange.getColumn() === icColumn && eRange.getWidth() === wcWidth && eRange.getHeight() === hrHeight; }))
+         {
+         shouldCreateRule = false;
+         return callback(eRule.copy()).build();
+         }
+      });
+   if (shouldCreateRule)
+      {
+      rules.push(callback(SpreadsheetApp.newConditionalFormatRule().setRanges([sheet.getRange(irRow, icColumn, wcWidth, hrHeight)])).build());
+      }
+   sheet.setConditionalFormatRules(rules);
+   }

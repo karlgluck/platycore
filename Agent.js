@@ -1,10 +1,20 @@
 
+
 function Agent (sheet_, options_)
    {
+   var properties_ = PropertiesService.getDocumentProperties();
+   var sheetId_ = sheet.getSheetId();
+
    var self_ = this;
    options_ = options_ || {};
+   var cellSize_ = sheet_.getRowHeight(1);
 
    var metadataFromKey_ = {};
+
+   this.urlAgentInstructionsGet = function ()
+      {
+      return metadataFromKey_.platycoreAgent.urlAgentInstructions;
+      };
 
    this.reboot = function ()
       {
@@ -30,7 +40,8 @@ function Agent (sheet_, options_)
 
    this.writeMetadata = function (key, value)
       {
-      sheet_.addDeveloperMetadata(key, JSON.stringify(value));
+      metadataFromKey_[key] = value;
+      properties_.setProperty(sheetId_ + '.' + key, JSON.stringify(value));
       };
 
    var toggleFromNameP_ = function (name)
@@ -49,12 +60,6 @@ function Agent (sheet_, options_)
          return { hasBeenRead: true, value: '' };
          }
       return metadataFromKey_.inputFromName[name];
-      };
-
-   var syncToggle_ = function (toggle, range)
-      {
-      range.setBackground(toggle.isOn ? (toggle.onColor || '#00ff00') : (toggle.offColor || '#000000')).setFontColor(toggle.isOn ? (toggle.offColor || '#000000') : (toggle.onColor || '#00ff00'));
-      return range;
       };
 
    var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
@@ -84,11 +89,21 @@ function Agent (sheet_, options_)
             }
          }
       return null;
-      }
+      };
+
+   var updateToggleConditionalFormatRule_ = function (toggle, range)
+      {
+      var rule = getConditionalFormatRuleByRange(range);
+      var builder = rule.copy();
+      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinates(range.getRow(), range.getColumn()) +(toggle.isOn?',TRUE)':',FALSE)'));
+      rule.gasConditionalFormatRule = builder.build();
+      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
+      return range;
+      };
 
    var syncInput_ = function (input, range)
       {
-      var rule = getConditionalFormatRuleByRange (range);
+      var rule = getConditionalFormatRuleByRange(range);
       var builder = rule.copy();
       builder.whenTextEqualTo(input.value);
       rule.gasConditionalFormatRule = builder.build();
@@ -104,7 +119,7 @@ function Agent (sheet_, options_)
          }
       if (!toggle.hasOwnProperty('hasBeenRead'))
          {
-         syncToggle_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
+         updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
          }
       toggle.hasBeenRead = true;
       return toggle.isOn;
@@ -133,7 +148,7 @@ function Agent (sheet_, options_)
          }
       toggle.isOn = isOn;
       sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(isOn);
-      syncToggle_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
+      updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
       };
    
    this.readInput = function (name)
@@ -191,6 +206,7 @@ function Agent (sheet_, options_)
          }
       //.setValue('▪').setVerticalAlignment('middle')
       sheet_.getRange(irNewMessage_, 1).setNote(JSON.stringify([new Date().toISOString()].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
+      //sheet_.setRowHeight(irNewMessage_, cellSize_);
       return sheet_.getRange(irNewMessage_, 1, 1, 49);
       };
    
@@ -238,30 +254,33 @@ function Agent (sheet_, options_)
       writeOutput_(arguments).setFontColor('red').setBackground('#3d0404');
       };
 
-   this.turnOn = function (timeoutInMillis)
+   this.turnOn = function ()
       {
       if (isThisOn_)
          {
          return true;
          }
       var lock = LockService.getDocumentLock();
-      lock.waitLock(timeoutInMillis || 1000);
-      var toggle = toggleFromNameP_('ON');
-      var range = sheet_.getRange(toggle.r, toggle.c, 1, toggle.w);
+      if (!lock.tryLock(15000))
+         {
+         return false;
+         }
+      var toggle = metadataFromKey_.toggleFromName.ON;
+      var range = sheet_.getRange(toggle.r, toggle.c, 1, 1);
       var notTooLongSinceLastLocked = true;
       var isOn = !!range.getValue() && (notTooLongSinceLastLocked);
       var isThisOn_ = !isOn;
       if (isThisOn_)
          {
+         // set the value of the LAST field to the current date
          toggle.isOn = true;
-         sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(true);
-         syncToggle_(toggle, range);
+         range.setValue(true);
          }
       lock.releaseLock();
       return isThisOn_;
       };
 
-   this.turnOff = function (timeoutInMillis)
+   this.turnOff = function ()
       {
       if (!isThisOn_)
          {
@@ -269,13 +288,11 @@ function Agent (sheet_, options_)
          }
       isThisOn_ = false;
       var lock = LockService.getDocumentLock();
-      if (lock.tryLock(timeoutInMillis || 10000))
+      if (lock.tryLock(15000))
          {
-         var toggle = toggleFromNameP_('ON');
-         var range = sheet_.getRange(toggle.r, toggle.c, 1, 1);
+         var toggle = metadataFromKey_.toggleFromName.ON;
          toggle.isOn = false;
          sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(false);
-         syncToggle_(toggle, range);
          }
       };
 
@@ -290,12 +307,17 @@ function Agent (sheet_, options_)
       return rvVerbose;
       };
 
-   sheet_.getDeveloperMetadata().forEach(function (eMetadata)
+   var metadataFromKey_ = (function ()
       {
-      var k = eMetadata.getKey(), v = eMetadata.getValue();
-      metadataFromKey_[k] = JSON.parse(v);
-      self_.verbose(function () { return ['metadata: ' + k + ' ', Util_clampStringLengthP(v.substring(0, 50))] });
-      });
+      var rvMetadataFromKey = {};
+      properties_.getKeys().filter(function (e) { e.substring(0, sheetId_.length+1) === sheetId_ }).forEach(function (eKey)
+         {
+         var stringValue = properties_.getProperty(eKey);
+         rvMetadataFromKey[eKey.substring(sheetId_.length+1)] = JSON.parse(stringValue);
+         self_.verbose(function () { return ['metadata: ' + k, Util_clampStringLengthP(stringValue, 50)] });
+         });
+      return rvMetadataFromKey;
+      })();
    
    if (!metadataFromKey_.hasOwnProperty('platycoreAgent'))
       {
