@@ -58,7 +58,7 @@ function newAgent (urlAgentInstructions)
                      .setVerticalAlignment('top')
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
                sheet.getRange(1, 1, 1, 49).setBackground('#434343');
-               sheet.getRange(riHeaders, 1, 1, 1).setValue(' MESSAGES');
+               sheet.getRange(riHeaders, 1, 1, 4).merge().setValue(' MESSAGES');
                agent = agent.reboot();
                break;
 
@@ -169,17 +169,17 @@ function newAgent (urlAgentInstructions)
                   var toggles = Object.keys(toggleFromName).map(function (kName)
                      {
                      var eToggle = toggleFromName[kName];
-                     return "NE(" + GAS_A1AddressFromCoordinates(eToggle.r, eToggle.c) + (!!eToggle.isOn ? ",TRUE)" : ",FALSE)");
+                     return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (!!eToggle.isOn ? ",TRUE)" : ",FALSE)");
                      });
                   var fields = Object.keys(fieldFromName).map(function (kName)
                      {
                      var eField = fieldFromName[kName];
-                     return "NE(" + GAS_A1AddressFromCoordinates(eField.r, eField.c) + ',"' + String(eField.value).replace('"', '""') + '")';
+                     return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.value).replace('"', '""') + '")';
                      });
-                  var range = sheet.getRange(go.r, go.c);
+                  var range = sheet.getRange(go.r, go.c).insertCheckboxes();
                   range.setFormula('=OR(' + toggles.concat(fields).join(',') + ')');
-                  sheet.getRange(go.r, go.c+1, 1, 2).mergeAcross().setValue('GO');
-                  toggleFromName['GO'] = { r: go.r, c: go.c, w: 3, h: 1, t: 'GO', isReadonly: true };
+                  sheet.getRange(go.r, go.c+1).setValue('GO');
+                  toggleFromName['GO'] = { r: go.r, c: go.c, w: 2, h: 1, t: 'GO', isReadonly: true };
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
@@ -233,7 +233,7 @@ function newAgent (urlAgentInstructions)
                      {
                      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
                            .setRanges([range])
-                           .whenFormulaSatisfied((toggle.isOn ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinates(toggle.r, toggle.c) + ')')
+                           .whenFormulaSatisfied((toggle.isOn ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) + ')')
                            .setFontColor('#ff00ff')
                            );
                      }

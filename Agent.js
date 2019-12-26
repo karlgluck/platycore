@@ -87,7 +87,7 @@ function Agent (sheet_, memory_, options_)
       {
       var rule = getConditionalFormatRuleByRange(range);
       var builder = rule.copy();
-      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinates(range.getRow(), range.getColumn()) +(toggle.isOn?',TRUE)':',FALSE)'));
+      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.isOn?',TRUE)':',FALSE)'));
       rule.gasConditionalFormatRule = builder.build();
       sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
       return range;
