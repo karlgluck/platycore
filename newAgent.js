@@ -167,7 +167,7 @@ function newAgent (urlAgentInstructions)
                break;
 
             case 'GO_EN':
-               (function (go)
+               (function (goen)
                   {
                   var toggles = Object.keys(toggleFromName).map(function (kName)
                      {
