@@ -16,7 +16,8 @@ function triggerPlatycoreSentinel ()
       var eAgentMemory = JSON.stringify(properties.getProperty(ePlatycoreAgentKey));
       if (!isAgentMemoryLatest)
          {
-         if (eAgentMemory.hasOwnProperty('sheetName')) // use the sheetName hint 
+         console.log('updating agent memory for ' + ePlatycoreAgentKey, eAgentMemory);
+         if (eAgentMemory.hasOwnProperty('sheetName')) // use the sheetName hint for direct lookup
             {
             sheet = spreadsheet.getSheetByName(eAgentMemory.sheetName);
             if (!sheet || sheet.getSheetId() !== eAgentMemory.sheetId)
@@ -24,7 +25,7 @@ function triggerPlatycoreSentinel ()
                sheet = undefined;
                }
             }
-         if ('undefined' === typeof sheet) // search by sheetId (and repair sheetName)
+         if ('undefined' === typeof sheet) // if sheetName didn't find it, search by sheetId (and repair sheetName)
             {
             sheet = (function (sheets, kTargetSheetId) 
                {
@@ -38,33 +39,36 @@ function triggerPlatycoreSentinel ()
                      }
                   return null;
                })(spreadsheet.getSheets(), eAgentMemory.sheetId);
-            if ('object' !== typeof sheet || null === sheet)
+            if ('object' === typeof sheet && null !== sheet) // if we got a valid sheet back, update the agent memory to save its new name
                {
                eAgentMemory.sheetName = sheet.getSheetName();
                properties.setProperty(ePlatycoreAgentKey, JSON.stringify(eAgentMemory));
                }
             }
-         if ('object' !== typeof sheet || null === sheet) // nuke invalid platycore agent
+         if ('object' !== typeof sheet || null === sheet) // nuke an invalid platycore agent
             {
-            console.warn('DELETE PLATYCORE AGENT ' + ePlatycoreAgentKey);
+            console.error('deleting invalid platycore agent "' + ePlatycoreAgentKey + '"');
             properties.deleteProperty(ePlatycoreAgentKey);
             continue;
             }
+         var go = eAgentMemory.toggleFromName.GO;
+         var shouldUpdate = !!sheet.getRange(go.r, go.c).getValue();
+         if (shouldUpdate !== eAgentMemory.shouldUpdate)
+            {
+            eAgentMemory.shouldUpdate = shouldUpdate;
+            properties.setProperty(ePlatycoreAgentKey, JSON.stringify(eAgentMemory));
+            }
          }
-      eAgentMemory
-      eAgentMemory.go = !!sheet.getRange(eAgentMemory.irGo || 1, eAgentMemory.icGo || 1).getValue();
-      if (true !== eAgentMemory.go)
+      
+      var isIdle = true !== eAgentMemory.shouldUpdate;
+      console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?'IDLE':'SHOULD UPDATE'), eAgentMemory);
+      if (isIdle)
          {
          return;
          }
-      if ('undefined' === typeof sheet)
+      if ('object' !== typeof sheet || null === sheet)
          {
          sheet = spreadsheet.getSheetByName(eAgentMemory.sheetName);
-         }
-      var isEnabled = !!sheet.getRange(1, 3).getValue();
-      if (!isEnabled)
-         {
-         return;
          }
       try{
          var agent = new Agent(sheet, {memory: eAgentMemory});
@@ -78,7 +82,7 @@ function triggerPlatycoreSentinel ()
                }
             catch (e)
                {
-               agent.error('doStep', e, e.stack);
+               agent.error('UPDATE', e, e.stack);
                }
             finally
                {

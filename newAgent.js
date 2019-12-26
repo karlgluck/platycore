@@ -13,7 +13,8 @@ function newAgent (urlAgentInstructions)
    sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
    sheet.activate();
    sheet.insertColumns(1, 23);
-   sheet.setColumnWidths(1, 49, sheet.getRowHeight(1));
+   var cellSize = sheet.getRowHeight(1);
+   sheet.setColumnWidths(1, 49, cellSize);
 
    try
       {
@@ -22,7 +23,9 @@ function newAgent (urlAgentInstructions)
             sheetId: sheet.getSheetId(),
             urlAgentInstructions: urlAgentInstructions,
             fieldFromName: {},
-            toggleFromName: {}
+            toggleFromName: {},
+            scriptFromName: {},
+            shouldUpdate: false
             };
       var agent = new Agent(sheet, memory, {verbose: true, forceThisOn: true});
       agent.info('Fetching ' + urlAgentInstructions);
@@ -32,6 +35,7 @@ function newAgent (urlAgentInstructions)
 
       var fieldFromName = memory.fieldFromName;
       var toggleFromName = memory.toggleFromName;
+      var scriptFromName = memory.scriptFromName;
 
       var dirty = {};
       var conditionalFormatRules = [];
@@ -57,7 +61,9 @@ function newAgent (urlAgentInstructions)
                      .setFontFamily('Courier New')
                      .setVerticalAlignment('top')
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-               sheet.getRange(1, 1, 1, 49).setBackground('#434343');
+               sheet.getRange(1, 1, 1, 49)
+                     .setBackground('#434343')
+                     .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
                sheet.getRange(riHeaders, 1, 1, 4).merge().setValue(' MESSAGES');
                agent = agent.reboot();
                break;
@@ -137,17 +143,13 @@ function newAgent (urlAgentInstructions)
                   agent.log('+field: ' + field.k, field.r, field.c, field.h, field.w);
                   var range = sheet.getRange(field.r, field.c, field.h, field.w);
                   range.merge()
-                        .setValue(field.value)
                         .setBackground(field.hasOwnProperty('bg') ? field.bg : '#000000')
                         .setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
                         .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
                         .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
                   if (field.isReadonly)
                      {
-                     if (field.hasOwnProperty('fg'))
-                        {
-                        range.setFontColor(field.fg);
-                        }
+                     range.setFontColor(field.hasOwnProperty('fg') ? field.fg : '#666666');
                      }
                   else
                      {
@@ -160,8 +162,12 @@ function newAgent (urlAgentInstructions)
                      }
                   if (field.hasOwnProperty('value'))
                      {
-                     agent.verbose(function () { return 'setting field value ' + field.value; });
                      range.setValue(field.value);
+                     delete field.f;
+                     }
+                  else if (field.hasOwnProperty('f'))
+                     {
+                     range.setFormula(field.f);
                      }
                   })(agentInstructions[++iAgentInstruction]);
                break;
@@ -184,15 +190,28 @@ function newAgent (urlAgentInstructions)
                   toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true };
                   sheet.getRange(goen.r, goen.c).insertCheckboxes()
                         .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(toggleFromName.EN.r, toggleFromName.EN.c) + ',OR(' + toggles.concat(fields).join(',') + '))');
-                  sheet.getRange(goen.r, goen.c+1).setValue('GO');
+      sheet.getRange(goen.r, goen.c+1).setValue('GO'); ///////////////// this should be a formula that schedules a trigger on change
                   sheet.getRange(goen.r, icEn).insertCheckboxes()
                         .setValue('false');
                   sheet.getRange(goen.r, icEn+1).setValue('EN');
+                  sheet.getRange(goen.r, icEn, 1, 2).setFontColor('#dadfe8');
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
-            case 'onUpdate':
-               var updateScript = agentInstructions[++iAgentInstruction];
+            case 'script': // script "<name>" <qSectionCount> [{"r": "<riRow>", "c": "<ciCol>"} [<"code"> [, <"code">] ...for each line of code]] ...for each section
+               var name = agentInstructions[++iAgentInstruction];
+               var qSectionCount = agentInstructions[++iAgentInstruction];
+               var script = {sections:[]};
+               while (qSectionCount-- > 0)
+                  {
+                  var scriptProperties = agentInstructions[++iAgentInstruction];
+                  script.sections.push(scriptProperties);
+                  sheet.getRange(scriptProperties.r, scriptProperties.c)
+                        .setValue(agentInstructions[++iAgentInstruction].join('\n'));
+                  sheet.setRowHeight(scriptProperties.r, cellSize);
+                  }
+               agent.log('+script: ' + name, script.sections);
+               memory.scriptFromName[name] = script;
                break;
 
             case 'toast':
