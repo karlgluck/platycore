@@ -75,7 +75,7 @@ function triggerPlatycoreSentinel ()
          sheet = spreadsheet.getSheetByName(eAgentMemory.sheetName);
          }
       try{
-         var agent = new Agent(sheet, {memory: eAgentMemory});
+         var agent = new Agent(sheet, eAgentMemory, {});
          var sentinel = Math.random().toString();
          var sentinelRange = sheet.getRange(1, 49);
          sentinelRange.setValue(sentinel);
@@ -97,6 +97,7 @@ function triggerPlatycoreSentinel ()
       catch (e)
          {
          console.error(e);
+         throw e;
          }
       }
 

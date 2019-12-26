@@ -3,8 +3,20 @@
 function Agent (sheet_, memory_, options_)
    {
    var properties_ = PropertiesService.getDocumentProperties();
-
    var self_ = this;
+
+   this.getSheetId = function ()
+      {
+      var rvSheetId = sheet_.getSheetId();
+      self_.getSheetId = (function (rv) { return function () { return rv }})(rvSheetId);
+      return rvSheetId;
+      }
+
+   if ('object' !== typeof memory_ || null === memory_)
+      {
+      memory_ = JSON.parse(properties.getProperty('platycoreAgent' + this.getSheetId()));
+      }
+
    options_ = options_ || {};
    var cellSize_ = sheet_.getRowHeight(1);
 

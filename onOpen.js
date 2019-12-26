@@ -14,14 +14,14 @@ function onOpen()
          .addSeparator()
          .addSubMenu(
                ui.createMenu("Sentinel")
-                     .addItem("Run", "triggerPlatycoreSentinel")
+                     .addItem("Run", "menuPlatycoreSentinel")
                      .addSeparator()
                      .addItem("Refresh", "menuRefreshSentinel")
                      .addItem("Stop", "menuStopSentinel")
                )
          .addSubMenu(
                ui.createMenu("Debug")
-                     .addItem("Run Sentinel", "triggerPlatycoreSentinel")
+                  .addItem("Dummy", "menuPlatycoreSentinel")
                )
          .addToUi();
    
