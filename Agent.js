@@ -166,10 +166,6 @@ function Agent (sheet_, memory_, options_)
    var mcColumns_ = sheet_.getMaxColumns();
    var irNewMessage_ = sheet_.getFrozenRows() + 1;
 
-   this.getMetadata = function () {
-      return JSON.stringify(memory_);
-   };
-
    var writeOutputFirstTime_ = function (args)
       {
       var range = writeOutputNormal_(args);
@@ -257,7 +253,7 @@ function Agent (sheet_, memory_, options_)
          {
          return false;
          }
-      var toggle = metadataFromKey_.toggleFromName.ON;
+      var toggle = memory_.toggleFromName.ON;
       var range = sheet_.getRange(toggle.r, toggle.c, 1, 1);
       var notTooLongSinceLastLocked = true;
       var isOn = !!range.getValue() && (notTooLongSinceLastLocked);
@@ -282,7 +278,7 @@ function Agent (sheet_, memory_, options_)
       var lock = LockService.getDocumentLock();
       if (lock.tryLock(15000))
          {
-         var toggle = metadataFromKey_.toggleFromName.ON;
+         var toggle = memory_.toggleFromName.ON;
          toggle.isOn = false;
          sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(false);
          }
