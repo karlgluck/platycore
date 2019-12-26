@@ -10,7 +10,12 @@ GAS_deleteTriggerByName = function (functionName)
          ScriptApp.deleteTrigger(eTrigger);
          }
       }
-   }
+   };
+
+GAS_isFunctionTriggeredP = function (functionName)
+   {
+   return ScriptApp.getProjectTriggers().some(function (eTrigger) { return eTrigger.getHandlerFunction() == functionName });
+   };
 
 
 function GAS_A1AddressFromCoordinatesP (irRow, icColumn)

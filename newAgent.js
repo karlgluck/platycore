@@ -207,6 +207,9 @@ function newAgent (urlAgentInstructions)
                   var scriptProperties = agentInstructions[++iAgentInstruction];
                   script.sections.push(scriptProperties);
                   sheet.getRange(scriptProperties.r, scriptProperties.c)
+                        .setFontSize(1)
+                        .setVerticalAlignment('middle')
+                        .setHorizontalAlignment('center')
                         .setValue(agentInstructions[++iAgentInstruction].join('\n'));
                   sheet.setRowHeight(scriptProperties.r, cellSize);
                   }
