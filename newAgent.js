@@ -151,7 +151,7 @@ function newAgent (urlAgentInstructions)
                      }
                   else
                      {
-                     var fontColor = field.hasOwnProperty('fg') ? field.fg : '#2a2a2a';
+                     var fontColor = field.hasOwnProperty('fg') ? field.fg : '#dadfe8';
                      range.setFontColor('#ff00ff');
                      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
                            .setRanges([range])
@@ -184,7 +184,7 @@ function newAgent (urlAgentInstructions)
                      {
                      throw 'must declare EN toggle before declaring GO';
                      }
-                  range.setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(toggleFromName.EN.r,toggleFromName.EN.c) + ',OR(' + toggles.concat(fields).join(',') + ')');
+                  range.setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(toggleFromName.EN.r,toggleFromName.EN.c) + ',OR(' + toggles.concat(fields).join(',') + '))');
                   sheet.getRange(go.r, go.c+1).setValue('GO');
                   toggleFromName['GO'] = { r: go.r, c: go.c, w: 2, h: 1, t: 'GO', isReadonly: true };
                   })(agentInstructions[++iAgentInstruction]);
@@ -229,7 +229,7 @@ function newAgent (urlAgentInstructions)
                      }
                   else if (!toggle.isReadonly)
                      {
-                     range.setFontColor('#999999'); // editable
+                     range.setFontColor('#dadfe8'); // editable
                      }
                   if (toggle.hasOwnProperty('bg'))
                      {
