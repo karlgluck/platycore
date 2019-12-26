@@ -166,7 +166,7 @@ function newAgent (urlAgentInstructions)
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
-            case 'go':
+            case 'GO_EN':
                (function (go)
                   {
                   var toggles = Object.keys(toggleFromName).map(function (kName)
@@ -179,14 +179,15 @@ function newAgent (urlAgentInstructions)
                      var eField = fieldFromName[kName];
                      return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.value).replace('"', '""') + '")';
                      });
-                  var range = sheet.getRange(go.r, go.c).insertCheckboxes();
-                  if (!toggleFromName.hasOwnProperty('EN'))
-                     {
-                     throw 'must declare EN toggle before declaring GO';
-                     }
-                  range.setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(toggleFromName.EN.r,toggleFromName.EN.c) + ',OR(' + toggles.concat(fields).join(',') + '))');
-                  sheet.getRange(go.r, go.c+1).setValue('GO');
-                  toggleFromName['GO'] = { r: go.r, c: go.c, w: 2, h: 1, t: 'GO', isReadonly: true };
+                  var icEn = goen.c + 2;
+                  toggleFromName['EN'] = { r: goen.r, c: icEn, w: 2, h: 1, t: 'EN', isReadonly: false };
+                  toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true };
+                  sheet.getRange(goen.r, goen.c).insertCheckboxes()
+                        .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(toggleFromName.EN.r, toggleFromName.EN.c) + ',OR(' + toggles.concat(fields).join(',') + '))');
+                  sheet.getRange(goen.r, goen.c+1).setValue('GO');
+                  sheet.getRange(goen.r, icEn).insertCheckboxes()
+                        .setValue('false');
+                  sheet.getRange(goen.r, icEn+1).setValue('EN');
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
