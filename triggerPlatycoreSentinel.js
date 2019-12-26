@@ -13,15 +13,17 @@ function triggerPlatycoreSentinel ()
       {
       var ePlatycoreAgentKey = keys[iKey];
       var sheet = undefined;
-      var eAgentMemory = JSON.stringify(properties.getProperty(ePlatycoreAgentKey));
+      var eAgentMemory = JSON.parse(properties.getProperty(ePlatycoreAgentKey));
       if (!isAgentMemoryLatest)
          {
          console.log('updating agent memory for ' + ePlatycoreAgentKey, eAgentMemory);
          if (eAgentMemory.hasOwnProperty('sheetName')) // use the sheetName hint for direct lookup
             {
             sheet = spreadsheet.getSheetByName(eAgentMemory.sheetName);
+            console.log('sheet = ' + (!!sheet ? '' + sheet.getSheetId(): 'null'));
             if (!sheet || sheet.getSheetId() != eAgentMemory.sheetId)
                {
+               console.warn('sheet had the wrong ID');
                sheet = undefined;
                }
             }
@@ -32,6 +34,7 @@ function triggerPlatycoreSentinel ()
                   for (var iSheet = 0, nSheetCount = sheets.length; iSheet < nSheetCount; ++iSheet)
                      {
                      var eSheet = sheets[iSheet];
+                     console.warn('looking for ' + kTargetSheetId + ' comparing to ' + eSheet.getSheetId() + ' named ' + eSheet.getSheetName());
                      if (eSheet.getSheetId() == kTargetSheetId)
                         {
                         return eSheet;
@@ -39,6 +42,7 @@ function triggerPlatycoreSentinel ()
                      }
                   return null;
                })(spreadsheet.getSheets(), eAgentMemory.sheetId);
+            console.log('sheet found by ID = ' + (!!sheet ? '' + sheet.getSheetName(): 'null'));
             if ('object' === typeof sheet && null !== sheet) // if we got a valid sheet back, update the agent memory to save its new name
                {
                eAgentMemory.sheetName = sheet.getSheetName();
