@@ -300,25 +300,6 @@ function Agent (sheet_, memory_, options_)
       return rvVerbose;
       };
 
-   var metadataFromKey_ = (function ()
-      {
-      var rvMetadataFromKey = {};
-      properties_.getKeys().filter(function (e) { e.substring(0, sheetId_.length+1) === sheetId_ }).forEach(function (eKey)
-         {
-         var stringValue = properties_.getProperty(eKey);
-         rvMetadataFromKey[eKey.substring(sheetId_.length+1)] = JSON.parse(stringValue);
-         self_.verbose(function () { return ['metadata: ' + k, Util_clampStringLengthP(stringValue, 50)] });
-         });
-      return rvMetadataFromKey;
-      })();
-   
-   if (!metadataFromKey_.hasOwnProperty('platycoreAgent'))
-      {
-      throw "not a platycore agent sheet";
-      }
-
-   var isOn_ = self_.peekToggleP('ON');
    var isThisOn_ = !!options_.forceThisOn;
-
 
    }

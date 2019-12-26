@@ -13,7 +13,7 @@ GAS_deleteTriggerByName = function (functionName)
    }
 
 
-function GAS_A1AddressFromCoordinates (irRow, icColumn)
+function GAS_A1AddressFromCoordinatesP (irRow, icColumn)
    {
    var iLetter, rvColumnLetters = '$';
    while (icColumn > 0)
@@ -22,7 +22,7 @@ function GAS_A1AddressFromCoordinates (irRow, icColumn)
       rvColumnLetters = String.fromCharCode(65 + iLetter) + rvColumnLetters;
       icColumn = (icColumn - iLetter - 1) / 26;
       }
-   return rvColumnLetters + '$' + (irRow >>> 0).toString();
+   return '$' + rvColumnLetters + (irRow >>> 0).toString();
    }
 
 function GAS_updateConditionalFormatRule (sheet, irRow, icColumn, wcWidth, hrHeight, callback)

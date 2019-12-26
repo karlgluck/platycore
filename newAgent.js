@@ -20,7 +20,9 @@ function newAgent (urlAgentInstructions)
       var memory = {
             sheetName: sheetName,
             sheetId: sheet.getSheetId(),
-            urlAgentInstructions: urlAgentInstructions
+            urlAgentInstructions: urlAgentInstructions,
+            fieldFromName: {},
+            toggleFromName: {}
             };
       var agent = new Agent(sheet, memory, {verbose: true, forceThisOn: true});
       agent.info('Fetching ' + urlAgentInstructions);
@@ -28,10 +30,8 @@ function newAgent (urlAgentInstructions)
       agent.info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
 
-      var fieldFromName = {};
-      var toggleFromName = {};
-      memory.fieldFromName = fieldFromName;
-      memory.toggleFromName = toggleFromName;
+      var fieldFromName = memory.fieldFromName;
+      var toggleFromName = memory.toggleFromName;
 
       var dirty = {};
       var conditionalFormatRules = [];
@@ -138,6 +138,7 @@ function newAgent (urlAgentInstructions)
                   var range = sheet.getRange(field.r, field.c, field.h, field.w);
                   range.merge()
                         .setValue(field.value)
+                        .setBackground(field.hasOwnProperty('bg') ? field.bg : '#b7b7b7')
                         .setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
                         .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
                         .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
@@ -242,14 +243,6 @@ function newAgent (urlAgentInstructions)
             } // switch agent instruction
          } // for each agent instruction
 
-
-         var properties = PropertiesService.getDocumentProperties();
-         var platycore = JSON.parse(properties.getProperty('platycore'));
-         platycore.agentMemories.push({
-            sheetId: sheet.getSheetId(),
-            isEnabled: false
-         });
-         properties.setProperty(JSON.stringify(platycore));
       }
    catch (e)
       {
