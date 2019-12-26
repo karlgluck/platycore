@@ -51,6 +51,7 @@ function triggerPlatycoreSentinel ()
             continue;
             }
          }
+      eAgentMemory
       eAgentMemory.go = !!sheet.getRange(eAgentMemory.irGo || 1, eAgentMemory.icGo || 1).getValue();
       if (true !== eAgentMemory.go)
          {

@@ -4,7 +4,10 @@
             "info",  "testing a minimal agent",
 
           "toggle",  {"r": 1, "c": 9, "k":"STEP", "w": 3},
-           
+        "onUpdate",  [
+                     "agent.writeToggle('STEP', false)"
+                     ],
+
           "toggle",  {"r": 1, "c": 7, "k":"IN", "w": 2, "isReadonly": true},
           "toggle",  {"r": 1, "c": 3, "k":"EN", "w": 2},
               "go",  {"r":1, "c": 1},

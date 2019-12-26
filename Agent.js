@@ -1,6 +1,6 @@
 
 
-function Agent (sheet_, options_)
+function Agent (sheet_, memory_, options_)
    {
    var properties_ = PropertiesService.getDocumentProperties();
    var sheetId_ = sheet.getSheetId();
@@ -9,26 +9,25 @@ function Agent (sheet_, options_)
    options_ = options_ || {};
    var cellSize_ = sheet_.getRowHeight(1);
 
-   var metadataFromKey_ = {};
-
    this.urlAgentInstructionsGet = function ()
       {
-      return metadataFromKey_.platycoreAgent.urlAgentInstructions;
+      return memory_.urlAgentInstructions;
       };
 
    this.reboot = function ()
       {
-      return new Agent(sheet_, options_);
+      properties_.setProperty('platycoreAgent' + sheet_.getSheetId(), JSON.stringify(memory_));
+      return new Agent(sheet_, JSON.parse(JSON.stringify(memory_)), JSON.parse(JSON.stringify(options_)));
       };
    
    this.uninstall = function ()
       {
-      if (metadataFromKey_.hasOwnProperty('uninstall'))
+      if (memory_.hasOwnProperty('uninstall'))
          {
-         self_.verbose(function () { return [metadataFromKey_.uninstall] });
+         self_.verbose(function () { return [memory_.uninstall] });
          try
             {
-            eval(metadataFromKey_.uninstall);
+            eval(memory_.uninstall);
             }
          catch (e)
             {
@@ -40,26 +39,26 @@ function Agent (sheet_, options_)
 
    this.writeMetadata = function (key, value)
       {
-      metadataFromKey_[key] = value;
+      memory_[key] = value;
       properties_.setProperty(sheetId_ + '.' + key, JSON.stringify(value));
       };
 
    var toggleFromNameP_ = function (name)
       {
-      if (!metadataFromKey_.hasOwnProperty('toggleFromName') || !metadataFromKey_.toggleFromName.hasOwnProperty(name))
+      if (!memory_.hasOwnProperty('toggleFromName') || !memory_.toggleFromName.hasOwnProperty(name))
          {
          return { hasBeenRead: true, isOn: false, r:1, c:49, w:1, t:'' };
          }
-      return metadataFromKey_.toggleFromName[name];
+      return memory_.toggleFromName[name];
       };
    
    var inputFromNameP_ = function (name)
       {
-      if (!metadataFromKey_.hasOwnProperty('inputFromName') || !metadataFromKey_.inputFromName.hasOwnProperty(name))
+      if (!memory_.hasOwnProperty('inputFromName') || !memory_.inputFromName.hasOwnProperty(name))
          {
          return { hasBeenRead: true, value: '' };
          }
-      return metadataFromKey_.inputFromName[name];
+      return memory_.inputFromName[name];
       };
 
    var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
@@ -175,7 +174,7 @@ function Agent (sheet_, options_)
    var irNewMessage_ = sheet_.getFrozenRows() + 1;
 
    this.getMetadata = function () {
-      return JSON.stringify(metadataFromKey_);
+      return JSON.stringify(memory_);
    };
 
    var writeOutputFirstTime_ = function (args)
@@ -294,6 +293,7 @@ function Agent (sheet_, options_)
          toggle.isOn = false;
          sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(false);
          }
+      properties_.setProperty('platycoreAgent' + sheet_.getSheetId(), JSON.stringify(memory_));
       };
 
    var isVerbose_ = function ()

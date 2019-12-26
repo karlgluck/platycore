@@ -12,25 +12,28 @@ function newAgent (urlAgentInstructions)
       }
    sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
    sheet.activate();
-   var memory = {
-      sheetName: sheetName,
-      sheetId: sheet.getSheetId(),
-      urlAgentInstructions: urlAgentInstructions
-      };
    sheet.insertColumns(1, 23);
    sheet.setColumnWidths(1, 49, sheet.getRowHeight(1));
 
    try
       {
-      var agent = new Agent(sheet, {verbose: true, forceThisOn: true});
+      var memory = {
+            sheetName: sheetName,
+            sheetId: sheet.getSheetId(),
+            urlAgentInstructions: urlAgentInstructions
+            };
+      var agent = new Agent(sheet, memory, {verbose: true, forceThisOn: true});
       agent.info('Fetching ' + urlAgentInstructions);
       var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
       agent.info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
 
-      var dirty = {};
       var fieldFromName = {};
       var toggleFromName = {};
+      memory.fieldFromName = fieldFromName;
+      memory.toggleFromName = toggleFromName;
+
+      var dirty = {};
       var conditionalFormatRules = [];
 
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
@@ -61,7 +64,7 @@ function newAgent (urlAgentInstructions)
 
             case 'name':
                var name = agentInstructions[++iAgentInstruction];
-               agent.writeMetadata('name', name);
+               memory.name = name;
                agent.info('Building agent "' + name + '"');
                break;
 
@@ -107,24 +110,11 @@ function newAgent (urlAgentInstructions)
 
             case 'uninstall':
                var uninstallScript = agentInstructions[++iAgentInstruction].join('\n');
-               agent.writeMetadata('uninstall', uninstallScript);
+               memory.uninstall = uninstallScript;
                agent = agent.reboot();
                break;
 
             case 'reboot':
-               agent.log('rebooting...');
-               if (dirty.hasOwnProperty('fieldFromName'))
-                  {
-                  agent.verbose(function () { return ['saving fieldFromName', fieldFromName]; });
-                  agent.writeMetadata('fieldFromName', fieldFromName);
-                  delete dirty.fieldFromName;
-                  }
-               if (dirty.hasOwnProperty('toggleFromName'))
-                  {
-                  agent.verbose(function () { return ['saving toggleFromName', toggleFromName]; });
-                  agent.writeMetadata('toggleFromName', toggleFromName);
-                  delete dirty.toggleFromName;
-                  }
                if (dirty.hasOwnProperty('conditionalFormatRules'))
                   {
                   agent.verbose(function () { return ['saving conditionalFormatRules']; });
@@ -136,7 +126,6 @@ function newAgent (urlAgentInstructions)
                break;
 
             case 'field':
-               dirty.fieldFromName = true;
                dirty.conditionalFormatRules = true;
                (function (field)
                   {
@@ -189,14 +178,12 @@ function newAgent (urlAgentInstructions)
                   var range = sheet.getRange(go.r, go.c);
                   range.setFormula('=OR(' + toggles.concat(fields).join(',') + ')');
                   sheet.getRange(go.r, go.c+1, 1, 2).mergeAcross().setValue('GO');
-                  memory.irGo = go.r;
-                  memory.icGo = go.c;
                   toggleFromName['GO'] = { r: go.r, c: go.c, w: 3, h: 1, t: 'GO', isReadonly: true };
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
-            case 'onRun':
-               var runScript = agentInstructions[++iAgentInstruction];
+            case 'onUpdate':
+               var updateScript = agentInstructions[++iAgentInstruction];
                break;
 
             case 'toast':
