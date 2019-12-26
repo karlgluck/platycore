@@ -27,7 +27,7 @@ function Agent (sheet_, memory_, options_)
 
    this.reboot = function ()
       {
-      properties_.setProperty('platycoreAgent' + sheet_.getSheetId(), JSON.stringify(memory_));
+      properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       return new Agent(sheet_, JSON.parse(JSON.stringify(memory_)), JSON.parse(JSON.stringify(options_)));
       };
    
@@ -44,6 +44,7 @@ function Agent (sheet_, memory_, options_)
             {
             }
          }
+      properties_.deleteProperty('platycoreAgent' + self_.getSheetId());
       sheet_.getParent().deleteSheet(sheet_);
       sheet_ = null;
       }
@@ -294,7 +295,7 @@ function Agent (sheet_, memory_, options_)
          toggle.isOn = false;
          sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(false);
          }
-      properties_.setProperty('platycoreAgent' + sheet_.getSheetId(), JSON.stringify(memory_));
+      properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };
 
    var isVerbose_ = function ()
