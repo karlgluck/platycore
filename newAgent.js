@@ -138,17 +138,20 @@ function newAgent (urlAgentInstructions)
                   var range = sheet.getRange(field.r, field.c, field.h, field.w);
                   range.merge()
                         .setValue(field.value)
-                        .setBackground(field.hasOwnProperty('bg') ? field.bg : '#b7b7b7')
+                        .setBackground(field.hasOwnProperty('bg') ? field.bg : '#000000')
                         .setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
                         .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
                         .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
                   if (field.isReadonly)
                      {
-                     range.setFontColor(field.hasOwnProperty('fg') ? field.fg : '#2a2a2a');
+                     if (field.hasOwnProperty('fg'))
+                        {
+                        range.setFontColor(field.fg);
+                        }
                      }
                   else
                      {
-                     var fontColor = field.hasOwnProperty('fg') ? field.fg : range.getFontColor();
+                     var fontColor = field.hasOwnProperty('fg') ? field.fg : '#2a2a2a';
                      range.setFontColor('#ff00ff');
                      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
                            .setRanges([range])
@@ -177,7 +180,11 @@ function newAgent (urlAgentInstructions)
                      return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.value).replace('"', '""') + '")';
                      });
                   var range = sheet.getRange(go.r, go.c).insertCheckboxes();
-                  range.setFormula('=OR(' + toggles.concat(fields).join(',') + ')');
+                  if (!toggleFromName.hasOwnProperty('EN'))
+                     {
+                     throw 'must declare EN toggle before declaring GO';
+                     }
+                  range.setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(toggleFromName.EN.r,toggleFromName.EN.c) + ',OR(' + toggles.concat(fields).join(',') + ')');
                   sheet.getRange(go.r, go.c+1).setValue('GO');
                   toggleFromName['GO'] = { r: go.r, c: go.c, w: 2, h: 1, t: 'GO', isReadonly: true };
                   })(agentInstructions[++iAgentInstruction]);
@@ -220,9 +227,9 @@ function newAgent (urlAgentInstructions)
                      range.setFontColor(toggle.fg); // explicit foreground color
                      delete toggle.fg;
                      }
-                  else if (toggle.isReadonly)
+                  else if (!toggle.isReadonly)
                      {
-                     range.setFontColor('#999999'); // readonly
+                     range.setFontColor('#999999'); // editable
                      }
                   if (toggle.hasOwnProperty('bg'))
                      {
