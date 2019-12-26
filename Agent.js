@@ -3,7 +3,6 @@
 function Agent (sheet_, memory_, options_)
    {
    var properties_ = PropertiesService.getDocumentProperties();
-   var sheetId_ = sheet.getSheetId();
 
    var self_ = this;
    options_ = options_ || {};
@@ -36,12 +35,6 @@ function Agent (sheet_, memory_, options_)
       sheet_.getParent().deleteSheet(sheet_);
       sheet_ = null;
       }
-
-   this.writeMetadata = function (key, value)
-      {
-      memory_[key] = value;
-      properties_.setProperty(sheetId_ + '.' + key, JSON.stringify(value));
-      };
 
    var toggleFromNameP_ = function (name)
       {
