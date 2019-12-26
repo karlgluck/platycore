@@ -2,23 +2,7 @@
 function onOpen()
    {
 
-   var isSentinelEnabled = GAS_isFunctionTriggeredP('triggerPlatycoreSentinel');
-
    var ui = SpreadsheetApp.getUi();
-   var sentinelMenu = ui.createMenu("Sentinel")
-         .addItem("Run", "triggerPlatycoreSentinel")
-         .addSeparator();
-   if (isSentinelEnabled)
-      {
-      sentinelMenu
-            .addItem("Refresh", "menuRefreshSentinel")
-            .addItem("Stop", "menuStopSentinel");
-      }
-   else
-      {
-      sentinelMenu
-            .addItem("Start", "menuRefreshSentinel");
-      }
    ui.createMenu("Platycore")
          .addSubMenu(
                ui.createMenu("New...")
@@ -28,7 +12,13 @@ function onOpen()
          .addSeparator()
          .addItem("Uninstall Agent", "menuUninstallAgent")
          .addSeparator()
-         .addSubMenu(sentinelMenu)
+         .addSubMenu(
+               ui.createMenu("Sentinel")
+                     .addItem("Run", "triggerPlatycoreSentinel")
+                     .addSeparator()
+                     .addItem("Refresh", "menuRefreshSentinel")
+                     .addItem("Stop", "menuStopSentinel")
+               )
          .addSubMenu(
                ui.createMenu("Debug")
                      .addItem("Run Sentinel", "triggerPlatycoreSentinel")

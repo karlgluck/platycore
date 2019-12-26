@@ -20,7 +20,7 @@ function triggerPlatycoreSentinel ()
          if (eAgentMemory.hasOwnProperty('sheetName')) // use the sheetName hint for direct lookup
             {
             sheet = spreadsheet.getSheetByName(eAgentMemory.sheetName);
-            if (!sheet || sheet.getSheetId() !== eAgentMemory.sheetId)
+            if (!sheet || sheet.getSheetId() != eAgentMemory.sheetId)
                {
                sheet = undefined;
                }
@@ -32,7 +32,7 @@ function triggerPlatycoreSentinel ()
                   for (var iSheet = 0, nSheetCount = sheets.length; iSheet < nSheetCount; ++iSheet)
                      {
                      var eSheet = sheets[iSheet];
-                     if (eSheet.getSheetId() === kTargetSheetId)
+                     if (eSheet.getSheetId() == kTargetSheetId)
                         {
                         return eSheet;
                         }
