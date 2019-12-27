@@ -5,6 +5,7 @@ function Agent (sheet_, memory_, options_)
    console.log('agent coming online: ', memory_);
    var properties_ = PropertiesService.getDocumentProperties();
    var self_ = this;
+   var isThisOn_ = !!options_.forceThisOn;
 
    this.getSheetId = function ()
       {
@@ -274,12 +275,15 @@ function Agent (sheet_, memory_, options_)
          {
          var onToggle = memory_.toggleFromName.ON;
          var onRange = sheet_.getRange(onToggle.r, onToggle.c);
-         var notTooLongSinceLastLocked = true;
+         var lockField = memory_.fieldFromName.LOCK;
+         var lockRange = sheet_.getRange(lockField.r, lockField.c, lockField.h, lockField.w);
+         var notTooLongSinceLastLocked = true; // TODO
          var isOn = !!onRange.getValue() && (notTooLongSinceLastLocked);
-         var isThisOn_ = !isOn;
+         isThisOn_ = !isOn;
          if (isThisOn_)
             {
             // set the value of the LAST field to the current date
+            lockRange.setValue(lockField.value = new Date().getTime());
             onToggle.isOn = isOn = true;
             onRange.setFormula('=TRUE');
             }
@@ -298,7 +302,7 @@ function Agent (sheet_, memory_, options_)
 
    this.turnOff = function ()
       {
-      self_.verbose(function () { return ['shutting down...', JSON.stringify(memory_)] });
+      self_.verbose(function () { return ['shutting down...', isThisOn_, JSON.stringify(memory_)] });
       if (!isThisOn_)
          {
          return;
@@ -332,7 +336,5 @@ function Agent (sheet_, memory_, options_)
       isVerbose_ = (function (value) { return function () { return value; }})(rvVerbose);
       return rvVerbose;
       };
-
-   var isThisOn_ = !!options_.forceThisOn;
 
    }

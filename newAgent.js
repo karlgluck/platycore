@@ -86,7 +86,7 @@ function newAgent (urlAgentInstructions)
 
             case 'range':
                var rangeCommand = agentInstructions[++iAgentInstruction];
-               var range = sheet.getRange(rangeCommand.r, rangeCommand.c);
+               var range = sheet.getRange(rangeCommand.r, rangeCommand.c, rangeCommand.h || 1, rangeCommand.w || 1);
                if (rangeCommand.hasOwnProperty('t'))
                   {
                   range.setValue(rangeCommand.t);
@@ -154,7 +154,9 @@ function newAgent (urlAgentInstructions)
                   else
                      {
                      var fontColor = field.hasOwnProperty('fg') ? field.fg : '#dadfe8';
-                     range.setFontColor('#ff00ff');
+                     var textStyle = range.getTextStyle().copy();
+                     textStyle.setUnderline(true);
+                     range.setFontColor('#ff00ff').setTextStyle(textStyle);
                      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
                            .setRanges([range])
                            .whenTextEqualTo(field.value)
@@ -198,22 +200,24 @@ function newAgent (urlAgentInstructions)
                break;
 
             case 'script': // script "<name>" <qSectionCount> [{"r": "<riRow>", "c": "<ciCol>"} [<"code"> [, <"code">] ...for each line of code]] ...for each section
-               var name = agentInstructions[++iAgentInstruction];
+               var kName = agentInstructions[++iAgentInstruction];
                var qSectionCount = agentInstructions[++iAgentInstruction];
                var script = {sections:[]};
-               while (qSectionCount-- > 0)
+               var backgroundColor = Util_rainbowColorFromValueP(Object.keys(memory.scriptFromName).length);
+               for (var iSection = 0; iSection < qSectionCount; ++iSection)
                   {
                   var scriptProperties = agentInstructions[++iAgentInstruction];
                   script.sections.push(scriptProperties);
                   sheet.getRange(scriptProperties.r, scriptProperties.c)
-                        .setFontSize(1)
                         .setVerticalAlignment('middle')
                         .setHorizontalAlignment('center')
-                        .setValue(agentInstructions[++iAgentInstruction].join('\n'));
-                  sheet.setRowHeight(scriptProperties.r, cellSize);
+                        .setNote(agentInstructions[++iAgentInstruction].join('\n'))
+                        .setBackground(backgroundColor)
+                        .setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID_THICK)
+                        .setValue(iSection);
                   }
-               agent.log('+script: ' + name, script.sections);
-               memory.scriptFromName[name] = script;
+               agent.log('+script: ' + kName, script.sections);
+               memory.scriptFromName[kName] = script;
                break;
 
             case 'toast':
