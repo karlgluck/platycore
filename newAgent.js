@@ -142,6 +142,10 @@ function newAgent (urlAgentInstructions)
                dirty.conditionalFormatRules = true;
                (function (field)
                   {
+                  if (!field.hasOwnProperty('w'))
+                     {
+                     field.w = 1;
+                     }
                   if (!field.hasOwnProperty('h'))
                      {
                      field.h = 1;
@@ -154,25 +158,27 @@ function newAgent (urlAgentInstructions)
                         .setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
                         .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
                         .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
+                  delete field.bg;
                   if (field.isReadonly)
                      {
                      range.setFontColor(field.hasOwnProperty('fg') ? field.fg : '#666666');
                      }
                   else
                      {
-                     var fontColor = field.hasOwnProperty('fg') ? field.fg : '#dadfe8';
-                     var textStyle = range.getTextStyle().copy();
-                     textStyle.setUnderline(true);
-                     range.setFontColor('#ff00ff').setTextStyle(textStyle);
+                     var fontColor = field.hasOwnProperty('fg') ? field.fg : '#00ffff';
+                     var textStyleBuilder = range.getTextStyle().copy();
+                     textStyleBuilder.setUnderline(true);
+                     range.setFontColor('#ff00ff').setTextStyle(textStyleBuilder.build());
                      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
                            .setRanges([range])
                            .whenTextEqualTo(field.value)
                            .setFontColor(fontColor));
                      }
+                  delete field.fg;
                   if (field.hasOwnProperty('value'))
                      {
                      range.setValue(field.value);
-                     delete field.f;
+                     delete field.value;
                      }
                   else if (field.hasOwnProperty('f'))
                      {
@@ -198,11 +204,12 @@ function newAgent (urlAgentInstructions)
                   var go = memory.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true };
                   sheet.getRange(goen.r, goen.c).insertCheckboxes()
                         .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ',OR(' + toggles.concat(fields).join(',') + '))');
-      sheet.getRange(go.r, go.c+1).setValue('GO'); ///////////////// this should be a formula that schedules a trigger on change
                   sheet.getRange(go.r, en.c).insertCheckboxes()
                         .setValue('false');
+                  sheet.getRange(go.r, go.c+1)
+                        .setFormula('=platycoreScheduler('+GAS_A1AddressFromCoordinatesP(go.r, go.c)+')');
                   sheet.getRange(en.r, en.c+1).setValue('EN');
-                  sheet.getRange(en.r, en.c, 1, 2).setFontColor('#dadfe8');
+                  sheet.getRange(en.r, en.c, 1, 2).setFontColor('#00ffff');
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
@@ -261,7 +268,7 @@ function newAgent (urlAgentInstructions)
                      }
                   else if (!toggle.isReadonly)
                      {
-                     range.setFontColor('#dadfe8'); // editable
+                     range.setFontColor('#00ffff'); // editable
                      }
                   if (toggle.hasOwnProperty('bg'))
                      {

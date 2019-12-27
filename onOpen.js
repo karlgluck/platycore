@@ -12,6 +12,7 @@ function onOpen()
                      //.addItem("Power On Self Test Mechanism no. 8 (POST-M8)", "menuNewSelfTestingAgent")
                )
          .addSeparator()
+         .addItem("Reinstall Agent", "menuReinstallAgent")
          .addItem("Uninstall Agent", "menuUninstallAgent")
          .addSeparator()
          .addSubMenu(

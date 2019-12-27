@@ -1,7 +1,6 @@
 [
             "name",  "sandbox",
-          "freeze",  12,
-            "info",  "testing a minimal agent",
+          "freeze",  8,
 
           "toggle",  {"r": 1, "c": 9, "k":"STEP", "w": 3},
           "script",  "UPDATE",
@@ -16,9 +15,9 @@
            "field",  {"r": 1, "c":12, "w": 5, "k": "LOCK", "isReadonly": true},
            "range",  {"r": 1, "c":17, "w": 2, "merge": "across", "t": "LOCK", "fg": "#000000"},
           "toggle",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "isOn": true, "isReadonly": true},
-           "field",  {"r": 1, "c":19, "k": "SI"},
+           "field",  {"r": 1, "c":19, "k": "SI", "value": 0},
            "range",  {"r": 1, "c":20, "t": "SI", "fg": "#dadfe8"},
-           "field",  {"r": 1, "c":21, "k": "BI"},
+           "field",  {"r": 1, "c":21, "k": "BI", "value": 0},
            "range",  {"r": 1, "c":22, "t": "BI", "fg": "#dadfe8"},
          "turnOff"
 ]

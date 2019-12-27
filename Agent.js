@@ -5,7 +5,8 @@ function Agent (sheet_, memory_, options_)
    console.log('agent coming online: ', memory_);
    var properties_ = PropertiesService.getDocumentProperties();
    var self_ = this;
-   var isThisOn_ = !!options_.forceThisOn;
+   options_ = options_ || {};
+   var isThisOn_ = options_.forceThisOn;
 
    this.getSheetId = function ()
       {
@@ -19,7 +20,6 @@ function Agent (sheet_, memory_, options_)
       memory_ = JSON.parse(properties_.getProperty('platycoreAgent' + this.getSheetId()));
       }
 
-   options_ = options_ || {};
    var cellSize_ = sheet_.getRowHeight(1);
 
    this.urlAgentInstructionsGet = function ()
@@ -62,13 +62,13 @@ function Agent (sheet_, memory_, options_)
       return memory_.toggleFromName[name];
       };
    
-   var inputFromNameP_ = function (name)
+   var fieldFromNameP_ = function (name)
       {
-      if (!memory_.hasOwnProperty('inputFromName') || !memory_.inputFromName.hasOwnProperty(name))
+      if (!memory_.hasOwnProperty('fieldFromName') || !memory_.fieldFromName.hasOwnProperty(name))
          {
-         return { hasBeenRead: true, value: '' };
+         return { hasBeenRead: true, value: '', r:1, c:49, w:1 };
          }
-      return memory_.inputFromName[name];
+      return memory_.fieldFromName[name];
       };
 
    var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
@@ -100,25 +100,6 @@ function Agent (sheet_, memory_, options_)
       return null;
       };
 
-   var updateToggleConditionalFormatRule_ = function (toggle, range)
-      {
-      var rule = getConditionalFormatRuleByRange(range);
-      var builder = rule.copy();
-      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.isOn?',TRUE)':',FALSE)'));
-      rule.gasConditionalFormatRule = builder.build();
-      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
-      return range;
-      };
-
-   var syncInput_ = function (input, range)
-      {
-      var rule = getConditionalFormatRuleByRange(range);
-      var builder = rule.copy();
-      builder.whenTextEqualTo(input.value);
-      rule.gasConditionalFormatRule = builder.build();
-      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
-      };
-
    this.readToggle = function (name)
       {
       var toggle = toggleFromNameP_(name);
@@ -148,36 +129,73 @@ function Agent (sheet_, memory_, options_)
       {
       isOn = !!isOn;
       var toggle = toggleFromNameP_(name);
-      if (toggle.hasOwnProperty('isOn'))
-         {
-         if (toggle.isOn === isOn)
-            {
-            return;
-            }
-         }
       toggle.isOn = isOn;
-      sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(isOn);
+      toggle.hasBeenRead = true;
+      var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
+      if (toggle.isReadonly)
+         {
+         checkboxRange.setFormula(isOn ? '=TRUE' : '=FALSE');
+         }
+      else
+         {
+         checkboxRange.setValue(isOn);
+         }
       updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
       };
-   
-   this.readInput = function (name)
+
+   var updateToggleConditionalFormatRule_ = function (toggle, range)
       {
-      var input = inputFromNameP_(name);
-      if (!input.hasOwnProperty('value'))
+      var rule = getConditionalFormatRuleByRange(range);
+      var builder = rule.copy();
+      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.isOn?',TRUE)':',FALSE)'));
+      rule.gasConditionalFormatRule = builder.build();
+      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
+      return range;
+      };
+   
+   this.readField = function (name)
+      {
+      var field = fieldFromNameP_(name);
+      if (!field.hasOwnProperty('value'))
          {
-         input.value = String(sheet_.getRange(input.r, input.c).getValue());
+         field.value = String(sheet_.getRange(field.r, field.c).getValue());
          }
-      if (!input.hasOwnProperty('hasBeenRead'))
+      if (!field.hasOwnProperty('hasBeenRead'))
          {
-         syncInput_(input, sheet_.getRange(input.r, input.c, input.h, input.w));
+         updateFieldConditionalFormatRule_(field, sheet_.getRange(field.r, field.c, field.h, field.w));
          }
-      input.hasBeenRead = true;
-      return input.value;
+      field.hasBeenRead = true;
+      return field.value;
       };
 
+   this.peekFieldP = function (name)
+      {
+      var toggle = fieldFromNameP_(name);
+      if (field.hasOwnProperty('value'))
+         {
+         return field.value;
+         }
+      return toggle.isOn = !!sheet_.getRange(toggle.r, toggle.c, 1, 1).getValue();
+      };
    
    this.writeField = function (name, value)
       {
+      value = String(value);
+      var field = fieldFromNameP_(name);
+      field.value = value;
+      field.hasBeenRead = true;
+      var range = sheet_.getRange(toggle.r, toggle.c, 1, toggle.w);
+      range.setValue(isOn);
+      updateFieldConditionalFormatRule_(toggle, range);
+      };
+
+   var updateFieldConditionalFormatRule_ = function (input, range)
+      {
+      var rule = getConditionalFormatRuleByRange(range);
+      var builder = rule.copy();
+      builder.whenTextEqualTo(input.value);
+      rule.gasConditionalFormatRule = builder.build();
+      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
       };
 
    var mcColumns_ = sheet_.getMaxColumns();
