@@ -186,16 +186,15 @@ function newAgent (urlAgentInstructions)
                      var eField = memory.fieldFromName[kName];
                      return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.value).replace('"', '""') + '")';
                      });
-                  var icEn = goen.c + 2;
-                  memory.toggleFromName['EN'] = { r: goen.r, c: icEn, w: 2, h: 1, t: 'EN', isReadonly: false };
-                  memory.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true };
+                  var en = memory.toggleFromName['EN'] = { r: goen.r, c: goen.c + 2, w: 2, h: 1, t: 'EN', isReadonly: false };
+                  var go = memory.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true };
                   sheet.getRange(goen.r, goen.c).insertCheckboxes()
-                        .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(toggleFromName.EN.r, toggleFromName.EN.c) + ',OR(' + toggles.concat(fields).join(',') + '))');
-      sheet.getRange(goen.r, goen.c+1).setValue('GO'); ///////////////// this should be a formula that schedules a trigger on change
-                  sheet.getRange(goen.r, icEn).insertCheckboxes()
+                        .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ',OR(' + toggles.concat(fields).join(',') + '))');
+      sheet.getRange(go.r, go.c+1).setValue('GO'); ///////////////// this should be a formula that schedules a trigger on change
+                  sheet.getRange(go.r, en.c).insertCheckboxes()
                         .setValue('false');
-                  sheet.getRange(goen.r, icEn+1).setValue('EN');
-                  sheet.getRange(goen.r, icEn, 1, 2).setFontColor('#dadfe8');
+                  sheet.getRange(en.r, en.c+1).setValue('EN');
+                  sheet.getRange(en.r, en.c, 1, 2).setFontColor('#dadfe8');
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
