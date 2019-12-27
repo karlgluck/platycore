@@ -2,6 +2,7 @@
 
 function Agent (sheet_, memory_, options_)
    {
+   console.log('agent coming online: ', memory_);
    var properties_ = PropertiesService.getDocumentProperties();
    var self_ = this;
 
@@ -10,7 +11,7 @@ function Agent (sheet_, memory_, options_)
       var rvSheetId = sheet_.getSheetId();
       self_.getSheetId = (function (rv) { return function () { return rv }})(rvSheetId);
       return rvSheetId;
-      }
+      };
 
    if ('object' !== typeof memory_ || null === memory_)
       {
@@ -28,7 +29,9 @@ function Agent (sheet_, memory_, options_)
    this.reboot = function ()
       {
       properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
-      return new Agent(sheet_, JSON.parse(JSON.stringify(memory_)), JSON.parse(JSON.stringify(options_)));
+      var newMemory = JSON.parse(JSON.stringify(memory_));
+      var newOptions = JSON.parse(JSON.stringify(options_));
+      return [new Agent(sheet_, newMemory, newOptions), newMemory];
       };
    
    this.uninstall = function ()

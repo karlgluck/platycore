@@ -33,10 +33,6 @@ function newAgent (urlAgentInstructions)
       agent.info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
 
-      var fieldFromName = memory.fieldFromName;
-      var toggleFromName = memory.toggleFromName;
-      var scriptFromName = memory.scriptFromName;
-
       var dirty = {};
       var conditionalFormatRules = [];
 
@@ -65,7 +61,7 @@ function newAgent (urlAgentInstructions)
                      .setBackground('#434343')
                      .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
                sheet.getRange(riHeaders, 1, 1, 4).merge().setValue(' MESSAGES');
-               agent = agent.reboot();
+               [agent, memory] = agent.reboot();
                break;
 
             case 'name':
@@ -75,6 +71,7 @@ function newAgent (urlAgentInstructions)
                break;
             
             case 'turnOff':
+               agent.info('shutting down...', memory);
                agent.turnOff();
                break;
 
@@ -121,7 +118,7 @@ function newAgent (urlAgentInstructions)
             case 'uninstall':
                var uninstallScript = agentInstructions[++iAgentInstruction].join('\n');
                memory.uninstall = uninstallScript;
-               agent = agent.reboot();
+               [agent, memory] = agent.reboot();
                break;
 
             case 'reboot':
@@ -132,7 +129,7 @@ function newAgent (urlAgentInstructions)
                   delete dirty.conditionalFormatRules;
                   }
                agent.verbose(function () { return 'reboot'; });
-               agent = agent.reboot();
+               [agent, memory] = agent.reboot();
                break;
 
             case 'field':
@@ -143,7 +140,7 @@ function newAgent (urlAgentInstructions)
                      {
                      field.h = 1;
                      }
-                  fieldFromName[field.k] = field;
+                  memory.fieldFromName[field.k] = field;
                   agent.log('+field: ' + field.k, field.r, field.c, field.h, field.w);
                   var range = sheet.getRange(field.r, field.c, field.h, field.w);
                   range.merge()
@@ -179,19 +176,19 @@ function newAgent (urlAgentInstructions)
             case 'GO_EN':
                (function (goen)
                   {
-                  var toggles = Object.keys(toggleFromName).map(function (kName)
+                  var toggles = Object.keys(memory.toggleFromName).map(function (kName)
                      {
-                     var eToggle = toggleFromName[kName];
+                     var eToggle = memory.toggleFromName[kName];
                      return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (!!eToggle.isOn ? ",TRUE)" : ",FALSE)");
                      });
-                  var fields = Object.keys(fieldFromName).map(function (kName)
+                  var fields = Object.keys(memory.fieldFromName).map(function (kName)
                      {
-                     var eField = fieldFromName[kName];
+                     var eField = memory.fieldFromName[kName];
                      return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.value).replace('"', '""') + '")';
                      });
                   var icEn = goen.c + 2;
-                  toggleFromName['EN'] = { r: goen.r, c: icEn, w: 2, h: 1, t: 'EN', isReadonly: false };
-                  toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true };
+                  memory.toggleFromName['EN'] = { r: goen.r, c: icEn, w: 2, h: 1, t: 'EN', isReadonly: false };
+                  memory.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true };
                   sheet.getRange(goen.r, goen.c).insertCheckboxes()
                         .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(toggleFromName.EN.r, toggleFromName.EN.c) + ',OR(' + toggles.concat(fields).join(',') + '))');
       sheet.getRange(goen.r, goen.c+1).setValue('GO'); ///////////////// this should be a formula that schedules a trigger on change
@@ -226,10 +223,9 @@ function newAgent (urlAgentInstructions)
                break;
 
             case 'toggle':
-               dirty.toggleFromName = true;
                (function (toggle)
                   {
-                  toggleFromName[toggle.k] = toggle;
+                  memory.toggleFromName[toggle.k] = toggle;
                   var toggleText = toggle.t || toggle.k;
                   toggle.isReadonly = !!toggle.isReadonly;
                   toggle.isOn = !!toggle.isOn;
