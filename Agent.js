@@ -14,7 +14,7 @@ function Agent (sheet_, memory_, options_)
 
    if ('object' !== typeof memory_ || null === memory_)
       {
-      memory_ = JSON.parse(properties.getProperty('platycoreAgent' + this.getSheetId()));
+      memory_ = JSON.parse(properties_.getProperty('platycoreAgent' + this.getSheetId()));
       }
 
    options_ = options_ || {};
@@ -264,20 +264,32 @@ function Agent (sheet_, memory_, options_)
       var lock = LockService.getDocumentLock();
       if (!lock.tryLock(15000))
          {
+         console.warn('lock prevented turnOn');
          return false;
          }
-      var toggle = memory_.toggleFromName.ON;
-      var range = sheet_.getRange(toggle.r, toggle.c, 1, 1);
-      var notTooLongSinceLastLocked = true;
-      var isOn = !!range.getValue() && (notTooLongSinceLastLocked);
-      var isThisOn_ = !isOn;
-      if (isThisOn_)
+      try
          {
-         // set the value of the LAST field to the current date
-         toggle.isOn = true;
-         range.setValue(true);
+         var onToggle = memory_.toggleFromName.ON;
+         var onRange = sheet_.getRange(onToggle.r, onToggle.c);
+         var notTooLongSinceLastLocked = true;
+         var isOn = !!onRange.getValue() && (notTooLongSinceLastLocked);
+         var isThisOn_ = !isOn;
+         if (isThisOn_)
+            {
+            // set the value of the LAST field to the current date
+            toggle.isOn = isOn = true;
+            onRange.setValue(true);
+            }
+         else
+            {
+            console.warn('another process is currently running this agent');
+            }
          }
-      lock.releaseLock();
+      finally 
+         {
+         lock.releaseLock();
+         lock = null;
+         }
       return isThisOn_;
       };
 
@@ -291,9 +303,17 @@ function Agent (sheet_, memory_, options_)
       var lock = LockService.getDocumentLock();
       if (lock.tryLock(15000))
          {
-         var toggle = memory_.toggleFromName.ON;
-         toggle.isOn = false;
-         sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(false);
+         try
+            {
+            var toggle = memory_.toggleFromName.ON;
+            toggle.isOn = false;
+            sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(false);
+            }
+         finally
+            {
+            lock.releaseLock();
+            lock = null;
+            }
          }
       properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };

@@ -79,17 +79,25 @@ function triggerPlatycoreSentinel ()
          var sentinel = Math.random().toString();
          var sentinelRange = sheet.getRange(1, 49);
          sentinelRange.setValue(sentinel);
-         if (agent.turnOn() && sentinel === sentinelRange.getValue())
+         var turnedOn = agent.turnOn();
+         var sentinelAfter = sentinelRange.getValue();
+         console.log('sentinel before', sentinel);
+         console.log('turnedOn',turnedOn);
+         console.log('sentinel after', sentinelAfter);
+         if (turnedOn && sentinel === sentinelAfter)
             {
+            console.warn(ePlatycoreAgentKey + ': agent online');
             try{
+               console.warn(ePlatycoreAgentKey + ': inside!');
                agent.log("Hello from the Platycore Sentinel!");
                }
             catch (e)
                {
-               agent.error('UPDATE', e, e.stack);
+               agent.error(ePlatycoreAgentKey + ': UPDATE', e, e.stack);
                }
             finally
                {
+               console.warn(ePlatycoreAgentKey + ': turning off');
                agent.turnOff();
                }
             }

@@ -1,6 +1,13 @@
 
 function menuUninstallAgent()
    {
-   var agent = new Agent(SpreadsheetApp.getActiveSheet());
-   agent.uninstall();
+   try
+      {
+      var agent = new Agent(SpreadsheetApp.getActiveSheet());
+      agent.uninstall();
+      }
+   catch (e)
+      {
+      SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
+      }
    }

@@ -71,7 +71,11 @@ function newAgent (urlAgentInstructions)
             case 'name':
                var name = agentInstructions[++iAgentInstruction];
                memory.name = name;
-               agent.info('Building agent "' + name + '"');
+               agent.info('Building agent "' + name + '" (platycoreAgent' + sheet.getSheetId() + ')');
+               break;
+            
+            case 'turnOff':
+               agent.turnOff();
                break;
 
             case 'info':

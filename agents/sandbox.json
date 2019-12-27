@@ -15,5 +15,6 @@
            "GO_EN",  {"r": 1, "c": 1},
            "field",  {"r": 1, "c":12, "w": 4, "k": "LOCK", "isReadonly": true},
           "toggle",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "isOn": true, "isReadonly": true},
-          "reboot"
+         "turnOff"
 ]
+
