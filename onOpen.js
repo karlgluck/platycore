@@ -6,8 +6,10 @@ function onOpen()
    ui.createMenu("Platycore")
          .addSubMenu(
                ui.createMenu("New...")
+                     .addItem("Agent from Text...","menuNewAgentFromText")
+                     .addSeparator()
                      .addItem("Sandbox Agent", "menuNewAgent")
-                     .addItem("Power On Self Test Mechanism no. 8 (POST-M8)", "menuNewSelfTestingAgent")
+                     //.addItem("Power On Self Test Mechanism no. 8 (POST-M8)", "menuNewSelfTestingAgent")
                )
          .addSeparator()
          .addItem("Uninstall Agent", "menuUninstallAgent")
@@ -19,10 +21,10 @@ function onOpen()
                      .addItem("Refresh", "menuRefreshSentinel")
                      .addItem("Stop", "menuStopSentinel")
                )
-         .addSubMenu(
-               ui.createMenu("Debug")
-                  .addItem("Dummy", "menuPlatycoreSentinel")
-               )
+         // .addSubMenu(
+         //       ui.createMenu("Debug")
+         //          .addItem("Dummy", "menuPlatycoreSentinel")
+         //       )
          .addToUi();
    
    }
