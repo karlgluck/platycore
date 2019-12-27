@@ -71,7 +71,6 @@ function newAgent (urlAgentInstructions)
                break;
             
             case 'turnOff':
-               agent.info('shutting down...', memory);
                agent.turnOff();
                break;
 

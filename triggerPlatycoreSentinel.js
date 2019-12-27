@@ -76,7 +76,7 @@ function triggerPlatycoreSentinel ()
          }
       try{
          var agent = new Agent(sheet, eAgentMemory, {});
-         var sentinel = Math.random().toString();
+         var sentinel = Utilities.base64Encode(Math.random().toString());
          var sentinelRange = sheet.getRange(1, 49);
          sentinelRange.setValue(sentinel);
          var turnedOn = agent.turnOn();
@@ -88,6 +88,7 @@ function triggerPlatycoreSentinel ()
             {
             console.warn(ePlatycoreAgentKey + ': agent online');
             try{
+               // DONE RUN THE THING NOW
                console.warn(ePlatycoreAgentKey + ': inside!');
                agent.log("Hello from the Platycore Sentinel!");
                }

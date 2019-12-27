@@ -280,7 +280,7 @@ function Agent (sheet_, memory_, options_)
          if (isThisOn_)
             {
             // set the value of the LAST field to the current date
-            toggle.isOn = isOn = true;
+            onToggle.isOn = isOn = true;
             onRange.setValue(true);
             }
          else
@@ -298,6 +298,7 @@ function Agent (sheet_, memory_, options_)
 
    this.turnOff = function ()
       {
+      self_.verbose(function () { return ['shutting down...', JSON.stringify(memory_)] });
       if (!isThisOn_)
          {
          return;
