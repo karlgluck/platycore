@@ -28,8 +28,15 @@ function newAgent (urlAgentInstructions)
             shouldUpdate: false
             };
       var agent = new Agent(sheet, memory, {verbose: true, forceThisOn: true});
-      agent.info('Fetching ' + urlAgentInstructions);
-      var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
+      agent.info('Fetching ' + Util_clampStringLengthP(urlAgentInstructions, 50));
+      if (urlAgentInstructions.substring(0, 22) === 'data:text/json;base64,')
+         {
+         var jsonAgentInstructions = Util_stringFromBase64(urlAgentInstructions.substring(22));
+         }
+      else
+         {
+         var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
+         }
       agent.info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
 
