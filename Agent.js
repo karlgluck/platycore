@@ -281,7 +281,7 @@ function Agent (sheet_, memory_, options_)
             {
             // set the value of the LAST field to the current date
             onToggle.isOn = isOn = true;
-            onRange.setValue(true);
+            onRange.setFormula('=TRUE');
             }
          else
             {
@@ -311,7 +311,7 @@ function Agent (sheet_, memory_, options_)
             {
             var toggle = memory_.toggleFromName.ON;
             toggle.isOn = false;
-            sheet_.getRange(toggle.r, toggle.c, 1, 1).setValue(false);
+            sheet_.getRange(toggle.r, toggle.c, 1, 1).setFormula('=FALSE');
             }
          finally
             {
