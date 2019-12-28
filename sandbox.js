@@ -1,6 +1,29 @@
 
 /*
 
+to be built later!
+
+record all messages during execution and save them into the properties memory
+   - YOU CAN ALWAYS QUERY LAST EXECUTION'S OUTPUT FOR ANY DATA YOU WANT
+   - ...and this is actually the preferred method of passing data from one execution to the next
+   -  because it makes internal state visible and disentangles the platycore agent's data
+         from the platycore's data
+
+this is how you forward data from one execution to another! You just write it
+to the agent, then ask the agent for it back later!
+
+   agent.write('foo',{bar:'baz'});
+      
+      --> writes into the agent's cache and outputs to the 
+
+   agent.read('foo')
+   
+      --> 
+
+
+
+
+
 I switched to using ff00ff (pink) as the "something is different" color
 We now also have a few required flags:
    GO - does this agent need to run?
