@@ -1,6 +1,16 @@
 
 /*
 
+next tasks are:
+- run executables!
+- empty cell in SI or BI means "reset"
+- 
+- channels
+
+
+
+
+
 to be built later!
 
 record all messages during execution and save them into the properties memory
@@ -22,6 +32,8 @@ to the agent, then ask the agent for it back later!
 
 
 
+
+00ffff (cyan) is the "you can mess with this" color
 
 
 I switched to using ff00ff (pink) as the "something is different" color
@@ -48,7 +60,9 @@ all toggles and fields can be readonly or not
 
 need to make:
    (1) the data-storage sheet API
-   (2) the change notification network
+         data queue: data persists for a period of time after which it will be deleted; each
+               consumer can query for only new data
+   (2) the change notification network (how does "IN" get set for a sheet?)
 
 
 so from here, we move into expanding the "language" of the agent build script:
