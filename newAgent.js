@@ -40,12 +40,17 @@ function newAgent (urlAgentInstructions)
       agent.info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
 
-      var dirty = {};
       var conditionalFormatRules = [];
 
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
          {
          var eAgentInstruction = agentInstructions[iAgentInstruction];
+
+         if ('reboot' === eAgentInstruction || 'turnOff' === eAgentInstruction) // save the conditional formatting rules before switching off
+            {
+            sheet.setConditionalFormatRules(conditionalFormatRules);
+            }
+
          switch (eAgentInstruction)
             {
             case 'freeze':
@@ -75,6 +80,11 @@ function newAgent (urlAgentInstructions)
                var name = agentInstructions[++iAgentInstruction];
                memory.name = name;
                agent.info('Building agent "' + name + '" (platycoreAgent' + sheet.getSheetId() + ')');
+               break;
+
+            case 'reboot':
+               agent.verbose(function () { return 'reboot'; });
+               [agent, memory] = agent.reboot();
                break;
             
             case 'turnOff':
@@ -127,19 +137,7 @@ function newAgent (urlAgentInstructions)
                [agent, memory] = agent.reboot();
                break;
 
-            case 'reboot':
-               if (dirty.hasOwnProperty('conditionalFormatRules'))
-                  {
-                  agent.verbose(function () { return ['saving conditionalFormatRules']; });
-                  sheet.setConditionalFormatRules(conditionalFormatRules);
-                  delete dirty.conditionalFormatRules;
-                  }
-               agent.verbose(function () { return 'reboot'; });
-               [agent, memory] = agent.reboot();
-               break;
-
             case 'field':
-               dirty.conditionalFormatRules = true;
                (function (field)
                   {
                   if (!field.hasOwnProperty('w'))
@@ -159,12 +157,24 @@ function newAgent (urlAgentInstructions)
                         .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
                         .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
                   delete field.bg;
+                  if (field.hasOwnProperty('value'))
+                     {
+                     range.setValue(field.value);
+                     }
+                  else if (field.hasOwnProperty('f'))
+                     {
+                     range.setFormula(field.f);
+                     }
                   if (field.isReadonly)
                      {
                      range.setFontColor(field.hasOwnProperty('fg') ? field.fg : '#666666');
                      }
                   else
                      {
+                     if (!field.hasOwnProperty('value'))
+                        {
+                        field.value = '';
+                        }
                      var fontColor = field.hasOwnProperty('fg') ? field.fg : '#00ffff';
                      var textStyleBuilder = range.getTextStyle().copy();
                      textStyleBuilder.setUnderline(true);
@@ -175,15 +185,6 @@ function newAgent (urlAgentInstructions)
                            .setFontColor(fontColor));
                      }
                   delete field.fg;
-                  if (field.hasOwnProperty('value'))
-                     {
-                     range.setValue(field.value);
-                     delete field.value;
-                     }
-                  else if (field.hasOwnProperty('f'))
-                     {
-                     range.setFormula(field.f);
-                     }
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
@@ -227,7 +228,7 @@ function newAgent (urlAgentInstructions)
                         .setHorizontalAlignment('center')
                         .setNote(agentInstructions[++iAgentInstruction].join('\n'))
                         .setBackground(backgroundColor)
-                        .setBorder(true, true, true, true, true, true, '#000000', SpreadsheetApp.BorderStyle.SOLID_THICK)
+                        .setBorder(true, true, true, true, true, true, '#434343', SpreadsheetApp.BorderStyle.SOLID_THICK)
                         .setValue(iSection);
                   }
                agent.log('+script: ' + kName, script.sections);

@@ -203,6 +203,7 @@ function Agent (sheet_, memory_, options_)
 
    var writeOutputFirstTime_ = function (args)
       {
+      writeOutputNormal_(['']); // feed an extra line so that the bordering of the last line of the previous output doesn't get removed
       var range = writeOutputNormal_(args);
       sheet_.getRange(irNewMessage_ + 1, 1, 1, 49)
             .setBorder(true, false, false, false, false, false, '#dadfe8', SpreadsheetApp.BorderStyle.SOLID_THICK);
