@@ -3,7 +3,7 @@
           "freeze",  8,
 
           "toggle",  {"r": 1, "c": 9, "k":"STEP", "w": 3},
-          "script",  "UPDATE",
+          "script",  "RESET",
                      1,
                      {"r": 2, "c": 1},
                         [
@@ -14,7 +14,7 @@
            "GO_EN",  {"r": 1, "c": 1},
            "field",  {"r": 1, "c":12, "w": 5, "k": "LOCK", "isReadonly": true},
            "range",  {"r": 1, "c":17, "w": 2, "merge": "across", "t": "LOCK", "fg": "#000000"},
-          "toggle",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "isOn": true, "isReadonly": true},
+          "toggle",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "value": true, "isReadonly": true},
            "field",  {"r": 1, "c":19, "k": "SI", "value": 0},
            "range",  {"r": 1, "c":20, "t": "SI", "fg": "#dadfe8"},
            "field",  {"r": 1, "c":21, "k": "BI", "value": 0},

@@ -3,7 +3,7 @@
 
 next tasks are:
 - run executables!
-- empty cell in SI or BI means "reset"
+- empty cell in SI or BI causes RESET, which runs the RESET block
 - 
 - channels
 

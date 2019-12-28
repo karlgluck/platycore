@@ -1,6 +1,8 @@
+// agent should know when its memory was last updated
+// and have the last time the sheet was changed
+// then be able to know how to clear its own cache
 
-
-function Agent (sheet_, memory_, options_)
+function Agent (sheet_, utsSheetLastModified_, memory_, options_)
    {
    console.log('agent coming online: ', memory_);
    var properties_ = PropertiesService.getDocumentProperties();
@@ -20,6 +22,32 @@ function Agent (sheet_, memory_, options_)
       memory_ = JSON.parse(properties_.getProperty('platycoreAgent' + this.getSheetId()));
       }
 
+   Object.keys(memory_.toggleFromName).forEach(function (kName)   // clear hasBeenRead from all of the interactables
+      {
+      var toggle = memory_.toggleFromName[kName];
+      delete toggle.hasBeenRead;
+      });
+   Object.keys(memory_.fieldFromName).forEach(function (kName)
+      {
+      var field = memory_.fieldFromName[kName];
+      delete field.hasBeenRead;
+      });
+
+   if ('undefined' === typeof utsSheetLastModified_
+         || (memory_.utsLastWritten >>> 0) < (utsSheetLastModified_ >>> 0))   // clear valueCached from all of the interactables
+      {
+      Object.keys(memory_.toggleFromName).forEach(function (kName)
+         {
+         var toggle = memory_.toggleFromName[kName];
+         delete toggle.valueCached;
+         });
+      Object.keys(memory_.fieldFromName).forEach(function (kName)
+         {
+         var field = memory_.fieldFromName[kName];
+         delete field.valueCached;
+         });
+      }
+
    var cellSize_ = sheet_.getRowHeight(1);
 
    this.urlAgentInstructionsGet = function ()
@@ -31,8 +59,9 @@ function Agent (sheet_, memory_, options_)
       {
       properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       var newMemory = JSON.parse(JSON.stringify(memory_));
+      newMemory.utsLastWritten = 0; // eliminate all caches
       var newOptions = JSON.parse(JSON.stringify(options_));
-      return [new Agent(sheet_, newMemory, newOptions), newMemory];
+      return [new Agent(sheet_, utsSheetLastModified_, newMemory, newOptions), newMemory];
       };
    
    this.uninstall = function ()
@@ -57,11 +86,15 @@ function Agent (sheet_, memory_, options_)
       {
       if (!memory_.hasOwnProperty('toggleFromName') || !memory_.toggleFromName.hasOwnProperty(name))
          {
-         return { hasBeenRead: true, isOn: false, r:1, c:49, w:1, t:'' };
+         return { hasBeenRead: true, valueCached: false, r:1, c:49, w:1, t:'' };
          }
       return memory_.toggleFromName[name];
       };
    
+   // Each field contains:
+   //    hasBeenRead - if it exists, the field has been read from its true value during this execution
+   //    valueCached - 
+   //
    var fieldFromNameP_ = function (name)
       {
       if (!memory_.hasOwnProperty('fieldFromName') || !memory_.fieldFromName.hasOwnProperty(name))
@@ -103,43 +136,44 @@ function Agent (sheet_, memory_, options_)
    this.readToggle = function (name)
       {
       var toggle = toggleFromNameP_(name);
-      if (!toggle.hasOwnProperty('isOn'))
+      if (!toggle.hasOwnProperty('valueCached'))
          {
-         toggle.isOn = !!range.getValue();
+         toggle.valueCached = !!range.getValue();
          }
       if (!toggle.hasOwnProperty('hasBeenRead'))
          {
          updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
          }
       toggle.hasBeenRead = true;
-      return toggle.isOn;
+      return toggle.valueCached;
       };
 
    this.peekToggleP = function (name)
       {
       var toggle = toggleFromNameP_(name);
-      if (toggle.hasOwnProperty('isOn'))
+      if (toggle.hasOwnProperty('valueCached'))
          {
-         return toggle.isOn;
+         return toggle.valueCached;
          }
-      return toggle.isOn = !!sheet_.getRange(toggle.r, toggle.c, 1, 1).getValue();
+      return toggle.valueCached = !!sheet_.getRange(toggle.r, toggle.c, 1, 1).getValue();
       };
 
-   this.writeToggle = function (name, isOn)
+   this.writeToggle = function (name, value)
       {
-      isOn = !!isOn;
+      value = !!value;
       var toggle = toggleFromNameP_(name);
-      toggle.isOn = isOn;
-      toggle.hasBeenRead = true;
+      delete toggle.valueCached;
       var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
       if (toggle.isReadonly)
          {
-         checkboxRange.setFormula(isOn ? '=TRUE' : '=FALSE');
+         checkboxRange.setFormula(value ? '=TRUE' : '=FALSE');
          }
       else
          {
-         checkboxRange.setValue(isOn);
+         checkboxRange.setValue(value);
          }
+      toggle.valueCached = value;
+      toggle.hasBeenRead = true;
       updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
       };
 
@@ -147,7 +181,7 @@ function Agent (sheet_, memory_, options_)
       {
       var rule = getConditionalFormatRuleByRange(range);
       var builder = rule.copy();
-      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.isOn?',TRUE)':',FALSE)'));
+      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.valueCached?',TRUE)':',FALSE)'));
       rule.gasConditionalFormatRule = builder.build();
       sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
       return range;
@@ -156,9 +190,9 @@ function Agent (sheet_, memory_, options_)
    this.readField = function (name)
       {
       var field = fieldFromNameP_(name);
-      if (!field.hasOwnProperty('value'))
+      if (!field.hasOwnProperty('valueCached'))
          {
-         field.value = String(sheet_.getRange(field.r, field.c).getValue());
+         field.valueCached = String(sheet_.getRange(field.r, field.c).getValue());
          }
       if (!field.hasOwnProperty('hasBeenRead'))
          {
@@ -170,12 +204,12 @@ function Agent (sheet_, memory_, options_)
 
    this.peekFieldP = function (name)
       {
-      var toggle = fieldFromNameP_(name);
-      if (field.hasOwnProperty('value'))
+      var field = fieldFromNameP_(name);
+      if (!field.hasOwnProperty('valueCached'))
          {
-         return field.value;
+         field.valueCached = String(sheet_.getRange(field.r, field.c).getValue());;
          }
-      return toggle.isOn = !!sheet_.getRange(toggle.r, toggle.c, 1, 1).getValue();
+      return field.valueCached;
       };
    
    this.writeField = function (name, value)
@@ -278,6 +312,17 @@ function Agent (sheet_, memory_, options_)
       writeOutput_(arguments).setFontColor('red').setBackground('#3d0404');
       };
 
+   var isVerbose_ = function ()
+      {
+      var rvVerbose = false;
+      if (options_.hasOwnProperty('verbose'))
+         {
+         rvVerbose = options_.verbose;
+         }
+      isVerbose_ = (function (value) { return function () { return value; }})(rvVerbose);
+      return rvVerbose;
+      };
+
    this.turnOn = function ()
       {
       if (isThisOn_)
@@ -296,15 +341,15 @@ function Agent (sheet_, memory_, options_)
          var onRange = sheet_.getRange(onToggle.r, onToggle.c);
          var lockField = memory_.fieldFromName.LOCK;
          var lockRange = sheet_.getRange(lockField.r, lockField.c, lockField.h, lockField.w);
-         var notTooLongSinceLastLocked = true; // TODO
-         var isOn = !!onRange.getValue() && (notTooLongSinceLastLocked);
-         isThisOn_ = !isOn;
+         var notTooLongSinceLastLocked = (new Date().getTime() - (lockRange.getValue() >>> 0)) < 1000 * (60 *  5+30); // TODO: test the lock override step
+         var value = !!onRange.getValue() && (notTooLongSinceLastLocked);
+         isThisOn_ = !value;
          if (isThisOn_)
             {
             // set the value of the LAST field to the current date
             lockRange.setValue(lockField.value = new Date().getTime());
-            onToggle.isOn = isOn = true;
             onRange.setFormula('=TRUE');
+            onToggle.valueCached = value = true;
             }
          else
             {
@@ -333,7 +378,7 @@ function Agent (sheet_, memory_, options_)
          try
             {
             var toggle = memory_.toggleFromName.ON;
-            toggle.isOn = false;
+            toggle.valueCached = false;
             sheet_.getRange(toggle.r, toggle.c, 1, 1).setFormula('=FALSE');
             }
          finally
@@ -345,15 +390,8 @@ function Agent (sheet_, memory_, options_)
       properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };
 
-   var isVerbose_ = function ()
+   this.step = function ()
       {
-      var rvVerbose = false;
-      if (options_.hasOwnProperty('verbose'))
-         {
-         rvVerbose = options_.verbose;
-         }
-      isVerbose_ = (function (value) { return function () { return value; }})(rvVerbose);
-      return rvVerbose;
       };
 
    }

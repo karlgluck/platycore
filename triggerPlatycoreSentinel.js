@@ -11,6 +11,7 @@ function triggerPlatycoreSentinel ()
          .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' });
    for (var iKey = 0, nKeyCount = keys.length; iKey < nKeyCount; ++iKey)
       {
+
       var ePlatycoreAgentKey = keys[iKey];
       var sheet = undefined;
       var eAgentMemory = JSON.parse(properties.getProperty(ePlatycoreAgentKey));
@@ -56,15 +57,15 @@ function triggerPlatycoreSentinel ()
             continue;
             }
          var go = eAgentMemory.toggleFromName.GO;
-         var shouldUpdate = !!sheet.getRange(go.r, go.c).getValue();
-         if (shouldUpdate !== eAgentMemory.shouldUpdate)
+         var goValue = !!sheet.getRange(go.r, go.c).getValue();
+         if (goValue !== go.valueCached)
             {
-            eAgentMemory.shouldUpdate = shouldUpdate;
+            go.valueCached = goValue;
             properties.setProperty(ePlatycoreAgentKey, JSON.stringify(eAgentMemory));
             }
          }
       
-      var isIdle = true !== eAgentMemory.shouldUpdate;
+      var isIdle = true !== eAgentMemory.toggleFromName.GO.valueCached;
       console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?'IDLE':'SHOULD UPDATE'), eAgentMemory);
       if (isIdle)
          {
@@ -79,15 +80,11 @@ function triggerPlatycoreSentinel ()
          var sentinel = Utilities.base64Encode(Math.random().toString());
          var sentinelRange = sheet.getRange(1, 49);
          sentinelRange.setValue(sentinel);
-         var turnedOn = agent.turnOn();
-         var sentinelAfter = sentinelRange.getValue();
-         console.log('sentinel before', sentinel);
-         console.log('turnedOn',turnedOn);
-         console.log('sentinel after', sentinelAfter);
-         if (turnedOn && sentinel === sentinelAfter)
+         if (agent.turnOn() && sentinel === sentinelRange.getValue())
             {
             console.warn(ePlatycoreAgentKey + ': agent online');
             try{
+               agent.step();
                // DONE RUN THE THING NOW
                console.warn(ePlatycoreAgentKey + ': inside!');
                agent.log("Hello from the Platycore Sentinel!");

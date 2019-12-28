@@ -245,16 +245,17 @@ function newAgent (urlAgentInstructions)
                   memory.toggleFromName[toggle.k] = toggle;
                   var toggleText = toggle.t || toggle.k;
                   toggle.isReadonly = !!toggle.isReadonly;
-                  toggle.isOn = !!toggle.isOn;
+                  toggle.valueCached = !!toggle.value;
+                  delete toggle.value;
                   agent.log('+toggle: ' + toggle.k + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
                   var checkboxRange = sheet.getRange(toggle.r, toggle.c).insertCheckboxes();
                   if (toggle.isReadonly)
                      {
-                     checkboxRange.setFormula(toggle.isOn ? '=TRUE' : '=FALSE');
+                     checkboxRange.setFormula(toggle.valueCached ? '=TRUE' : '=FALSE');
                      }
                      else
                      {
-                     checkboxRange.setValue(toggle.isOn);
+                     checkboxRange.setValue(toggle.valueCached);
                      }
                   var qcColumns = toggle.w - 1;
                   if (qcColumns > 0)
@@ -302,6 +303,7 @@ function newAgent (urlAgentInstructions)
       }
    finally
       {
+      memory.utsLastWritten = new Date().getTime();
       PropertiesService.getDocumentProperties().setProperty(
             'platycoreAgent' + memory.sheetId,
             JSON.stringify(memory)
