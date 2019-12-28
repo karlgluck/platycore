@@ -17,38 +17,40 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       return rvSheetId;
       };
 
+   //
+   // Load memory_ for this execution (clear cache, reserved flags, etc.)
+   //
+
    if ('object' !== typeof memory_ || null === memory_)
       {
       memory_ = JSON.parse(properties_.getProperty('platycoreAgent' + this.getSheetId()));
       }
 
-   Object.keys(memory_.toggleFromName).forEach(function (kName)   // clear hasBeenRead from all of the interactables
-      {
-      var toggle = memory_.toggleFromName[kName];
-      delete toggle.hasBeenRead;
-      });
-   Object.keys(memory_.fieldFromName).forEach(function (kName)
-      {
-      var field = memory_.fieldFromName[kName];
-      delete field.hasBeenRead;
-      });
+   memory_.toggleFromName = memory_.toggleFromName || {};
+   memory_.fieldFromName = memory_.fieldFromName || {};
+   memory_.scriptFromName = memory_.scriptFromName || {};
 
-   if ('undefined' === typeof utsSheetLastModified_
-         || (memory_.utsLastWritten >>> 0) < (utsSheetLastModified_ >>> 0))   // clear valueCached from all of the interactables
+   (function (isCacheExpired)
       {
-      Object.keys(memory_.toggleFromName).forEach(function (kName)
-         {
-         var toggle = memory_.toggleFromName[kName];
-         delete toggle.valueCached;
-         });
-      Object.keys(memory_.fieldFromName).forEach(function (kName)
-         {
-         var field = memory_.fieldFromName[kName];
-         delete field.valueCached;
-         });
-      }
 
-   var cellSize_ = sheet_.getRowHeight(1);
+      console.log('isCacheExpired: ' + isCacheExpired, isCacheExpired);
+
+      ['toggleFromName', 'fieldFromName', 'scriptFromName'].forEach(function (kDictionary)
+         {
+         var eDictionary = memory_[kDictionary];
+         
+         Object.keys(eDictionary).forEach(function (kName)   // clear hasBeenRead from all of the interactables
+            {
+            var toggle = eDictionary[kName];
+            delete toggle.hasBeenRead;
+            if (isCacheExpired) delete toggle.valueCached;
+            });
+         
+         })
+      })('undefined' === typeof utsSheetLastModified_
+            || (memory_.utsLastWritten >>> 0) < (utsSheetLastModified_ >>> 0));
+
+//   var cellSize_ = sheet_.getRowHeight(1);
 
    this.urlAgentInstructionsGet = function ()
       {
