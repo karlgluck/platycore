@@ -34,3 +34,9 @@ function Util_base64FromObject(objectToEncode)
    {
    return Util_base64FromString(JSON.stringify(objectToEncode));
    }
+
+// https://stackoverflow.com/questions/1303646/check-whether-variable-is-number-or-string-in-javascript/20373925
+function Util_isNumber(n)
+   {
+   return !isNaN(parseFloat(n)) && !isNaN(n - 0)
+   }

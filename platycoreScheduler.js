@@ -1,7 +1,7 @@
 function platycoreScheduler(go)
    {
    if (!go) return 'GO';
-   var sentinelTriggers = ScriptApp.getProjectTriggers().filter(function (eTrigger) { return eTrigger.getHandlerFunction() === 'triggerPlatycoreSentinel' });
+   var sentinelTriggers = ScriptApp.getProjectTriggers();
    if (sentinelTriggers >= 3) return 'G'+sentinelTriggers.length;
    ScriptApp.newTrigger('triggerPlatycoreSentinel')
       .timeBased()

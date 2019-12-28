@@ -7,7 +7,8 @@
                      1,
                      {"r": 2, "c": 1},
                         [
-                        "agent.writeToggle('STEP', false);"
+                        "agent.writeToggle('STEP', false);",
+                        "agent.log('off you go!');"
                         ],
 
           "toggle",  {"r": 1, "c": 7, "k":"IN", "w": 2, "isReadonly": true},
@@ -15,9 +16,9 @@
            "field",  {"r": 1, "c":12, "w": 5, "k": "LOCK", "isReadonly": true},
            "range",  {"r": 1, "c":17, "w": 2, "merge": "across", "t": "LOCK", "fg": "#000000"},
           "toggle",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "value": true, "isReadonly": true},
-           "field",  {"r": 1, "c":19, "k": "SI", "value": 0},
+           "field",  {"r": 1, "c":19, "k": "SI"},
            "range",  {"r": 1, "c":20, "t": "SI", "fg": "#dadfe8"},
-           "field",  {"r": 1, "c":21, "k": "BI", "value": 0},
+           "field",  {"r": 1, "c":21, "k": "BI"},
            "range",  {"r": 1, "c":22, "t": "BI", "fg": "#dadfe8"},
          "turnOff"
 ]

@@ -29,13 +29,14 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
    memory_.toggleFromName = memory_.toggleFromName || {};
    memory_.fieldFromName = memory_.fieldFromName || {};
    memory_.scriptFromName = memory_.scriptFromName || {};
+   memory_.scriptNames = memory_.scriptNames || [];
 
    (function (isCacheExpired)
       {
 
       console.log('isCacheExpired: ' + isCacheExpired, isCacheExpired);
 
-      ['toggleFromName', 'fieldFromName', 'scriptFromName'].forEach(function (kDictionary)
+      ['toggleFromName', 'fieldFromName'].forEach(function (kDictionary)
          {
          var eDictionary = memory_[kDictionary];
          
@@ -47,8 +48,22 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
             });
          
          })
+
+      if (isCacheExpired) // clear valueCached from all code blocks
+         {
+         Object.keys(memory_.scriptFromName).forEach(function (kName)
+            {
+            var eScript = memory_.scriptFromName[kName];
+            eScript.blocks.forEach(function (eBlock)
+               {
+               delete eBlock.valueCached;
+               })
+            })
+         }
+
+
       })('undefined' === typeof utsSheetLastModified_
-            || (memory_.utsLastWritten >>> 0) < (utsSheetLastModified_ >>> 0));
+            || (memory_.utsLastSaved >>> 0) < (utsSheetLastModified_ >>> 0));
 
 //   var cellSize_ = sheet_.getRowHeight(1);
 
@@ -59,11 +74,16 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
 
    this.reboot = function ()
       {
-      properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
+      self_.save();
       var newMemory = JSON.parse(JSON.stringify(memory_));
-      newMemory.utsLastWritten = 0; // eliminate all caches
+      newMemory.utsLastSaved = 0; // eliminate all caches
       var newOptions = JSON.parse(JSON.stringify(options_));
       return [new Agent(sheet_, utsSheetLastModified_, newMemory, newOptions), newMemory];
+      };
+   
+   this.save = function ()
+      {
+      properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };
    
    this.uninstall = function ()
@@ -86,11 +106,38 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
 
    var toggleFromNameP_ = function (name)
       {
-      if (!memory_.hasOwnProperty('toggleFromName') || !memory_.toggleFromName.hasOwnProperty(name))
+      try
+         {
+         return memory_.toggleFromName[name];
+         }
+      catch (e)
          {
          return { hasBeenRead: true, valueCached: false, r:1, c:49, w:1, t:'' };
          }
-      return memory_.toggleFromName[name];
+      };
+
+   var scriptFromNameP_ = function (name)
+      {
+      try
+         {
+         return memory_.scriptFromName[name];
+         }
+      catch (e)
+         {
+         return { blocks: [] };
+         }
+      };
+
+   var scriptBlockFromNameP_ = function (name, iBlockIndex)
+      {
+      try
+         {
+         return memory_.scriptFromName[name].blocks[iBlockIndex];
+         }
+      catch (e)
+         {
+         return { valueCached: '', r:1, c:49, w:1, h:1 };
+         }
       };
    
    // Each field contains:
@@ -127,7 +174,8 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
          {
          var eConditionalFormatRule = conditionalFormatRules_[i];
-         if (eRanges.length === 1 && eConditionalFormatRule.ranges[0].r === ir && eConditionalFormatRule.ranges[0].c === ic)
+         var ranges = eConditionalFormatRule.ranges;
+         if (ranges.length === 1 && ranges[0].r === ir && ranges[0].c === ic)
             {
             return eConditionalFormatRule;
             }
@@ -145,8 +193,8 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       if (!toggle.hasOwnProperty('hasBeenRead'))
          {
          updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
+         toggle.hasBeenRead = true;
          }
-      toggle.hasBeenRead = true;
       return toggle.valueCached;
       };
 
@@ -182,8 +230,8 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
    var updateToggleConditionalFormatRule_ = function (toggle, range)
       {
       var rule = getConditionalFormatRuleByRange(range);
-      var builder = rule.copy();
-      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.valueCached?',TRUE)':',FALSE)'));
+      var builder = rule.gasConditionalFormatRule.copy();
+      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.valueCached?',FALSE)':',TRUE)'));
       rule.gasConditionalFormatRule = builder.build();
       sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
       return range;
@@ -199,9 +247,25 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       if (!field.hasOwnProperty('hasBeenRead'))
          {
          updateFieldConditionalFormatRule_(field, sheet_.getRange(field.r, field.c, field.h, field.w));
+         field.hasBeenRead = true;
          }
-      field.hasBeenRead = true;
-      return field.value;
+      return field.valueCached;
+      };
+   
+   this.readFieldAsArrayIndex = function (name, mArrayLength)
+      {
+      var value = self_.readField(name);
+      if (Util_isNumber(value))
+         {
+         value = value >>> 0;
+         if (value > mArrayLength - 1)
+            {
+            return null;
+            }
+         return value;
+         }
+      else
+         return null;
       };
 
    this.peekFieldP = function (name)
@@ -220,18 +284,28 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       var field = fieldFromNameP_(name);
       field.value = value;
       field.hasBeenRead = true;
-      var range = sheet_.getRange(toggle.r, toggle.c, 1, toggle.w);
-      range.setValue(isOn);
-      updateFieldConditionalFormatRule_(toggle, range);
+      var range = sheet_.getRange(field.r, field.c, 1, field.w);
+      range.setValue(value);
+      updateFieldConditionalFormatRule_(field, range);
       };
 
    var updateFieldConditionalFormatRule_ = function (input, range)
       {
       var rule = getConditionalFormatRuleByRange(range);
-      var builder = rule.copy();
+      var builder = rule.gasConditionalFormatRule.copy();
       builder.whenTextEqualTo(input.value);
       rule.gasConditionalFormatRule = builder.build();
       sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
+      };
+   
+   this.readScriptBlock = function (name, iBlockIndex)
+      {
+      var block = scriptBlockFromNameP_(name, iBlockIndex);
+      if (!block.hasOwnProperty('valueCached'))
+         {
+         block.valueCached = String(sheet_.getRange(block.r, block.c).getNote());
+         }
+      return block.valueCached;
       };
 
    var mcColumns_ = sheet_.getMaxColumns();
@@ -392,11 +466,56 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
             lock = null;
             }
          }
-      properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
+      self_.save();
       };
 
    this.step = function ()
       {
+      if (!isThisOn_)
+         {
+         throw "must be on"
+         }
+      var iScriptIndex = self_.readFieldAsArrayIndex('SI', memory_.scriptNames.length);
+      if (null === iScriptIndex)
+         {
+         iScriptIndex = memory_.scriptNames.indexOf('RESET');
+         self_.writeField('SI', iScriptIndex);
+         var script = scriptFromNameP_('RESET');
+         }
+      else
+         {
+         var script = scriptFromNameP_(memory_.scriptNames[iScriptIndex]);
+         }
+      var iBlockIndex = self_.readFieldAsArrayIndex('BI', script.blocks.length);
+      if (null === iBlockIndex)
+         {
+         iBlockIndex = 0;
+         self_.writeField('BI', iBlockIndex);
+         }
+      var block = script.blocks[iBlockIndex];
+      if (!block.hasOwnProperty('valueCached'))
+         {
+         block.valueCached = String(sheet_.getRange(block.r, block.c).getNote());
+         }
+      
+      (function (agent)
+         {
+         eval(block.valueCached);
+         })(self_);
+      
+      };
+
+   this.setNext = function (scriptName)
+      {
+      };
+   
+   this.reset = function ()
+      {
+      if (!isThisOn_)
+         {
+         throw "must be on"
+         }
+      self_.readScript()
       };
 
    }

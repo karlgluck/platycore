@@ -1,30 +1,39 @@
 
 function triggerPlatycoreSentinel ()
    {
+   GAS_deleteTriggerByName('triggerPlatycoreSentinel');
+   // TODO: re-schedule the sentinel
    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
    var file = DriveApp.getFileById(spreadsheet.getId());
    var properties = PropertiesService.getDocumentProperties();
-   file.getLastUpdated().getTime();
+   var utsNow = new Date().getTime();
    var platycore = JSON.parse(properties.getProperty('platycore') || '{}');
-   var isAgentMemoryLatest = platycore.hasOwnProperty('utsLastUpdated') && (platycore.utsLastUpdated >>> 0) >= file.getLastUpdated().getTime();
    var keys = properties.getKeys()
          .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' });
+
+
+   // TODO: this loop continues going as long as any agent is GO
+
    for (var iKey = 0, nKeyCount = keys.length; iKey < nKeyCount; ++iKey)
       {
+      
+      var utsLastUpdated = file.getLastUpdated().getTime();
+      var isPlatycoreMemoryLatest = platycore.hasOwnProperty('utsLastSaved') && (platycore.utsLastSaved >>> 0) >= 
+      utsLastUpdated;
 
       var ePlatycoreAgentKey = keys[iKey];
       var sheet = undefined;
       var eAgentMemory = JSON.parse(properties.getProperty(ePlatycoreAgentKey));
-      if (!isAgentMemoryLatest)
+      if (!isPlatycoreMemoryLatest)
          {
-         console.log('updating agent memory for ' + ePlatycoreAgentKey, eAgentMemory);
+         console.log('syncing platycore memory with ' + ePlatycoreAgentKey, eAgentMemory);
          if (eAgentMemory.hasOwnProperty('sheetName')) // use the sheetName hint for direct lookup
             {
             sheet = spreadsheet.getSheetByName(eAgentMemory.sheetName);
             console.log('sheet = ' + (!!sheet ? '' + sheet.getSheetId(): 'null'));
             if (!sheet || sheet.getSheetId() != eAgentMemory.sheetId)
                {
-               console.warn('sheet had the wrong ID');
+               console.warn(ePlatycoreAgentKey + ' sheet had the wrong ID');
                sheet = undefined;
                }
             }
@@ -35,7 +44,6 @@ function triggerPlatycoreSentinel ()
                   for (var iSheet = 0, nSheetCount = sheets.length; iSheet < nSheetCount; ++iSheet)
                      {
                      var eSheet = sheets[iSheet];
-                     console.warn('looking for ' + kTargetSheetId + ' comparing to ' + eSheet.getSheetId() + ' named ' + eSheet.getSheetName());
                      if (eSheet.getSheetId() == kTargetSheetId)
                         {
                         return eSheet;
@@ -43,7 +51,7 @@ function triggerPlatycoreSentinel ()
                      }
                   return null;
                })(spreadsheet.getSheets(), eAgentMemory.sheetId);
-            console.log('sheet found by ID = ' + (!!sheet ? '' + sheet.getSheetName(): 'null'));
+            console.log(ePlatycoreAgentKey + ': sheet found by agent ID = ' + (!!sheet ? '' + sheet.getSheetName(): 'null'));
             if ('object' === typeof sheet && null !== sheet) // if we got a valid sheet back, update the agent memory to save its new name
                {
                eAgentMemory.sheetName = sheet.getSheetName();
@@ -52,7 +60,7 @@ function triggerPlatycoreSentinel ()
             }
          if ('object' !== typeof sheet || null === sheet) // nuke an invalid platycore agent
             {
-            console.error('deleting invalid platycore agent "' + ePlatycoreAgentKey + '"');
+            console.error('platycore: deleting invalid platycore agent "' + ePlatycoreAgentKey + '"',ePlatycoreAgentKey);
             properties.deleteProperty(ePlatycoreAgentKey);
             continue;
             }
@@ -76,18 +84,14 @@ function triggerPlatycoreSentinel ()
          sheet = spreadsheet.getSheetByName(eAgentMemory.sheetName);
          }
       try{
-         var agent = new Agent(sheet, eAgentMemory, {});
+         var agent = new Agent(sheet, utsLastUpdated, eAgentMemory, {});
          var sentinel = Utilities.base64Encode(Math.random().toString());
          var sentinelRange = sheet.getRange(1, 49);
          sentinelRange.setValue(sentinel);
          if (agent.turnOn() && sentinel === sentinelRange.getValue())
             {
-            console.warn(ePlatycoreAgentKey + ': agent online');
             try{
                agent.step();
-               // DONE RUN THE THING NOW
-               console.warn(ePlatycoreAgentKey + ': inside!');
-               agent.log("Hello from the Platycore Sentinel!");
                }
             catch (e)
                {
@@ -95,7 +99,6 @@ function triggerPlatycoreSentinel ()
                }
             finally
                {
-               console.warn(ePlatycoreAgentKey + ': turning off');
                agent.turnOff();
                }
             }

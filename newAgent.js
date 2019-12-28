@@ -18,6 +18,7 @@ function newAgent (urlAgentInstructions)
 
    try
       {
+      var utsNow = new Date().getTime();
       var memory = {
             sheetName: sheetName,
             sheetId: sheet.getSheetId(),
@@ -25,9 +26,12 @@ function newAgent (urlAgentInstructions)
             fieldFromName: {},
             toggleFromName: {},
             scriptFromName: {},
+            scriptNames: [],
+            utsLastSaved: utsNow,
             shouldUpdate: false
             };
-      var agent = new Agent(sheet, memory, {verbose: true, forceThisOn: true});
+      var agent = new Agent(sheet, utsNow, memory, {verbose: true, forceThisOn: true});
+      agent.save();
       agent.info('Fetching ' + Util_clampStringLengthP(urlAgentInstructions, 50));
       if (urlAgentInstructions.substring(0, 22) === 'data:text/json;base64,')
          {
@@ -214,25 +218,28 @@ function newAgent (urlAgentInstructions)
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
-            case 'script': // script "<name>" <qSectionCount> [{"r": "<riRow>", "c": "<ciCol>"} [<"code"> [, <"code">] ...for each line of code]] ...for each section
+            case 'script': // script "<name>" <qBlockCount> [{"r": "<riRow>", "c": "<ciCol>"} [<"code"> [, <"code">] ...for each line of code]] ...for each section
                var kName = agentInstructions[++iAgentInstruction];
-               var qSectionCount = agentInstructions[++iAgentInstruction];
-               var script = {sections:[]};
+               var qBlockCount = agentInstructions[++iAgentInstruction];
+               var script = {blocks:[]};
                var backgroundColor = Util_rainbowColorFromValueP(Object.keys(memory.scriptFromName).length);
-               for (var iSection = 0; iSection < qSectionCount; ++iSection)
+               for (var iBlock = 0; iBlock < qBlockCount; ++iBlock)
                   {
-                  var scriptProperties = agentInstructions[++iAgentInstruction];
-                  script.sections.push(scriptProperties);
-                  sheet.getRange(scriptProperties.r, scriptProperties.c)
+                  var blockProperties = agentInstructions[++iAgentInstruction];
+                  var code = agentInstructions[++iAgentInstruction].join('\n');
+                  blockProperties.valueCached = code;
+                  script.blocks.push(blockProperties);
+                  sheet.getRange(blockProperties.r, blockProperties.c)
                         .setVerticalAlignment('middle')
                         .setHorizontalAlignment('center')
-                        .setNote(agentInstructions[++iAgentInstruction].join('\n'))
+                        .setNote(code)
                         .setBackground(backgroundColor)
                         .setBorder(true, true, true, true, true, true, '#434343', SpreadsheetApp.BorderStyle.SOLID_THICK)
-                        .setValue(iSection);
+                        .setValue(iBlock);
                   }
-               agent.log('+script: ' + kName, script.sections);
+               agent.log('+script: ' + kName, script.blocks);
                memory.scriptFromName[kName] = script;
+               memory.scriptNames.push(kName);
                break;
 
             case 'toast':
@@ -303,7 +310,7 @@ function newAgent (urlAgentInstructions)
       }
    finally
       {
-      memory.utsLastWritten = new Date().getTime();
+      memory.utsLastSaved = new Date().getTime();
       PropertiesService.getDocumentProperties().setProperty(
             'platycoreAgent' + memory.sheetId,
             JSON.stringify(memory)
