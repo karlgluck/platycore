@@ -341,15 +341,18 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
          var onRange = sheet_.getRange(onToggle.r, onToggle.c);
          var lockField = memory_.fieldFromName.LOCK;
          var lockRange = sheet_.getRange(lockField.r, lockField.c, lockField.h, lockField.w);
-         var notTooLongSinceLastLocked = (new Date().getTime() - (lockRange.getValue() >>> 0)) < 1000 * (60 *  5+30); // TODO: test the lock override step
-         var value = !!onRange.getValue() && (notTooLongSinceLastLocked);
-         isThisOn_ = !value;
+         var onValue = !!onRange.getValue();
+         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (new Date().getTime() - (lockRange.getValue() >>> 0)); // TODO: test the lock override step
+         isThisOn_ = !onValue || tooLongSinceLastLocked;
          if (isThisOn_)
             {
-            // set the value of the LAST field to the current date
+            if (!onValue)
+               {
+               console.warn('previous lock on platycoreAgent' + sheet_.getSheetId() + ' aged out and is being ignored');
+               }
             lockRange.setValue(lockField.value = new Date().getTime());
             onRange.setFormula('=TRUE');
-            onToggle.valueCached = value = true;
+            onToggle.valueCached = onValue = true;
             }
          else
             {

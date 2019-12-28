@@ -2,7 +2,7 @@
             "name",  "Power On Self Test Machine no. 8 (POSTM8)",
           "freeze",  12,
           "toggle", {"r": 1, "c": 1, "k":"EN"},
-          "toggle", {"r": 1, "c": 3, "k":"ON",  "isOn": true},
+          "toggle", {"r": 1, "c": 3, "k":"ON",  "value": true},
           "toggle", {"r": 3, "c": 3, "k":"MAKE AGENT"},
             "eval",  "this is where you install the data to the platycore settings that adds the menu item for this agent, then toast to reboot",
        "uninstall",  [

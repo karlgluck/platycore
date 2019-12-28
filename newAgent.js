@@ -194,7 +194,7 @@ function newAgent (urlAgentInstructions)
                   var toggles = Object.keys(memory.toggleFromName).map(function (kName)
                      {
                      var eToggle = memory.toggleFromName[kName];
-                     return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (!!eToggle.isOn ? ",TRUE)" : ",FALSE)");
+                     return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (eToggle.valueCached ? ",TRUE)" : ",FALSE)");
                      });
                   var fields = Object.keys(memory.fieldFromName).map(function (kName)
                      {
@@ -281,7 +281,7 @@ function newAgent (urlAgentInstructions)
                      {
                      conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
                            .setRanges([range])
-                           .whenFormulaSatisfied((toggle.isOn ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) + ')')
+                           .whenFormulaSatisfied((toggle.valueCached ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) + ')')
                            .setFontColor('#ff00ff')
                            );
                      }
