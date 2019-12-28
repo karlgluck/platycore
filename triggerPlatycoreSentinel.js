@@ -18,20 +18,19 @@ function triggerPlatycoreSentinel ()
       {
       
       var utsLastUpdated = file.getLastUpdated().getTime();
-      var isPlatycoreMemoryLatest = platycore.hasOwnProperty('utsLastSaved') && (platycore.utsLastSaved >>> 0) >= 
-      utsLastUpdated;
+      var isPlatycoreMemoryLatest = platycore.hasOwnProperty('utsLastSaved') && (platycore.utsLastSaved >>> 0) >= utsLastUpdated;
 
       var ePlatycoreAgentKey = keys[iKey];
       var sheet = undefined;
-      var eAgentMemory = JSON.parse(properties.getProperty(ePlatycoreAgentKey));
+      var agentMemory = JSON.parse(properties.getProperty(ePlatycoreAgentKey));
       if (!isPlatycoreMemoryLatest)
          {
-         console.log('syncing platycore memory with ' + ePlatycoreAgentKey, eAgentMemory);
-         if (eAgentMemory.hasOwnProperty('sheetName')) // use the sheetName hint for direct lookup
+         console.log('syncing platycore memory with ' + ePlatycoreAgentKey, agentMemory);
+         if (agentMemory.hasOwnProperty('sheetName')) // use the sheetName hint for direct lookup
             {
-            sheet = spreadsheet.getSheetByName(eAgentMemory.sheetName);
+            sheet = spreadsheet.getSheetByName(agentMemory.sheetName);
             console.log('sheet = ' + (!!sheet ? '' + sheet.getSheetId(): 'null'));
-            if (!sheet || sheet.getSheetId() != eAgentMemory.sheetId)
+            if (!sheet || sheet.getSheetId() != agentMemory.sheetId)
                {
                console.warn(ePlatycoreAgentKey + ' sheet had the wrong ID');
                sheet = undefined;
@@ -50,12 +49,12 @@ function triggerPlatycoreSentinel ()
                         }
                      }
                   return null;
-               })(spreadsheet.getSheets(), eAgentMemory.sheetId);
+               })(spreadsheet.getSheets(), agentMemory.sheetId);
             console.log(ePlatycoreAgentKey + ': sheet found by agent ID = ' + (!!sheet ? '' + sheet.getSheetName(): 'null'));
             if ('object' === typeof sheet && null !== sheet) // if we got a valid sheet back, update the agent memory to save its new name
                {
-               eAgentMemory.sheetName = sheet.getSheetName();
-               properties.setProperty(ePlatycoreAgentKey, JSON.stringify(eAgentMemory));
+               agentMemory.sheetName = sheet.getSheetName();
+               properties.setProperty(ePlatycoreAgentKey, JSON.stringify(agentMemory));
                }
             }
          if ('object' !== typeof sheet || null === sheet) // nuke an invalid platycore agent
@@ -64,48 +63,45 @@ function triggerPlatycoreSentinel ()
             properties.deleteProperty(ePlatycoreAgentKey);
             continue;
             }
-         var go = eAgentMemory.toggleFromName.GO;
+         var go = agentMemory.toggleFromName.GO;
          var goValue = !!sheet.getRange(go.r, go.c).getValue();
          if (goValue !== go.valueCached)
             {
             go.valueCached = goValue;
-            properties.setProperty(ePlatycoreAgentKey, JSON.stringify(eAgentMemory));
+            properties.setProperty(ePlatycoreAgentKey, JSON.stringify(agentMemory));
             }
          }
       
-      var isIdle = true !== eAgentMemory.toggleFromName.GO.valueCached;
-      console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?'IDLE':'SHOULD UPDATE'), eAgentMemory);
+      var isIdle = true !== agentMemory.toggleFromName.GO.valueCached;
+      console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?'IDLE':'UPDATE'), agentMemory);
       if (isIdle)
          {
          return;
          }
       if ('object' !== typeof sheet || null === sheet)
          {
-         sheet = spreadsheet.getSheetByName(eAgentMemory.sheetName);
+         sheet = spreadsheet.getSheetByName(agentMemory.sheetName);
          }
       try{
-         var agent = new Agent(sheet, utsLastUpdated, eAgentMemory, {});
-         var sentinel = Utilities.base64Encode(Math.random().toString());
-         var sentinelRange = sheet.getRange(1, 49);
-         sentinelRange.setValue(sentinel);
-         if (agent.turnOn() && sentinel === sentinelRange.getValue())
+         var agent = new Agent(sheet, {origin:'triggerPlatycoreSentinel',utsSheetLastUpdated: utsLastUpdated, memory: agentMemory});
+         if (agent.TurnOn())
             {
             try{
-               agent.step();
+               agent.Step();
                }
             catch (e)
                {
-               agent.error(ePlatycoreAgentKey + ': UPDATE', e, e.stack);
+               agent.Error(ePlatycoreAgentKey + ': Step', e, e.stack);
                }
             finally
                {
-               agent.turnOff();
+               agent.TurnOff();
                }
             }
          }
       catch (e)
          {
-         console.error(e);
+         console.error(e, e.stack);
          throw e;
          }
       }

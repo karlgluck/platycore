@@ -8,9 +8,11 @@ function onOpen()
                ui.createMenu("New...")
                      .addItem("Agent from Text...","menuNewAgentFromText")
                      .addSeparator()
-                     .addItem("Sandbox Agent", "menuNewAgent")
+                     .addItem("Sandbox Agent", "menuNewSandboxAgent")
                      //.addItem("Power On Self Test Mechanism no. 8 (POST-M8)", "menuNewSelfTestingAgent")
                )
+         .addSeparator()
+         .addItem("Step Agent", "menuStepAgent")
          .addSeparator()
          .addItem("Reinstall Agent", "menuReinstallAgent")
          .addItem("Uninstall Agent", "menuUninstallAgent")
@@ -22,10 +24,16 @@ function onOpen()
                      .addItem("Refresh", "menuRefreshSentinel")
                      .addItem("Stop", "menuStopSentinel")
                )
-         // .addSubMenu(
-         //       ui.createMenu("Debug")
-         //          .addItem("Dummy", "menuPlatycoreSentinel")
-         //       )
+         .addSubMenu(
+               ui.createMenu("Debug")
+                  .addItem("Test", "menuDebugTest")
+               )
          .addToUi();
    
+   }
+
+
+function menuDebugTest()
+   {
+   SpreadsheetApp.getActiveSheet().getRange(1, 49).setFormula('=VALUE(NOW())')
    }

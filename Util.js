@@ -40,3 +40,18 @@ function Util_isNumber(n)
    {
    return !isNaN(parseFloat(n)) && !isNaN(n - 0)
    }
+
+function Util_utsNowGet()
+   {
+   return new Date().getTime();
+   }
+
+var Util_makeLazyConstantMethod = function (self, name, valueCallback)
+   {
+   self[name] = function ()
+      {
+      var rv = valueCallback();
+      self[name] = (function (rvConstant) { return function () { return rvConstant }})(rv);
+      return rv;
+      }
+   };

@@ -6,7 +6,7 @@ function menuReinstallAgent()
       {  // the clean way using the API
       var agent = new Agent(sheet);
       var urlAgentInstructions = agent.urlAgentInstructionsGet();
-      agent.uninstall();
+      agent.Uninstall();
       }
    catch (e)
       {
@@ -18,17 +18,17 @@ function menuReinstallAgent()
          }
       catch (e)
          {
-         SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
+         SpreadsheetApp.getActiveSpreadsheet().toast('Uninstall failed: ' + e + ' ' + e.stack);
          return;
          }
       }
    try
       {
-      newAgent(urlAgentInstructions);
+      newAgent(urlAgentInstructions, 'menuReinstallAgent');
       }
    catch (e)
       {
-      SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
+      SpreadsheetApp.getActiveSpreadsheet().toast('Install failed: ' + e + ' ' + e.stack);
       return;
       }
    }

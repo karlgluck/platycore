@@ -75,7 +75,7 @@ ALSO make sure that EVERYTHING cleans up after itself on its output:
 - that way we can rely on the system scaling when it is running automatically "forever"
  with nobody looking at it
  - you are responsible for your "trash"
-   --> I'm looking at YOU, agent.log! -- where does this get cleaned up?
+   --> I'm looking at YOU, agent.Log! -- where does this get cleaned up?
 
    I think agent logs get trimmed by another guess-scheduled longer-running job 
 

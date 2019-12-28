@@ -2,20 +2,53 @@
 // and have the last time the sheet was changed
 // then be able to know how to clear its own cache
 
-function Agent (sheet_, utsSheetLastModified_, memory_, options_)
+function Agent (sheet_, config_)
    {
-   console.log('agent coming online: ', memory_);
+   console.log('agent coming online: ', sheet_.getName(), config_);
+
    var properties_ = PropertiesService.getDocumentProperties();
    var self_ = this;
-   options_ = options_ || {};
-   var isThisOn_ = options_.forceThisOn;
 
-   this.getSheetId = function ()
+   if (!!config_.shouldReuseMemoryPointer)            // If the user asks for it explicitly, we can carefully
+      {                                               // preserve the memory pointer so that outside sources
+      var [config_, memory_] = (function (config)     // can continue to edit the insides of the agent. By
+         {                                            // default, agents are isolated to prevent accidents.
+         if (config.hasOwnProperty('memory'))
+            {
+            var memory = config.memory;
+            delete config.memory;
+            var rvConfig = JSON.parse(JSON.stringify(config));
+            rvConfig.memory = config.memory = memory;
+            return [rvConfig, memory];
+            }
+         else
+            {
+            var rvConfig = JSON.parse(JSON.stringify(config));
+            return [rvConfig, rvConfig.memory];
+            }
+         })(config_);
+      }
+   else
       {
-      var rvSheetId = sheet_.getSheetId();
-      self_.getSheetId = (function (rv) { return function () { return rv }})(rvSheetId);
-      return rvSheetId;
-      };
+      config_ = JSON.parse(JSON.stringify(config_ || {}));
+      var memory_ = config_.memory;
+      }
+   var isThisOn_ = !!config_.forceThisOn;
+
+   //
+   // Apply defaults
+   //
+
+   if (!config_.hasOwnProperty('dtLockWait')) config_.dtLockWait = 15000;
+
+   //
+   // Accessors
+   //
+
+   Util_makeLazyConstantMethod(this, 'getSheetId', function () { return sheet_.getSheetId() });
+   Util_makeLazyConstantMethod(this, 'isVerbose_', function () { return !!config_.verbose && !self_.ReadToggle('VERBOSE') });
+
+   self_.isVerbose_ = function () { return true; };
 
    //
    // Load memory_ for this execution (clear cache, reserved flags, etc.)
@@ -34,7 +67,7 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
    (function (isCacheExpired)
       {
 
-      console.log('isCacheExpired: ' + isCacheExpired, isCacheExpired);
+      console.log('isCacheExpired', isCacheExpired);
 
       ['toggleFromName', 'fieldFromName'].forEach(function (kDictionary)
          {
@@ -62,35 +95,46 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
          }
 
 
-      })('undefined' === typeof utsSheetLastModified_
-            || (memory_.utsLastSaved >>> 0) < (utsSheetLastModified_ >>> 0));
-
-//   var cellSize_ = sheet_.getRowHeight(1);
+      })('undefined' === typeof config_.utsSheetLastUpdated
+            || (memory_.utsLastSaved >>> 0) < (config_.utsSheetLastUpdated >>> 0));
 
    this.urlAgentInstructionsGet = function ()
       {
       return memory_.urlAgentInstructions;
       };
 
-   this.reboot = function ()
+   this.Reboot = function ()
       {
-      self_.save();
-      var newMemory = JSON.parse(JSON.stringify(memory_));
-      newMemory.utsLastSaved = 0; // eliminate all caches
-      var newOptions = JSON.parse(JSON.stringify(options_));
-      return [new Agent(sheet_, utsSheetLastModified_, newMemory, newOptions), newMemory];
+      self_.Save();
+      if (config_.shouldReuseMemoryPointer)
+         {
+         delete config_.memory;
+         var newConfig = JSON.parse(JSON.stringify(config_));
+         newConfig.memory = memory_;
+         }
+      else
+         {
+         var newConfig = JSON.parse(JSON.stringify(config_));
+         }
+      newConfig.memory.utsLastSaved = 0;  // eliminate all caches
+      console.log('newConfig', newConfig);
+      var rvAgentAndMemory = [new Agent(sheet_, newConfig), newConfig.memory];
+      sheet_ = null;
+      config_ = null;
+      memory_ = null;
+      return rvAgentAndMemory;
       };
    
-   this.save = function ()
+   this.Save = function ()
       {
       properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };
    
-   this.uninstall = function ()
+   this.Uninstall = function ()
       {
       if (memory_.hasOwnProperty('uninstall'))
          {
-         self_.verbose(function () { return [memory_.uninstall] });
+         self_.Verbose(function () { return [memory_.uninstall] });
          try
             {
             eval(memory_.uninstall);
@@ -108,11 +152,14 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       {
       try
          {
-         return memory_.toggleFromName[name];
+         var rvToggle = memory_.toggleFromName[name];
          }
       catch (e)
          {
-         return { hasBeenRead: true, valueCached: false, r:1, c:49, w:1, t:'' };
+         }
+      finally
+         {
+         return rvToggle || { hasBeenRead: true, valueCached: false, r:1, c:49, w:1, t:'' };
          }
       };
 
@@ -120,11 +167,14 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       {
       try
          {
-         return memory_.scriptFromName[name];
+         var rvScript = memory_.scriptFromName[name];
          }
       catch (e)
          {
-         return { blocks: [] };
+         }
+      finally
+         {
+         return rvScript || { blocks: [] };
          }
       };
 
@@ -132,11 +182,14 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       {
       try
          {
-         return memory_.scriptFromName[name].blocks[iBlockIndex];
+         var rvScriptBlock = memory_.scriptFromName[name].blocks[iBlockIndex];
          }
       catch (e)
          {
-         return { valueCached: '', r:1, c:49, w:1, h:1 };
+         }
+      finally
+         {
+         return rvScriptBlock || { valueCached: '', r:1, c:49, w:1, h:1 };
          }
       };
    
@@ -146,11 +199,17 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
    //
    var fieldFromNameP_ = function (name)
       {
-      if (!memory_.hasOwnProperty('fieldFromName') || !memory_.fieldFromName.hasOwnProperty(name))
+      try
          {
-         return { hasBeenRead: true, value: '', r:1, c:49, w:1 };
+         var rvField = memory_.fieldFromName[name];
          }
-      return memory_.fieldFromName[name];
+      catch (e)
+         {
+         }
+      finally
+         {
+         return rvField || { valueCached: '', r:1, c:49, w:1, h:1 };
+         }
       };
 
    var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
@@ -183,7 +242,7 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       return null;
       };
 
-   this.readToggle = function (name)
+   this.ReadToggle = function (name)
       {
       var toggle = toggleFromNameP_(name);
       if (!toggle.hasOwnProperty('valueCached'))
@@ -198,7 +257,7 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       return toggle.valueCached;
       };
 
-   this.peekToggleP = function (name)
+   this.PeekToggleP = function (name)
       {
       var toggle = toggleFromNameP_(name);
       if (toggle.hasOwnProperty('valueCached'))
@@ -286,7 +345,7 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       field.hasBeenRead = true;
       var range = sheet_.getRange(field.r, field.c, 1, field.w);
       range.setValue(value);
-      updateFieldConditionalFormatRule_(field, range);
+      updateFieldConditionalFormatRule_(field, sheet_.getRange(field.r, field.c, field.h, field.w).getValue());
       };
 
    var updateFieldConditionalFormatRule_ = function (input, range)
@@ -346,9 +405,9 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
    
    var writeOutput_ = writeOutputFirstTime_;
 
-   this.verbose = function (callback)
+   this.Verbose = function (callback)
       {
-      if (isVerbose_())
+      if (self_.isVerbose_())
          {
          var output = callback();
          if (!Array.isArray(output))
@@ -361,52 +420,44 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       };
    
    // writes debug text to the output log for this sheet
-   this.log = function (message)
+   this.Log = function (message)
       {
       console.log.apply(console, arguments);
       writeOutput_(arguments).setFontColor('#00ff00').setBackground('black');
       };
    
    // writes an informational message to the output log for this sheet
-   this.info = function (message)
+   this.Info = function (message)
       {
       console.info.apply(console, arguments);
       writeOutput_(arguments).setFontColor('white').setBackground('black');
       };
    
    // writes a warning to the output log for this sheet
-   this.warn = function (message)
+   this.Warn = function (message)
       {
       console.warn.apply(console, arguments);
       writeOutput_(arguments).setFontColor('yellow').setBackground('#38340a');
       };
 
    // writes an error message to the output log for this sheet
-   this.error = function (message)
+   this.Error = function (message)
       {
       console.error.apply(console, arguments);
       writeOutput_(arguments).setFontColor('red').setBackground('#3d0404');
       };
 
-   var isVerbose_ = function ()
-      {
-      var rvVerbose = false;
-      if (options_.hasOwnProperty('verbose'))
-         {
-         rvVerbose = options_.verbose;
-         }
-      isVerbose_ = (function (value) { return function () { return value; }})(rvVerbose);
-      return rvVerbose;
-      };
-
-   this.turnOn = function ()
+   this.TurnOn = function ()
       {
       if (isThisOn_)
          {
          return true;
          }
+      var sentinel = Utilities.base64Encode(Math.random().toString());
+      var sentinelRange = sheet_.getRange(1, 49);
+      sentinelRange.setValue(sentinel);
       var lock = LockService.getDocumentLock();
-      if (!lock.tryLock(15000))
+      if (!lock.tryLock(config_.dtLockWait))
          {
          console.warn('lock prevented turnOn');
          return false;
@@ -419,7 +470,7 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
          var lockRange = sheet_.getRange(lockField.r, lockField.c, lockField.h, lockField.w);
          var onValue = !!onRange.getValue();
          var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (new Date().getTime() - (lockRange.getValue() >>> 0)); // TODO: test the lock override step
-         isThisOn_ = !onValue || tooLongSinceLastLocked;
+         isThisOn_ = (!onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
          if (isThisOn_)
             {
             if (!onValue)
@@ -435,6 +486,10 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
             console.warn('another process is currently running this agent');
             }
          }
+      catch (e)
+         {
+         agent.Error('TurnOn', e);
+         }
       finally 
          {
          lock.releaseLock();
@@ -443,16 +498,16 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       return isThisOn_;
       };
 
-   this.turnOff = function ()
+   this.TurnOff = function ()
       {
-      self_.verbose(function () { return ['shutting down...', isThisOn_, JSON.stringify(memory_)] });
+      self_.Verbose(function () { return ['shutting down...', isThisOn_, JSON.stringify(memory_)] });
       if (!isThisOn_)
          {
          return;
          }
       isThisOn_ = false;
       var lock = LockService.getDocumentLock();
-      if (lock.tryLock(15000))
+      if (lock.tryLock(config_.dtLockWait))
          {
          try
             {
@@ -466,10 +521,10 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
             lock = null;
             }
          }
-      self_.save();
+      self_.Save();
       };
 
-   this.step = function ()
+   this.Step = function ()
       {
       if (!isThisOn_)
          {
@@ -505,17 +560,16 @@ function Agent (sheet_, utsSheetLastModified_, memory_, options_)
       
       };
 
-   this.setNext = function (scriptName)
+   this.SetNext = function (scriptName)
       {
       };
    
-   this.reset = function ()
+   this.Reset = function ()
       {
       if (!isThisOn_)
          {
          throw "must be on"
          }
-      self_.readScript()
       };
 
    }

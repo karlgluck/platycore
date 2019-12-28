@@ -1,4 +1,4 @@
-function newAgent (urlAgentInstructions)
+function newAgent (urlAgentInstructions, origin)
    {
 
    var spreadsheet = SpreadsheetApp.getActive();
@@ -30,9 +30,16 @@ function newAgent (urlAgentInstructions)
             utsLastSaved: utsNow,
             shouldUpdate: false
             };
-      var agent = new Agent(sheet, utsNow, memory, {verbose: true, forceThisOn: true});
-      agent.save();
-      agent.info('Fetching ' + Util_clampStringLengthP(urlAgentInstructions, 50));
+      var agent = new Agent(sheet, {
+            origin: origin || 'newAgent',
+            utsSheetLastUpdated: utsNow,
+            memory: memory,
+            shouldReuseMemoryPointer: true,
+            verbose: true,
+            forceThisOn: true
+            });
+      agent.Save();
+      agent.Info('Fetching ' + Util_clampStringLengthP(urlAgentInstructions, 50));
       if (urlAgentInstructions.substring(0, 22) === 'data:text/json;base64,')
          {
          var jsonAgentInstructions = Util_stringFromBase64(urlAgentInstructions.substring(22));
@@ -41,7 +48,7 @@ function newAgent (urlAgentInstructions)
          {
          var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
          }
-      agent.info('jsonAgentInstructions', jsonAgentInstructions);
+      agent.Info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
 
       var conditionalFormatRules = [];
@@ -54,12 +61,20 @@ function newAgent (urlAgentInstructions)
             {
             sheet.setConditionalFormatRules(conditionalFormatRules);
             }
+         
+         console.log('memory for ' + iAgentInstruction + ' = ', memory);
 
          switch (eAgentInstruction)
             {
-            case 'freeze':
+            case 'NAME':
+               var name = agentInstructions[++iAgentInstruction];
+               memory.name = name;
+               agent.Info('Building agent "' + name + '" (platycoreAgent' + sheet.getSheetId() + ')');
+               break;
+
+            case 'FREEZE':
                var qrFrozenRows = agentInstructions[++iAgentInstruction] >>> 0;
-               agent.verbose(function () { return 'freezing ' + qrFrozenRows + ' rows'; });
+               agent.Verbose(function () { return 'freezing ' + qrFrozenRows + ' rows'; });
                var riHeaders = qrFrozenRows;
                sheet.insertRowsBefore(1, qrFrozenRows);
                sheet.setFrozenRows(qrFrozenRows);
@@ -77,35 +92,31 @@ function newAgent (urlAgentInstructions)
                      .setBackground('#434343')
                      .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
                sheet.getRange(riHeaders, 1, 1, 4).merge().setValue(' MESSAGES');
-               [agent, memory] = agent.reboot();
+               console.log('before freeze boot, memory = ', memory);
+               [agent, memory] = agent.Reboot();
+               console.log('after freeze, memory = ', memory);
                break;
 
-            case 'name':
-               var name = agentInstructions[++iAgentInstruction];
-               memory.name = name;
-               agent.info('Building agent "' + name + '" (platycoreAgent' + sheet.getSheetId() + ')');
-               break;
-
-            case 'reboot':
-               agent.verbose(function () { return 'reboot'; });
-               [agent, memory] = agent.reboot();
+            case 'REBOOT':
+               agent.Verbose(function () { return 'reboot'; });
+               [agent, memory] = agent.Reboot();
                break;
             
-            case 'turnOff':
-               agent.turnOff();
+            case 'OFF':
+               agent.TurnOff();
                break;
 
-            case 'info':
-               agent.info(agentInstructions[++iAgentInstruction]);
+            case 'INFO':
+               agent.Info(agentInstructions[++iAgentInstruction]);
                break;
 
-            case 'eval':
+            case 'EVAL':
                var code = agentInstructions[++iAgentInstruction];
-               agent.log(code);
+               agent.Log(code);
                eval(code);
                break;
 
-            case 'range':
+            case 'RANGE':
                var rangeCommand = agentInstructions[++iAgentInstruction];
                var range = sheet.getRange(rangeCommand.r, rangeCommand.c, rangeCommand.h || 1, rangeCommand.w || 1);
                if (rangeCommand.hasOwnProperty('t'))
@@ -135,13 +146,13 @@ function newAgent (urlAgentInstructions)
                   }
                break;
 
-            case 'uninstall':
+            case 'UNINSTALL':
                var uninstallScript = agentInstructions[++iAgentInstruction].join('\n');
                memory.uninstall = uninstallScript;
-               [agent, memory] = agent.reboot();
+               [agent, memory] = agent.Reboot();
                break;
 
-            case 'field':
+            case 'FIELD':
                (function (field)
                   {
                   if (!field.hasOwnProperty('w'))
@@ -153,7 +164,7 @@ function newAgent (urlAgentInstructions)
                      field.h = 1;
                      }
                   memory.fieldFromName[field.k] = field;
-                  agent.log('+field: ' + field.k, field.r, field.c, field.h, field.w);
+                  agent.Log('+field: ' + field.k, field.r, field.c, field.h, field.w);
                   var range = sheet.getRange(field.r, field.c, field.h, field.w);
                   range.merge()
                         .setBackground(field.hasOwnProperty('bg') ? field.bg : '#000000')
@@ -169,25 +180,26 @@ function newAgent (urlAgentInstructions)
                      {
                      range.setFormula(field.f);
                      }
+                  if (!field.hasOwnProperty('value'))
+                     {
+                     field.value = '';
+                     }
+                  var textStyleBuilder = range.getTextStyle().copy();
                   if (field.isReadonly)
                      {
-                     range.setFontColor(field.hasOwnProperty('fg') ? field.fg : '#666666');
+                     var fontColor = field.hasOwnProperty('fg') ? field.fg : '#666666';
                      }
                   else
                      {
-                     if (!field.hasOwnProperty('value'))
-                        {
-                        field.value = '';
-                        }
                      var fontColor = field.hasOwnProperty('fg') ? field.fg : '#00ffff';
-                     var textStyleBuilder = range.getTextStyle().copy();
                      textStyleBuilder.setUnderline(true);
-                     range.setFontColor('#ff00ff').setTextStyle(textStyleBuilder.build());
-                     conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
-                           .setRanges([range])
-                           .whenTextEqualTo(field.value)
-                           .setFontColor(fontColor));
                      }
+                  textStyleBuilder.setForegroundColor('#ff00ff');
+                  range.setTextStyle(textStyleBuilder.build());
+                  conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+                        .setRanges([range])
+                        .whenTextEqualTo(field.value)
+                        .setFontColor(fontColor));
                   delete field.fg;
                   })(agentInstructions[++iAgentInstruction]);
                break;
@@ -218,7 +230,7 @@ function newAgent (urlAgentInstructions)
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
-            case 'script': // script "<name>" <qBlockCount> [{"r": "<riRow>", "c": "<ciCol>"} [<"code"> [, <"code">] ...for each line of code]] ...for each section
+            case 'SCRIPT': // SCRIPT "<name>" <qBlockCount> [{"r": "<riRow>", "c": "<ciCol>"} [<"code"> [, <"code">] ...for each line of code]] ...for each section
                var kName = agentInstructions[++iAgentInstruction];
                var qBlockCount = agentInstructions[++iAgentInstruction];
                var script = {blocks:[]};
@@ -237,16 +249,16 @@ function newAgent (urlAgentInstructions)
                         .setBorder(true, true, true, true, true, true, '#434343', SpreadsheetApp.BorderStyle.SOLID_THICK)
                         .setValue(iBlock);
                   }
-               agent.log('+script: ' + kName, script.blocks);
+               agent.Log('+script: ' + kName, script.blocks);
                memory.scriptFromName[kName] = script;
                memory.scriptNames.push(kName);
                break;
 
-            case 'toast':
+            case 'TOAST':
                spreadsheet.toast(agentInstructions[++iAgentInstruction]);
                break;
 
-            case 'toggle':
+            case 'TOGGLE':
                (function (toggle)
                   {
                   memory.toggleFromName[toggle.k] = toggle;
@@ -254,7 +266,7 @@ function newAgent (urlAgentInstructions)
                   toggle.isReadonly = !!toggle.isReadonly;
                   toggle.valueCached = !!toggle.value;
                   delete toggle.value;
-                  agent.log('+toggle: ' + toggle.k + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
+                  agent.Log('+toggle: ' + toggle.k + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
                   var checkboxRange = sheet.getRange(toggle.r, toggle.c).insertCheckboxes();
                   if (toggle.isReadonly)
                      {
@@ -303,7 +315,8 @@ function newAgent (urlAgentInstructions)
       {
       if (!!agent)
          {
-         agent.error('exception during agent initialization', e, e.stack);
+         agent.Error('step ' + iAgentInstruction + ' threw an exception', iAgentInstruction, eAgentInstruction);
+         agent.Error('exception during agent initialization', e, e.stack);
          }
       spreadsheet.toast(e + ' ' + e.stack);
       return;
