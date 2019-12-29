@@ -79,10 +79,10 @@ function Agent (sheet_, config_)
          {
          var eDictionary = memory_[kDictionary];
          
-         Object.keys(eDictionary).forEach(function (kName)   // clear hasBeenRead from all of the interactables
+         Object.keys(eDictionary).forEach(function (kName)
             {
             var dictionary = eDictionary[kName];
-            delete dictionary.hasBeenRead; // won't apply to all of them but it doesn't hurt
+            delete dictionary.fRuleIsSynced; // won't apply to all of them but it doesn't hurt
             if (isCacheExpired) delete dictionary.valueCached; // this is really what we want to do
             });
          
@@ -118,6 +118,8 @@ function Agent (sheet_, config_)
                return{
                      r: eRange.getRow(),
                      c: eRange.getColumn(),
+                     w: eRange.getWidth(),
+                     h: eRange.getHeight(),
                      gasRange: eRange,
                      }
                })
@@ -126,14 +128,13 @@ function Agent (sheet_, config_)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   var getConditionalFormatRuleByRange = function (range)
+   var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
       {
-      var ir = range.getRow(), ic = range.getColumn();
       for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
          {
          var eConditionalFormatRule = conditionalFormatRules_[i];
          var ranges = eConditionalFormatRule.ranges;
-         if (ranges.length === 1 && ranges[0].r === ir && ranges[0].c === ic)
+         if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
             {
             return eConditionalFormatRule;
             }
@@ -151,11 +152,11 @@ function Agent (sheet_, config_)
 ***********   ********     ********      ******      ****         *         **********************************************************
 *************************************************************************************************************************************/
 
-   var updateToggleConditionalFormatRule_ = function (toggle, range)
+   var updateToggleConditionalFormatRule_ = function (toggle)
       {
-      var rule = getConditionalFormatRuleByRange(range);
+      var rule = getConditionalFormatRuleByArea(toggle.r, toggle.c, 1, toggle.w);
       var builder = rule.gasConditionalFormatRule.copy();
-      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.valueCached?',FALSE)':',TRUE)'));
+      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) +(toggle.valueCached?',FALSE)':',TRUE)'));
       rule.gasConditionalFormatRule = builder.build();
       sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
       return range;
@@ -172,10 +173,10 @@ function Agent (sheet_, config_)
             {
             toggle.valueCached = !!sheet_.getRange(toggle.r, toggle.c).getValue();
             }
-         if (!toggle.hasOwnProperty('hasBeenRead'))
+         if (!toggle.hasOwnProperty('fRuleIsSynced'))
             {
-            updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
-            toggle.hasBeenRead = true;
+            updateToggleConditionalFormatRule_(toggle);
+            toggle.fRuleIsSynced = null;
             }
          return toggle.valueCached;
          }
@@ -194,7 +195,7 @@ function Agent (sheet_, config_)
          {
          value = !!value;
          var toggle = memory_.toggleFromName[name];
-         toggle.hasBeenRead = false;
+         delete toggle.fRuleIsSynced;
          var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
          if (toggle.isReadonly)
             {
@@ -206,7 +207,7 @@ function Agent (sheet_, config_)
             }
          updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
          toggle.valueCached = value;
-         toggle.hasBeenRead = true;
+         toggle.fRuleIsSynced = null;
          }
       catch (e)
          {
@@ -224,9 +225,9 @@ function Agent (sheet_, config_)
 ******   *********   ****         ***         ***      *******************************************************************************
 *************************************************************************************************************************************/
 
-   var updateFieldConditionalFormatRule_ = function (field, range)
+   var updateFieldConditionalFormatRule_ = function (field)
       {
-      var rule = getConditionalFormatRuleByRange(range);
+      var rule = getConditionalFormatRuleByArea(field.r, field.c, field.h, field.w);
       var builder = rule.gasConditionalFormatRule.copy();
       builder.whenTextEqualTo(field.valueCached);
       rule.gasConditionalFormatRule = builder.build();
@@ -244,10 +245,10 @@ function Agent (sheet_, config_)
             {
             field.valueCached = String(sheet_.getRange(field.r, field.c).getValue());
             }
-         if (!field.hasOwnProperty('hasBeenRead'))
+         if (!field.hasOwnProperty('fRuleIsSynced'))
             {
-            updateFieldConditionalFormatRule_(field, sheet_.getRange(field.r, field.c, field.h, field.w));
-            field.hasBeenRead = true;
+            updateFieldConditionalFormatRule_(field);
+            field.fRuleIsSynced = null;
             }
          return field.valueCached;
          }
@@ -266,12 +267,12 @@ function Agent (sheet_, config_)
          {
          value = String(value);
          var field = memory_.fieldFromName[name];
-         field.hasBeenRead = false;
-         var fieldRange = sheet_.getRange(field.r, field.c, field.h, field.w);
-         fieldRange.setValue(value);
-         updateFieldConditionalFormatRule_(field, fieldRange);
+         delete field.fRuleIsSynced;
+         sheet_.getRange(field.r, field.c, field.h, field.w)
+               .setValue(value);
          field.valueCached = value;
-         field.hasBeenRead = true;
+         updateFieldConditionalFormatRule_(field);
+         field.fRuleIsSynced = null;
          }
       catch (e)
          {
