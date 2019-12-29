@@ -240,7 +240,7 @@ function newAgent (urlAgentInstructions, origin)
                var note = JSON.parse(JSON.stringify(location));
                note.valueCached = value;
                memory.noteFromName[kName] = note;
-               sheet.getRange(location.r, location.c).setNote(JSON.stringify(value));
+               sheet.getRange(location.r, location.c).setNote(Util_isString(value) ? value : JSON.stringify(value));
                break;
             
             case 'RAINBOW_BOX':
@@ -261,7 +261,7 @@ function newAgent (urlAgentInstructions, origin)
 
             case 'SCRIPT': // SCRIPT "<name>" <qBlockCount>
                var kName = agentInstructions[++iAgentInstruction];
-               var script = {blockNoteNames:agentInstructions[++iAgentInstruction]};
+               var script = {blockCodeNoteNames:agentInstructions[++iAgentInstruction]};
                agent.Log('+script: ' + kName, script.blocks);
                memory.scriptFromName[kName] = script;
                memory.scriptNames.push(kName);

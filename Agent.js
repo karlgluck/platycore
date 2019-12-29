@@ -46,7 +46,7 @@ function Agent (sheet_, config_)
    //
 
    Util_makeLazyConstantMethod(this, 'getSheetId', function () { return sheet_.getSheetId() });
-   Util_makeLazyConstantMethod(this, 'isVerbose_', function () { return !!config_.verbose || !self_.ReadToggle('VERBOSE') });
+   Util_makeLazyConstantMethod(this, 'isVerbose_', function () { return !!config_.verbose || self_.ReadToggle('VERBOSE') });
 
    //
    // Load memory_ for this execution (clear cache, reserved flags, etc.)
@@ -247,10 +247,7 @@ function Agent (sheet_, config_)
       catch (e)
          {
          console.warn(e, e.stack);
-         }
-      finally
-         {
-         return false;
+         return undefined;
          }
       };
 
@@ -309,14 +306,11 @@ function Agent (sheet_, config_)
       catch (e)
          {
          console.warn(e, e.stack);
-         }
-      finally
-         {
-         return '';
+         return undefined;
          }
       };
    
-   this.ReadFieldAsArrayIndex = function (name, mArrayLength)
+   this.ReadArrayIndexFromField = function (name, mArrayLength)
       {
       var value = self_.ReadField(name);
       if (Util_isNumber(value))
@@ -324,13 +318,13 @@ function Agent (sheet_, config_)
          value = value >>> 0;
          if (value > mArrayLength - 1)
             {
-            return null;
+            return undefined;
             }
          return value;
          }
       else
          {
-         return null;
+         return undefined;
          }
       };
    
@@ -362,24 +356,7 @@ function Agent (sheet_, config_)
       sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
       };
    
-   this.readScriptBlock = function (name, iBlockIndex)
-      {
-      try
-         {
-         var block = memory_.scriptFromName[name].blocks[iBlockIndex];
-         if (!block.hasOwnProperty('valueCached'))
-            {
-            block.valueCached = String(sheet_.getRange(block.r, block.c).getNote());
-            }
-         return block.valueCached;
-         }
-      catch (e)
-         {
-         return '';
-         }
-      };
-   
-   this.readNote = function (name)
+   this.ReadNote = function (name)
       {
       try
          {
@@ -393,11 +370,23 @@ function Agent (sheet_, config_)
       catch (e)
          {
          console.warn(e, e.stack);
-         return '';
+         return undefined;
+         }
+      };
+
+   this.ReadObjectFromNote = function (name)
+      {
+      try
+         {
+         return JSON.parse(self_.ReadNote(name));
+         }
+      catch (e)
+         {
+         return {};
          }
       };
    
-   this.writeNote = function (name)
+   this.WriteNote = function (name)
       {
       try
          {
@@ -574,28 +563,24 @@ function Agent (sheet_, config_)
          {
          throw "must be on"
          }
-      var iScriptIndex = self_.ReadFieldAsArrayIndex('SI', memory_.scriptNames.length);
+      var iScriptIndex = self_.ReadArrayIndexFromField('SI', memory_.scriptNames.length);
       if (memory_.scriptNames.hasOwnProperty(iScriptIndex))
          {
          var script = scriptFromNameP_(memory_.scriptNames[iScriptIndex]);
-         }
+         } 
       else
          {
          iScriptIndex = memory_.scriptNames.indexOf('RESET');
          self_.writeField('SI', iScriptIndex);
          var script = scriptFromNameP_('RESET');
          }
-      var iBlockIndex = self_.ReadFieldAsArrayIndex('BI', script.blocks.length);
+      var iBlockIndex = self_.ReadArrayIndexFromField('BI', script.blockCodeNoteNames.length);
       if (!script.blocks.hasOwnProperty(iBlockIndex))
          {
          iBlockIndex = 0;
          self_.writeField('BI', iBlockIndex);
          }
-      var block = script.blocks[iBlockIndex];
-      if (!block.hasOwnProperty('valueCached'))
-         {
-         block.valueCached = String(sheet_.getRange(block.r, block.c).getNote());
-         }
+      var note = self_.ReadNote(script.blockCodeNoteNames[iBlockIndex]);
       
       (function (agent)
          {
