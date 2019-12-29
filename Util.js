@@ -46,6 +46,11 @@ function Util_isObject(v)
    return typeof (v) === 'object' && v !== null;
    }
 
+function Util_isArray(v)
+   {
+   return Array.isArray(v);
+   }
+
 // https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
 function Util_isString(v)
    {

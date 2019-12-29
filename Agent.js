@@ -510,7 +510,7 @@ function Agent (sheet_, config_)
                {
                console.warn('previous lock on platycoreAgent' + sheet_.getSheetId() + ' aged out and is being ignored');
                }
-            self_.writeField('LOCK', new Date().getTime());
+            self_.WriteField('LOCK', new Date().getTime());
             onRange.setFormula('=TRUE');
             onToggle.valueCached = onValue = true;
             }
@@ -521,7 +521,7 @@ function Agent (sheet_, config_)
          }
       catch (e)
          {
-         agent.Error('TurnOn', e);
+         self_.Error('TurnOn', e);
          }
       finally 
          {
@@ -571,14 +571,14 @@ function Agent (sheet_, config_)
       else
          {
          iScriptIndex = memory_.scriptNames.indexOf('RESET');
-         self_.writeField('SI', iScriptIndex);
+         self_.WriteField('SI', iScriptIndex);
          var script = scriptFromNameP_('RESET');
          }
       var iBlockIndex = self_.ReadArrayIndexFromField('BI', script.blockCodeNoteNames.length);
       if (!script.blocks.hasOwnProperty(iBlockIndex))
          {
          iBlockIndex = 0;
-         self_.writeField('BI', iBlockIndex);
+         self_.WriteField('BI', iBlockIndex);
          }
       var note = self_.ReadNote(script.blockCodeNoteNames[iBlockIndex]);
       

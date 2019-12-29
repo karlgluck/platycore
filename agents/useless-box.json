@@ -6,9 +6,9 @@
           "TOGGLE",  {"r": 1, "c": 9, "k":"STEP", "w": 3},
 
              "REM", "[RESET]",
-     "RAINBOW_BOX",  {"r": 2, "c": 1}, 0, "0",
+     "RAINBOW_BOX",  {"r": 1, "c": 24}, 0, "0",
             "NOTE",  "RESET.0",
-                     {"r": 2, "c": 1},
+                     {"r": 1, "c": 24},
                      [
                      "agent.WriteToggle('STEP', false);",
                      "agent.Log('off you go! lock = ', agent.ReadField('LOCK'));"

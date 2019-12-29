@@ -238,9 +238,21 @@ function newAgent (urlAgentInstructions, origin)
                var location = agentInstructions[++iAgentInstruction];
                var value = agentInstructions[++iAgentInstruction];
                var note = JSON.parse(JSON.stringify(location));
-               note.valueCached = value;
                memory.noteFromName[kName] = note;
-               sheet.getRange(location.r, location.c).setNote(Util_isString(value) ? value : JSON.stringify(value));
+               if (Util_isString(value))
+                  {
+                  // value = value;
+                  }
+               else if (Util_isArray(value) && value.every(function (e) { return Util_isString(e) }))
+                  {
+                  value = value.join('\n'); // this is an array of strings, so turn it into lines of text
+                  }
+               else
+                  {
+                  value = JSON.stringify(value);
+                  }
+               sheet.getRange(location.r, location.c).setNote(value);
+               note.valueCached = value;
                break;
             
             case 'RAINBOW_BOX':
