@@ -72,7 +72,7 @@ function newAgent (urlAgentInstructions, origin)
                break;
 
             case 'FREEZE':
-               var qrFrozenRows = agentInstructions[++iAgentInstruction] >>> 0;
+               var qrFrozenRows = agentInstructions[++iAgentInstruction];
                agent.Verbose(function () { return 'freezing ' + qrFrozenRows + ' rows'; });
                var riHeaders = qrFrozenRows;
                sheet.insertRowsBefore(1, qrFrozenRows);
@@ -233,7 +233,7 @@ function newAgent (urlAgentInstructions, origin)
                var kName = agentInstructions[++iAgentInstruction];
                var qBlockCount = agentInstructions[++iAgentInstruction];
                var script = {blocks:[]};
-               var backgroundColor = Util_rainbowColorFromValueP(Object.keys(memory.scriptFromName).length);
+               var backgroundColor = Util_rainbowColorFromAnyP(Object.keys(memory.scriptFromName).length);
                for (var iBlock = 0; iBlock < qBlockCount; ++iBlock)
                   {
                   var blockProperties = agentInstructions[++iAgentInstruction];

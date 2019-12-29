@@ -94,7 +94,7 @@ function Agent (sheet_, config_)
 
 
       })('undefined' === typeof config_.utsSheetLastUpdated
-            || (memory_.utsLastSaved >>> 0) < (config_.utsSheetLastUpdated >>> 0));
+            || memory_.utsLastSaved < config_.utsSheetLastUpdated);
 
    this.urlAgentInstructionsGet = function ()
       {
@@ -468,7 +468,7 @@ function Agent (sheet_, config_)
          var lockField = memory_.fieldFromName.LOCK;
          var lockRange = sheet_.getRange(lockField.r, lockField.c, lockField.h, lockField.w);
          var onValue = !!onRange.getValue();
-         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (new Date().getTime() - (lockRange.getValue() >>> 0)); // TODO: test the lock override step
+         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (new Date().getTime() - lockRange.getValue()); // TODO: test the lock override step
          isThisOn_ = (!onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
          if (isThisOn_)
             {

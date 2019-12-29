@@ -27,7 +27,7 @@ function GAS_A1AddressFromCoordinatesP (irRow, icColumn)
       rvColumnLetters = String.fromCharCode(65 + iLetter) + rvColumnLetters;
       icColumn = (icColumn - iLetter - 1) / 26;
       }
-   return '$' + rvColumnLetters + (irRow >>> 0).toString();
+   return '$' + rvColumnLetters + (irRow >>> 0).toString(); // can't have more than 2^32 rows so >>> is ok
    }
 
 function GAS_updateConditionalFormatRule (sheet, irRow, icColumn, wcWidth, hrHeight, callback)

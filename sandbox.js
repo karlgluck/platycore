@@ -1,6 +1,16 @@
 
 /*
 
+ ==== HARDENING PHASE RIGHT NOW === WOOP WOOP ======
+
+- randomly generate scripts
+- test all operations to see if they break shit
+- boil down ideas and delete loose ends so we have a fresh slate
+
+
+
+
+
 next tasks are:
 - run executables!
 - empty cell in SI or BI causes RESET, which runs the RESET block

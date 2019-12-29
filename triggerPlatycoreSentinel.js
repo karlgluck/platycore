@@ -20,7 +20,7 @@ function triggerPlatycoreSentinel ()
       {
       
       var utsLastUpdated = file.getLastUpdated().getTime();
-      var isPlatycoreMemoryLatest = platycore.hasOwnProperty('utsLastSaved') && (platycore.utsLastSaved >>> 0) >= utsLastUpdated;
+      var isPlatycoreMemoryLatest = platycore.hasOwnProperty('utsLastSaved') && (platycore.utsLastSaved >= utsLastUpdated);
 
       var ePlatycoreAgentKey = keys[iKey];
       var sheet = undefined;
@@ -66,17 +66,18 @@ function triggerPlatycoreSentinel ()
             continue;
             }
          var go = agentMemory.toggleFromName.GO;
-         var goValue = !!sheet.getRange(go.r, go.c).getValue();
-         if (goValue !== go.valueCached)
+         go.valueCached = !!sheet.getRange(go.r, go.c).getValue();
+         if (agentMemory.fieldFromName.hasOwnProperty('WAKE'))
             {
-            go.valueCached = goValue;
-            properties.setProperty(ePlatycoreAgentKey, JSON.stringify(agentMemory));
+            var wake = agentMemory.fieldFromName.WAKE;
+            wake.valueCached = sheet.getRange(wake.r, wake.c).getValue();
             }
          }
       
       var isIdle = true !== agentMemory.toggleFromName.GO.valueCached;
-      console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?'IDLE':'UPDATE'), agentMemory);
-      if (isIdle)
+      var shouldWake = agentMemory.fieldFromName.hasOwnProperty('WAKE') && agentMemory.fieldFromName.WAKE.valueCached < utsPlatycoreNow;
+      console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?(shouldWake?'WAKE':'IDLE'):'UPDATE'), agentMemory);
+      if (isIdle && !shouldWake)
          {
          return;
          }

@@ -26,6 +26,8 @@ function onOpen()
                )
          .addSubMenu(
                ui.createMenu("Debug")
+                  .addItem("Write Agent Memory", "menuWriteAgentMemory")
+                  .addItem("Read Agent Memory", "menuReadAgentMemory")
                   .addItem("Test", "menuDebugTest")
                )
          .addToUi();
