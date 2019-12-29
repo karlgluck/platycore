@@ -70,15 +70,22 @@ function newAgent (urlAgentInstructions, origin)
                memory.name = name;
                agent.Info('Building agent "' + name + '" (platycoreAgent' + sheet.getSheetId() + ')');
                break;
+            
+            case 'TOOLBAR':
+               var irToolbar = agentInstructions[++iAgentInstruction];
+               sheet.getRange(irToolbar, 1, 1, 49)
+                     .setBackground('#434343')
+                     .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
+               break;
 
             case 'FREEZE':
                var qrFrozenRows = agentInstructions[++iAgentInstruction];
                agent.Verbose(function () { return 'freezing ' + qrFrozenRows + ' rows'; });
-               var riHeaders = qrFrozenRows;
+               var irHeaders = qrFrozenRows;
                sheet.insertRowsBefore(1, qrFrozenRows);
                sheet.setFrozenRows(qrFrozenRows);
                var mrMaxRows = sheet.getMaxRows();
-               var riFirstRowToDelete = Math.max(riHeaders + 2, sheet.getLastRow() + 1);
+               var riFirstRowToDelete = Math.max(irHeaders + 2, sheet.getLastRow() + 1);
                sheet.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
                mrMaxRows = riFirstRowToDelete - 1;
                sheet.getRange(1, 1, mrMaxRows, 49)
@@ -87,13 +94,7 @@ function newAgent (urlAgentInstructions, origin)
                      .setFontFamily('Courier New')
                      .setVerticalAlignment('top')
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-               sheet.getRange(1, 1, 1, 49)
-                     .setBackground('#434343')
-                     .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
-               sheet.getRange(riHeaders, 1, 1, 4).merge().setValue(' MESSAGES');
-               console.log('before freeze boot, memory = ', memory);
                [agent, memory] = agent.Reboot();
-               console.log('after freeze, memory = ', memory);
                break;
 
             case 'REBOOT':

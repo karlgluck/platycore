@@ -1,16 +1,15 @@
 [
-            "NAME",  "sandbox",
-          "FREEZE",  8,
+            "NAME",  "Useless Box",
+          "FREEZE",  1,
          "TOOLBAR",  1,
-           "RANGE",  {"r": 8, "c":1, "w":4, "merge":"across", "t": " MESSAGES"},
 
           "TOGGLE",  {"r": 1, "c": 9, "k":"STEP", "w": 3},
           "SCRIPT",  "RESET",
                      1,
-                     {"r": 2, "c": 1},
+                     {"r": 1, "c": 23},
                         [
                         "agent.writeToggle('STEP', false);",
-                        "agent.Log('off you go! lock = ', agent.readField('LOCK'));"
+                        "agent.Log('Nope! STEP off.', new Date().getTime());"
                         ],
 
           "TOGGLE",  {"r": 1, "c": 7, "k":"IN", "w": 2, "isReadonly": true},
