@@ -36,7 +36,7 @@ function newAgent (urlAgentInstructions, origin)
             utsSheetLastUpdated: utsNow,
             conditionalFormatRules: conditionalFormatRules,
             memory: memory,
-            shouldReuseMemoryPointer: true,
+            shouldReusePointers: true,
             verbose: true,
             forceThisOn: true
             });

@@ -6,52 +6,70 @@ function Agent (sheet_, config_)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
-// conditionalFormatRules can be shared with the caller so that
-// newAgent can manipulate them, but this is not the common case.
+//
 //
 
-   if (config_.hasOwnProperty('conditionalFormatRules'))
-      {
-      var conditionalFormatRules_ = config_.conditionalFormatRules;
-      delete config_.conditionalFormatRules;
-      }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   if (Util_isObjectPropertyTruthy(config_, 'shouldReuseMemoryPointer')) // If the user asks for it explicitly, we can carefully
-      {                                                              // preserve the memory pointer so that outside sources
-      var [config_, memory_] = (function (config)                    // can continue to edit the insides of the agent. By
+   if (Util_isObjectPropertyTruthy(config_, 'shouldReusePointers'))  // If the user asks for it explicitly, we can carefully
+      {                                                              // preserve pointers from the config so that outside sources
+      config_ = (function (config)                                   // can continue to edit the insides of the agent. By
          {                                                           // default, agents are isolated to prevent accidents.
-         if (config.hasOwnProperty('memory'))
+         var saved = {};
+         var savedKeys = ['memory', 'conditionalFormatRules'];
+         savedKeys.forEach(function (eKey) { saved[eKey] = config[eKey]; });
+         var rvConfig = JSON.parse(JSON.stringify(config));
+         savedKeys.forEach(function (eKey)
             {
-            var memory = config.memory;
-            delete config.memory;
-            var rvConfig = JSON.parse(JSON.stringify(config));
-            rvConfig.memory = config.memory = memory;
-            return [rvConfig, memory];
-            }
-         else
-            {
-            var rvConfig = JSON.parse(JSON.stringify(config));
-            return [rvConfig, rvConfig.memory];
-            }
+            if ('undefined' === typeof saved[eKey])
+               {
+               delete rvConfig[eKey];
+               }
+            else
+               {
+               rvConfig[eKey] = saved[eKey];
+               }
+            });
+         return rvConfig;
          })(config_);
+      if (!Util_isArray(config_.conditionalFormatRules))
+         {
+         console.error('when requesting shouldReusePointers, you need to have a reason such as initializing a new agent (and also to provide conditionalFormatRules)');
+         }
       }
    else
       {
       config_ = JSON.parse(JSON.stringify(config_ || {}));
-      var memory_ = config_.memory;
       }
    var isThisOn_ = !!config_.forceThisOn;
+
+   if (!Util_isArray(config_.conditionalFormatRules))
+      {
+      config_.conditionalFormatRules = sheet_.getConditionalFormatRules().map(function (eRule)
+         {
+         return{
+               gasConditionalFormatRule: eRule,
+               ranges: eRule.getRanges().map(function (eRange)
+                  {
+                  return{
+                        r: eRange.getRow(),
+                        c: eRange.getColumn(),
+                        w: eRange.getWidth(),
+                        h: eRange.getHeight(),
+                        gasRange: eRange
+                        }
+                  })
+               }
+         });
+      }
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
       {
-      for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
+      var rules = config_.conditionalFormatRules;
+      for (var i = 0, n = rules.length; i < n; ++i)
          {
-         var eConditionalFormatRule = conditionalFormatRules_[i];
+         var eConditionalFormatRule = rules[i];
          var ranges = eConditionalFormatRule.ranges;
          if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
             {
@@ -83,11 +101,11 @@ function Agent (sheet_, config_)
 // Load memory_ for this execution (clear cache, reserved flags, etc.)
 //
 
-   if ('object' !== typeof memory_ || null === memory_)
+   if (!Util_isObject(config_.memory))
       {
-      memory_ = JSON.parse(PropertiesService.getDocumentProperties().getProperty('platycoreAgent' + this.getSheetId()));
+      config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty('platycoreAgent' + this.getSheetId()));
       }
-
+   var memory_ = config_.memory;
    memory_.toggleFromName = memory_.toggleFromName || {};
    memory_.fieldFromName = memory_.fieldFromName || {};
    memory_.scriptFromName = memory_.scriptFromName || {};
@@ -155,7 +173,7 @@ function Agent (sheet_, config_)
       var builder = rule.gasConditionalFormatRule.copy();
       builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) +(toggle.valueCached?',FALSE)':',TRUE)'));
       rule.gasConditionalFormatRule = builder.build();
-      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
+      sheet_.setConditionalFormatRules(config_.conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
       return range;
       };
 
@@ -228,7 +246,7 @@ function Agent (sheet_, config_)
       var builder = rule.gasConditionalFormatRule.copy();
       builder.whenTextEqualTo(field.valueCached);
       rule.gasConditionalFormatRule = builder.build();
-      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
+      sheet_.setConditionalFormatRules(config_.conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
