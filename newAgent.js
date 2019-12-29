@@ -321,14 +321,11 @@ function newAgent (urlAgentInstructions, origin)
                      range.setBackground(toggle.bg);
                      delete toggle.bg;
                      }
-                  if (!toggle.isReadonly)
-                     {
-                     conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
-                           .setRanges([range])
-                           .whenFormulaSatisfied((toggle.valueCached ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) + ')')
-                           .setFontColor('#ff00ff')
-                           );
-                     }
+                  conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
+                        .setRanges([range])
+                        .whenFormulaSatisfied((toggle.valueCached ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) + ')')
+                        .setFontColor('#ff00ff')
+                        );
                   delete toggle.k;
                   })(agentInstructions[++iAgentInstruction]);
                break;
