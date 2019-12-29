@@ -5,6 +5,6 @@ function menuNewAgentFromText()
    if (response.getSelectedButton() === ui.Button.OK)
       {
       console.log('encoding',response.getResponseText());
-      newAgent('data:text/json;base64,' + Util_base64FromString(response.getResponseText()), 'menuNewAgentFromText');
+      newAgent('data:text/json;base64,' + Util_base64FromString(response.getResponseText()), null, 'menuNewAgentFromText');
       }
    }

@@ -87,3 +87,14 @@ var Util_makeLazyConstantMethod = function (self, name, valueCallback)
       return rv;
       }
    };
+
+var Util_stackTraceGet = function (qLevelsUp)
+   {
+   try {
+      undefined.hasOwnProperty(null)
+      }
+   catch (e)
+      {
+      return e.stack.split('\n').slice(qLevelsUp).map(function (s) { return s.trim() }).join('\n')
+      }
+   };

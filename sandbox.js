@@ -7,16 +7,21 @@
 - test all operations to see if they break shit
 - boil down ideas and delete loose ends so we have a fresh slate
 
+- figure out why EVAL doesn't like getinboxthreads
+- be able to set next SI / BI
+- be able to set a 'wake timer'
+
+- make the "list as an email contact" agent
+
+- deploy this to Treehouse
 
 
 
-
-next tasks are:
-- run executables!
-- empty cell in SI or BI causes RESET, which runs the RESET block
-- 
-- channels
-
+I can totally make it so that you have access to the previous installation's
+memory when you are re-installing -- this gives platycore the ability to
+have built-in support for upgrading agents AND swapping agents in-place
+within a live system (uninstall old agent, "reinstall" new agent, new agent has
+code to detect alternate memory source for data)
 
 
 

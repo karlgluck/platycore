@@ -1,4 +1,4 @@
-function newAgent (urlAgentInstructions, origin)
+function newAgent (urlAgentInstructions, previousInstallMemory, origin)
    {
 
    var spreadsheet = SpreadsheetApp.getActive();
@@ -52,20 +52,16 @@ function newAgent (urlAgentInstructions, origin)
          }
       agent.Info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
+      memory.agentInstructions = agentInstructions; // save so that reboots can do self-analysis
 
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
          {
          var eAgentInstruction = agentInstructions[iAgentInstruction];
 
-         console.log('verifying memory ptr', iAgentInstruction, agent.VerifyMemoryPointer(memory));
-         console.log('verifying rules ptr', iAgentInstruction, agent.VerifyRulesPointer(conditionalFormatRules));
-
          if ('REBOOT' === eAgentInstruction || 'OFF' === eAgentInstruction || iAgentInstruction + 1 == nAgentInstructionCount) // save the conditional formatting rules before switching off
             {
             sheet.setConditionalFormatRules(conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
             }
-         
-//         console.log('memory for ' + iAgentInstruction + ' = ', memory);
 
          switch (eAgentInstruction)
             {
@@ -118,11 +114,21 @@ function newAgent (urlAgentInstructions, origin)
                agent.Info(agentInstructions[++iAgentInstruction]);
                break;
 
+            case 'REINSTALL': // execute code if this is a reinstall operation; guarantee access to the variable previousInstallMemory
+               var code = agentInstructions[++iAgentInstruction].join('\n');
+               if (Util_isObject(previousInstallMemory))
+                  {
+                  (function (agent, previousInstallMemory)
+                     {
+                     eval(code);
+                     })(agent, previousInstallMemory);
+                  }
+               break;
+
             case 'EVAL':
-               var code = agentInstructions[++iAgentInstruction];
+               var code = agentInstructions[++iAgentInstruction].join('\n');
                (function (agent)
                   {
-                  agent.Log('eval(' + code + ')');
                   eval(code);
                   })(agent);
                break;
@@ -174,57 +180,72 @@ function newAgent (urlAgentInstructions, origin)
                      {
                      field.h = 1;
                      }
+                  if (memory.fieldFromName.hasOwnProperty(field.k))
+                     {
+                     if (!field.hasOwnProperty('value')) // borrow the value from the existing one, if necessary (this lets us make virtual into "visible" fields)
+                        {
+                        field.value = memory.fieldFromName[field.k].valueCached;
+                        }
+                     }
                   memory.fieldFromName[field.k] = field;
-                  agent.Log('+field: ' + field.k, field.r, field.c, field.h, field.w);
-                  var range = sheet.getRange(field.r, field.c, field.h, field.w);
-                  range.merge()
-                        .setBackground(field.hasOwnProperty('bg') ? field.bg : '#000000')
-                        .setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
-                        .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
-                        .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
-                  delete field.bg;
-                  if (field.hasOwnProperty('value'))
+                  if (field.hasOwnProperty('fVirtual'))
                      {
+                     agent.Log('+field [VIRTUAL]: ' + field.k);
                      field.valueCached = field.value;
-                     delete field.value;
-                     range.setValue(field.valueCached);
-                     }
-                  else if (field.hasOwnProperty('f'))
-                     {
-                     range.setFormula(field.f);
                      }
                   else
                      {
-                     field.valueCached = '';
+                     agent.Log('+field: ' + field.k, field.r, field.c, field.h, field.w);
+                     
+                     var range = sheet.getRange(field.r, field.c, field.h, field.w);
+                     range.merge()
+                           .setBackground(field.hasOwnProperty('bg') ? field.bg : '#000000')
+                           .setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
+                           .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
+                           .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
+                     delete field.bg;
+                     if (field.hasOwnProperty('value'))
+                        {
+                        field.valueCached = field.value;
+                        delete field.value;
+                        range.setValue(field.valueCached);
+                        }
+                     else if (field.hasOwnProperty('f'))
+                        {
+                        range.setFormula(field.f);
+                        }
+                     else
+                        {
+                        field.valueCached = '';
+                        }
+                     var textStyleBuilder = range.getTextStyle().copy();
+                     if (field.isReadonly)
+                        {
+                        var fontColor = field.hasOwnProperty('fg') ? field.fg : '#666666';
+                        }
+                     else
+                        {
+                        var fontColor = field.hasOwnProperty('fg') ? field.fg : '#00ffff';
+                        textStyleBuilder.setUnderline(true);
+                        }
+                     delete field.fg;
+                     textStyleBuilder.setForegroundColor('#ff00ff');
+                     range.setTextStyle(textStyleBuilder.build());
+                     conditionalFormatRules.push({
+                           ranges:[{
+                                 gasRange: range,
+                                 r:field.r,
+                                 c:field.c,
+                                 h:field.h,
+                                 w:field.w
+                           }],
+                           gasConditionalFormatRule: SpreadsheetApp.newConditionalFormatRule()
+                                 .setRanges([range])
+                                 .whenTextEqualTo(field.valueCached)
+                                 .setFontColor(fontColor)
+                                 .build()
+                           });
                      }
-                  var textStyleBuilder = range.getTextStyle().copy();
-                  if (field.isReadonly)
-                     {
-                     var fontColor = field.hasOwnProperty('fg') ? field.fg : '#666666';
-                     }
-                  else
-                     {
-                     var fontColor = field.hasOwnProperty('fg') ? field.fg : '#00ffff';
-                     textStyleBuilder.setUnderline(true);
-                     }
-                  delete field.fg;
-                  textStyleBuilder.setForegroundColor('#ff00ff');
-                  range.setTextStyle(textStyleBuilder.build());
-                  conditionalFormatRules.push({
-                        ranges:[{
-                              gasRange: range,
-                              r:field.r,
-                              c:field.c,
-                              h:field.h,
-                              w:field.w
-                        }],
-                        gasConditionalFormatRule: SpreadsheetApp.newConditionalFormatRule()
-                              .setRanges([range])
-                              .whenTextEqualTo(field.valueCached)
-                              .setFontColor(fontColor)
-                              .build()
-                        });
-                  console.log('there are now ' + conditionalFormatRules.length + ' conditional formatting rules');
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
@@ -256,9 +277,8 @@ function newAgent (urlAgentInstructions, origin)
             
             case 'NOTE': // NOTE "<name>"  {"r": "<riRow>", "c": "<ciCol>"} <any>
                var kName = agentInstructions[++iAgentInstruction];
-               var location = agentInstructions[++iAgentInstruction];
+               var note = JSON.parse(JSON.stringify(agentInstructions[++iAgentInstruction]));
                var value = agentInstructions[++iAgentInstruction];
-               var note = JSON.parse(JSON.stringify(location));
                memory.noteFromName[kName] = note;
                if (Util_isString(value))
                   {
@@ -272,7 +292,11 @@ function newAgent (urlAgentInstructions, origin)
                   {
                   value = JSON.stringify(value);
                   }
-               sheet.getRange(location.r, location.c).setNote(value);
+               agent.Log(note);
+               if (!note.hasOwnProperty('fVirtual'))
+                  {
+                  sheet.getRange(note.r, note.c).setNote(value);
+                  }
                note.valueCached = value;
                break;
             

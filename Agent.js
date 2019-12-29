@@ -39,7 +39,6 @@ function Agent (sheet_, config_)
 
    if (!Util_isArray(config_.conditionalFormatRules))
       {
-      console.error('mapping conditional format rules from sheet');
       config_.conditionalFormatRules = sheet_.getConditionalFormatRules().map(function (eRule)
          {
          return{
@@ -131,6 +130,10 @@ function Agent (sheet_, config_)
          Object.keys(eDictionary).forEach(function (kName)
             {
             var dictionary = eDictionary[kName];
+            if (dictionary.hasOwnProperty('fVirtual')) // virtual properties are set when fields, toggles,
+               {                                       // and notes are not set by the creation script
+               return;
+               }
             delete dictionary.fRuleIsSynced; // won't apply to all of them but it doesn't hurt
             if (isCacheExpired) delete dictionary.valueCached; // this is really what we want to do
             });
@@ -176,7 +179,6 @@ function Agent (sheet_, config_)
       builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) +(toggle.valueCached?',FALSE)':',TRUE)'));
       rule.gasConditionalFormatRule = builder.build();
       sheet_.setConditionalFormatRules(config_.conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
-      return range;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -199,7 +201,7 @@ function Agent (sheet_, config_)
          }
       catch (e)
          {
-         console.warn('ReadToggle suppressed', e, e.stack);
+         console.warn('ReadToggle('+name+') suppressed', e, e.stack);
          return undefined;
          }
       };
@@ -210,25 +212,45 @@ function Agent (sheet_, config_)
       {
       try
          {
+
          value = !!value;
-         var toggle = memory_.toggleFromName[name];
-         delete toggle.fRuleIsSynced;
-         var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
-         if (toggle.isReadonly)
+
+         if (memory_.toggleFromName.hasOwnProperty(name))
             {
-            checkboxRange.setFormula(value ? '=TRUE' : '=FALSE');
+            var toggle = memory_.toggleFromName[name];
+            }
+         else 
+            {
+            var toggle = memory_.toggleFromName[name] = {
+                  fVirtual: null,
+                  fRuleIsSynced: true
+                  };
+            }
+         if (toggle.hasOwnProperty('fVirtual'))
+            {
+            toggle.valueCached = value;
             }
          else
             {
-            checkboxRange.setValue(value);
+            delete toggle.fRuleIsSynced;
+            var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
+            if (toggle.isReadonly)
+               {
+               checkboxRange.setFormula(value ? '=TRUE' : '=FALSE');
+               }
+            else
+               {
+               checkboxRange.setValue(value);
+               }
+            toggle.valueCached = value;
+            updateToggleConditionalFormatRule_(toggle);
+            toggle.fRuleIsSynced = null;
             }
-         toggle.valueCached = value;
-         updateToggleConditionalFormatRule_(toggle);
-         toggle.fRuleIsSynced = null;
+
          }
       catch (e)
          {
-         console.warn('WriteToggle suppressed', e, e.stack);
+         console.warn('WriteToggle('+name+','+value+') suppressed', e, e.stack);
          }
       };
 
@@ -271,7 +293,7 @@ function Agent (sheet_, config_)
          }
       catch (e)
          {
-         console.warn('ReadField suppressed', e, e.stack);
+         console.warn('ReadField('+name+') suppressed', e, e.stack);
          return undefined;
          }
       };
@@ -283,17 +305,34 @@ function Agent (sheet_, config_)
       try
          {
          value = String(value);
-         var field = memory_.fieldFromName[name];
-         delete field.fRuleIsSynced;
-         sheet_.getRange(field.r, field.c, field.h, field.w)
-               .setValue(value);
-         field.valueCached = value;
-         updateFieldConditionalFormatRule_(field);
-         field.fRuleIsSynced = null;
+         if (memory_.fieldFromName.hasOwnProperty(name))
+            {
+            var field = memory_.fieldFromName[name];
+            }
+         else 
+            {
+            var field = memory_.fieldFromName[name] = {
+                  fVirtual: null,
+                  fRuleIsSynced: true
+                  };
+            }
+         if (field.hasOwnProperty('fVirtual'))
+            {
+            field.valueCached = value;
+            }
+         else
+            {
+            delete field.fRuleIsSynced;
+            sheet_.getRange(field.r, field.c, field.h, field.w)
+                  .setValue(value);
+            field.valueCached = value;
+            updateFieldConditionalFormatRule_(field);
+            field.fRuleIsSynced = null;
+            }
          }
       catch (e)
          {
-         console.warn('WriteField suppressed', e, e.stack);
+         console.warn('WriteField('+name+','+value+') suppressed', e, e.stack);
          }
       };
 
@@ -340,7 +379,7 @@ function Agent (sheet_, config_)
          }
       catch (e)
          {
-         console.warn(e, e.stack);
+         console.warn('ReadNote('+name+') suppressed', e, e.stack);
          return undefined;
          }
       };
@@ -361,17 +400,30 @@ function Agent (sheet_, config_)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.WriteNote = function (name)
+   this.WriteNote = function (name, value)
       {
       try
          {
-         var note = memory_.noteFromName[name];
-         sheet_.getRange(note.r, note.c).setNote(note);
+         if (memory_.noteFromName.hasOwnProperty(name))
+            {
+            var note = memory_.noteFromName[name];
+            }
+         else 
+            {
+            var note = memory_.noteFromName[name] = {
+                  fVirtual: null
+                  };
+            }
+         if (!note.hasOwnProperty('fVirtual'))
+            {
+            sheet_.getRange(note.r, note.c)
+                  .setNote(value);
+            }
          note.valueCached = value;
          }
       catch (e)
          {
-         console.warn(e, e.stack);
+         console.warn('ReadNote('+name+','+value+') suppressed', e, e.stack);
          }
       };
 
@@ -416,7 +468,7 @@ function Agent (sheet_, config_)
          sheet_.getRange(irNewMessage_, starts[iArg], 1, counts[iArg]).mergeAcross().setValue(args[iArg]).setHorizontalAlignment('left');
          }
       //.setValue('▪').setVerticalAlignment('middle')
-      sheet_.getRange(irNewMessage_, 1).setNote(JSON.stringify([new Date().toISOString()].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
+      sheet_.getRange(irNewMessage_, 1).setNote(JSON.stringify([new Date().toISOString(),Util_stackTraceGet(2)].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
       //sheet_.setRowHeight(irNewMessage_, cellSize_);
       return sheet_.getRange(irNewMessage_, 1, 1, 49);
       };
@@ -536,6 +588,7 @@ function Agent (sheet_, config_)
       PropertiesService.getDocumentProperties().deleteProperty('platycoreAgent' + self_.getSheetId());
       sheet_.getParent().deleteSheet(sheet_);
       sheet_ = null;
+      return memory_;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------

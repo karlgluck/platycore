@@ -6,7 +6,7 @@ function menuReinstallAgent()
       {  // the clean way using the API
       var agent = new Agent(sheet);
       var urlAgentInstructions = agent.UrlAgentInstructionsGet();
-      agent.Uninstall();
+      var previousInstallMemory = agent.Uninstall();
       }
    catch (e)
       {
@@ -24,7 +24,7 @@ function menuReinstallAgent()
       }
    try
       {
-      newAgent(urlAgentInstructions, 'menuReinstallAgent');
+      newAgent(urlAgentInstructions, previousInstallMemory, 'menuReinstallAgent');
       }
    catch (e)
       {

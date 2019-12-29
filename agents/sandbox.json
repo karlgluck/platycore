@@ -4,7 +4,7 @@
          "TOOLBAR",  1,
 
             "EVAL",  [
-                     "GmailApp.getInboxThreads().slice(0,1).forEach(function (e) { console.log(e.getFirstMessageSubject()) });"
+                     "GmailApp.getInboxThreads().forEach(function (e) { agent.Log(e.getFirstMessageSubject()) });"
                      ],
 
              "OFF"
