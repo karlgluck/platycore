@@ -274,7 +274,7 @@ function newAgent (urlAgentInstructions, origin)
             case 'SCRIPT': // SCRIPT "<name>" <qBlockCount>
                var kName = agentInstructions[++iAgentInstruction];
                var script = {blockCodeNoteNames:agentInstructions[++iAgentInstruction]};
-               agent.Log('+script: ' + kName, script.blocks);
+               agent.Log('+script: ' + kName, script.blockCodeNoteNames);
                memory.scriptFromName[kName] = script;
                memory.scriptNames.push(kName);
                break;

@@ -497,25 +497,18 @@ function Agent (sheet_, config_)
          }
       try
          {
-         self_.ReadToggle('ON')
-         self_.ReadField('LOCK')
-         var onToggle = memory_.toggleFromName.ON;
-         var onRange = sheet_.getRange(onToggle.r, onToggle.c);
-         var lockField = memory_.fieldFromName.LOCK;
-         var lockRange = sheet_.getRange(lockField.r, lockField.c, lockField.h, lockField.w);
-         var onValue = !!onRange.getValue();
-         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (new Date().getTime() - lockRange.getValue()); // TODO: test the lock override step
+         var onValue = self_.ReadToggle('ON');
+         var lockValue = self_.ReadField('LOCK');
+         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (new Date().getTime() - lockValue);
          isThisOn_ = (!onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
          if (isThisOn_)
             {
-            if (!onValue)
+            if (onValue)
                {
                console.warn('previous lock on platycoreAgent' + sheet_.getSheetId() + ' aged out and is being ignored');
                }
             self_.WriteField('LOCK', new Date().getTime());
-            self_
-            onRange.setFormula('=TRUE');
-            onToggle.valueCached = onValue = true;
+            self_.WriteToggle('ON', true);
             }
          else
             {
@@ -526,7 +519,7 @@ function Agent (sheet_, config_)
          {
          self_.Error('TurnOn', e);
          }
-      finally 
+      finally
          {
          lock.releaseLock();
          lock = null;
@@ -546,11 +539,9 @@ function Agent (sheet_, config_)
       if (lock.tryLock(config_.dtLockWait))
          {
          try
-            {
-            var toggle = memory_.toggleFromName.ON;
-            toggle.valueCached = false;
-            sheet_.getRange(toggle.r, toggle.c, 1, 1).setFormula('=FALSE');
-            }
+            {                                // There is only one line of content right now and
+            self_.WriteToggle('ON', false);  // it doesn't throw, but it's good practice to have
+            }                                // this ready to go for future teradown code.
          finally
             {
             lock.releaseLock();
