@@ -43,7 +43,7 @@ function Util_isNumber(v)
 
 function Util_isObject(v)
    {
-   return typeof (v) === 'object' && v !== null;
+   return 'object' === typeof v && null !== v;
    }
 
 function Util_isArray(v)
@@ -51,15 +51,21 @@ function Util_isArray(v)
    return Array.isArray(v);
    }
 
+// https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
+function Util_isFunction(v)
+   {
+   return v && {}.toString.call(v) === '[object Function]';
+   }
+
 // https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
 function Util_isString(v)
    {
-   return typeof (v) === 'string' || v instanceof String;
+   return 'string' === typeof v || v instanceof String;
    }
 
-function Util_isObjectFlagTruthy(v, flagName)
+function Util_isObjectPropertyTruthy(v, flagName)
    {
-   return typeof (v) === 'object' && v !== null && !!v[flagName];
+   return 'object' === typeof v  && null !== v && !!v[flagName];
    }
 
 function Util_utsNowGet()

@@ -30,9 +30,11 @@ function newAgent (urlAgentInstructions, origin)
             noteFromName: {},
             utsLastSaved: utsNow
             };
+      var conditionalFormatRules = [];
       var agent = new Agent(sheet, {
             origin: origin || 'newAgent',
             utsSheetLastUpdated: utsNow,
+            conditionalFormatRules: conditionalFormatRules,
             memory: memory,
             shouldReuseMemoryPointer: true,
             verbose: true,
@@ -51,18 +53,16 @@ function newAgent (urlAgentInstructions, origin)
       agent.Info('jsonAgentInstructions', jsonAgentInstructions);
       var agentInstructions = JSON.parse(jsonAgentInstructions);
 
-      var conditionalFormatRules = [];
-
       for (var iAgentInstruction = 0, nAgentInstructionCount = agentInstructions.length; iAgentInstruction < nAgentInstructionCount; ++iAgentInstruction)
          {
          var eAgentInstruction = agentInstructions[iAgentInstruction];
 
          if ('REBOOT' === eAgentInstruction || 'OFF' === eAgentInstruction || iAgentInstruction + 1 == nAgentInstructionCount) // save the conditional formatting rules before switching off
             {
-            sheet.setConditionalFormatRules(conditionalFormatRules);
+            sheet.setConditionalFormatRules(conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
             }
          
-         console.log('memory for ' + iAgentInstruction + ' = ', memory);
+//         console.log('memory for ' + iAgentInstruction + ' = ', memory);
 
          switch (eAgentInstruction)
             {
@@ -197,13 +197,23 @@ function newAgent (urlAgentInstructions, origin)
                      var fontColor = field.hasOwnProperty('fg') ? field.fg : '#00ffff';
                      textStyleBuilder.setUnderline(true);
                      }
+                  delete field.fg;
                   textStyleBuilder.setForegroundColor('#ff00ff');
                   range.setTextStyle(textStyleBuilder.build());
-                  conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
-                        .setRanges([range])
-                        .whenTextEqualTo(field.valueCached)
-                        .setFontColor(fontColor));
-                  delete field.fg;
+                  conditionalFormatRules.push({
+                        ranges:[{
+                              gasRange: range,
+                              r:field.r,
+                              c:field.c,
+                              h:field.h,
+                              w:field.w
+                        }],
+                        gasConditionalFormatRule: SpreadsheetApp.newConditionalFormatRule()
+                              .setRanges([range])
+                              .whenTextEqualTo(field.valueCached)
+                              .setFontColor(fontColor)
+                              .build()
+                        });
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
@@ -321,11 +331,20 @@ function newAgent (urlAgentInstructions, origin)
                      range.setBackground(toggle.bg);
                      delete toggle.bg;
                      }
-                  conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
-                        .setRanges([range])
-                        .whenFormulaSatisfied((toggle.valueCached ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) + ')')
-                        .setFontColor('#ff00ff')
-                        );
+                  conditionalFormatRules.push({
+                        ranges:[{
+                              gasRange: range,
+                              r:toggle.r,
+                              c:toggle.c,
+                              h:1,
+                              w:toggle.w
+                        }],
+                        gasConditionalFormatRule: SpreadsheetApp.newConditionalFormatRule()
+                              .setRanges([range])
+                              .whenFormulaSatisfied((toggle.valueCached ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) + ')')
+                              .setFontColor('#ff00ff')
+                              .build()
+                        });
                   delete toggle.k;
                   })(agentInstructions[++iAgentInstruction]);
                break;
@@ -335,16 +354,28 @@ function newAgent (urlAgentInstructions, origin)
       }
    catch (e)
       {
-      if (!!agent)
+      console.error(e, e.stack);
+      spreadsheet.toast(e + ' ' + e.stack);
+      try
          {
          agent.Error('step ' + iAgentInstruction + ' threw an exception', iAgentInstruction, eAgentInstruction);
          agent.Error('exception during agent initialization', e, e.stack);
          }
-      spreadsheet.toast(e + ' ' + e.stack);
+      catch (e2)
+         {
+         console.error(e2, e2.stack);
+         }
       return;
       }
    finally
       {
-      agent.Save();
+      try
+         {
+         agent.Save();
+         }
+      catch (e)
+         {
+         console.error(e, e.stack);
+         }
       }
    }

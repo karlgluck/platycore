@@ -2,10 +2,23 @@
 
 function Agent (sheet_, config_)
    {
-   //console.log('agent coming online: ', sheet_.getName(), config_);
-   var properties_ = PropertiesService.getDocumentProperties();
    var self_ = this;
-   if (Util_isObjectFlagTruthy(config_, 'shouldReuseMemoryPointer')) // If the user asks for it explicitly, we can carefully
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// conditionalFormatRules can be shared with the caller so that
+// newAgent can manipulate them, but this is not the common case.
+//
+
+   if (config_.hasOwnProperty('conditionalFormatRules'))
+      {
+      var conditionalFormatRules_ = config_.conditionalFormatRules;
+      delete config_.conditionalFormatRules;
+      }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   if (Util_isObjectPropertyTruthy(config_, 'shouldReuseMemoryPointer')) // If the user asks for it explicitly, we can carefully
       {                                                              // preserve the memory pointer so that outside sources
       var [config_, memory_] = (function (config)                    // can continue to edit the insides of the agent. By
          {                                                           // default, agents are isolated to prevent accidents.
@@ -33,6 +46,22 @@ function Agent (sheet_, config_)
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
+
+   var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
+      {
+      for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
+         {
+         var eConditionalFormatRule = conditionalFormatRules_[i];
+         var ranges = eConditionalFormatRule.ranges;
+         if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
+            {
+            return eConditionalFormatRule;
+            }
+         }
+      return null;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 //
 // Apply defaults
 //
@@ -56,7 +85,7 @@ function Agent (sheet_, config_)
 
    if ('object' !== typeof memory_ || null === memory_)
       {
-      memory_ = JSON.parse(properties_.getProperty('platycoreAgent' + this.getSheetId()));
+      memory_ = JSON.parse(PropertiesService.getDocumentProperties().getProperty('platycoreAgent' + this.getSheetId()));
       }
 
    memory_.toggleFromName = memory_.toggleFromName || {};
@@ -109,38 +138,6 @@ function Agent (sheet_, config_)
          }
       };
 
-   var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
-      {
-      return{
-            gasConditionalFormatRule: eRule,
-            ranges: eRule.getRanges().map(function (eRange)
-               {
-               return{
-                     r: eRange.getRow(),
-                     c: eRange.getColumn(),
-                     w: eRange.getWidth(),
-                     h: eRange.getHeight(),
-                     gasRange: eRange,
-                     }
-               })
-            }
-      });
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
-      {
-      for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
-         {
-         var eConditionalFormatRule = conditionalFormatRules_[i];
-         var ranges = eConditionalFormatRule.ranges;
-         if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
-            {
-            return eConditionalFormatRule;
-            }
-         }
-      return null;
-      };
 
 /*************************************************************************************************************************************
 ******            ****     *********     *******     ****   *******         **********************************************************
@@ -205,8 +202,8 @@ function Agent (sheet_, config_)
             {
             checkboxRange.setValue(value);
             }
-         updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
          toggle.valueCached = value;
+         updateToggleConditionalFormatRule_(toggle);
          toggle.fRuleIsSynced = null;
          }
       catch (e)
@@ -502,7 +499,7 @@ function Agent (sheet_, config_)
    this.Save = function ()
       {
       memory_.utsLastSaved = utsPlatycoreNow;
-      properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
+      PropertiesService.getDocumentProperties().setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -520,7 +517,7 @@ function Agent (sheet_, config_)
             {
             }
          }
-      properties_.deleteProperty('platycoreAgent' + self_.getSheetId());
+      PropertiesService.getDocumentProperties().deleteProperty('platycoreAgent' + self_.getSheetId());
       sheet_.getParent().deleteSheet(sheet_);
       sheet_ = null;
       };
