@@ -27,8 +27,7 @@ function newAgent (urlAgentInstructions, origin)
             toggleFromName: {},
             scriptFromName: {},
             scriptNames: [],
-            utsLastSaved: utsNow,
-            shouldUpdate: false
+            utsLastSaved: utsNow
             };
       var agent = new Agent(sheet, {
             origin: origin || 'newAgent',
