@@ -5,7 +5,7 @@ function menuReinstallAgent()
    try   // first, attempt to uninstall the agent
       {  // the clean way using the API
       var agent = new Agent(sheet);
-      var urlAgentInstructions = agent.urlAgentInstructionsGet();
+      var urlAgentInstructions = agent.UrlAgentInstructionsGet();
       agent.Uninstall();
       }
    catch (e)

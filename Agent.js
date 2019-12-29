@@ -1,14 +1,10 @@
-// agent should know when its memory was last updated
-// and have the last time the sheet was changed
-// then be able to know how to clear its own cache
+
 
 function Agent (sheet_, config_)
    {
-   console.log('agent coming online: ', sheet_.getName(), config_);
-
+   //console.log('agent coming online: ', sheet_.getName(), config_);
    var properties_ = PropertiesService.getDocumentProperties();
    var self_ = this;
-
    if (Util_isObjectFlagTruthy(config_, 'shouldReuseMemoryPointer')) // If the user asks for it explicitly, we can carefully
       {                                                              // preserve the memory pointer so that outside sources
       var [config_, memory_] = (function (config)                    // can continue to edit the insides of the agent. By
@@ -35,22 +31,28 @@ function Agent (sheet_, config_)
       }
    var isThisOn_ = !!config_.forceThisOn;
 
-   //
-   // Apply defaults
-   //
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Apply defaults
+//
 
    if (!config_.hasOwnProperty('dtLockWait')) config_.dtLockWait = 15000;
 
-   //
-   // Accessors
-   //
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Accessors
+//
 
    Util_makeLazyConstantMethod(this, 'getSheetId', function () { return sheet_.getSheetId() });
    Util_makeLazyConstantMethod(this, 'isVerbose_', function () { return !!config_.verbose || self_.ReadToggle('VERBOSE') });
 
-   //
-   // Load memory_ for this execution (clear cache, reserved flags, etc.)
-   //
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Load memory_ for this execution (clear cache, reserved flags, etc.)
+//
 
    if ('object' !== typeof memory_ || null === memory_)
       {
@@ -61,6 +63,12 @@ function Agent (sheet_, config_)
    memory_.fieldFromName = memory_.fieldFromName || {};
    memory_.scriptFromName = memory_.scriptFromName || {};
    memory_.scriptNames = memory_.scriptNames || [];
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Clear all cached values from memory if the document was
+// modified more recently than the cache was updated.
+//
 
    (function (isCacheExpired)
       {
@@ -83,56 +91,8 @@ function Agent (sheet_, config_)
       })('undefined' === typeof config_.utsSheetLastUpdated
             || memory_.utsLastSaved < config_.utsSheetLastUpdated);
 
-   this.urlAgentInstructionsGet = function ()
-      {
-      return memory_.urlAgentInstructions;
-      };
 
-   this.Reboot = function ()
-      {
-      self_.Save();
-      if (config_.shouldReuseMemoryPointer)
-         {
-         delete config_.memory;
-         var newConfig = JSON.parse(JSON.stringify(config_));
-         newConfig.memory = memory_;
-         }
-      else
-         {
-         var newConfig = JSON.parse(JSON.stringify(config_));
-         }
-      newConfig.memory.utsLastSaved = 0;  // eliminate all caches
-      console.log('newConfig', newConfig);
-      var rvAgentAndMemory = [new Agent(sheet_, newConfig), newConfig.memory];
-      sheet_ = null;
-      config_ = null;
-      memory_ = null;
-      return rvAgentAndMemory;
-      };
-   
-   this.Save = function ()
-      {
-      memory_.utsLastSaved = utsPlatycoreNow;
-      properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
-      };
-   
-   this.Uninstall = function ()
-      {
-      if (memory_.hasOwnProperty('uninstall'))
-         {
-         self_.Verbose(function () { return [memory_.uninstall] });
-         try
-            {
-            eval(memory_.uninstall);
-            }
-         catch (e)
-            {
-            }
-         }
-      properties_.deleteProperty('platycoreAgent' + self_.getSheetId());
-      sheet_.getParent().deleteSheet(sheet_);
-      sheet_ = null;
-      }
+//------------------------------------------------------------------------------------------------------------------------------------
 
    var scriptFromNameP_ = function (name)
       {
@@ -164,6 +124,8 @@ function Agent (sheet_, config_)
             }
       });
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
    var getConditionalFormatRuleByRange = function (range)
       {
       var ir = range.getRow(), ic = range.getColumn();
@@ -178,6 +140,28 @@ function Agent (sheet_, config_)
          }
       return null;
       };
+
+/*************************************************************************************************************************************
+******            ****     *********     *******     ****   *******         **********************************************************
+***********   ******   ****   ****  ****   ***  ****   **   *******   ****************************************************************
+***********   ****   ********   *   *********   *********   *******   ****************************************************************
+***********   ****   ********   *   *********   *********   *******       ************************************************************
+***********   ****   ********   *   ***     *   ***     *   *******   ****************************************************************
+***********   ******   *****   ***   ****  ***   ****  **   *******   ****************************************************************
+***********   ********     ********      ******      ****         *         **********************************************************
+*************************************************************************************************************************************/
+
+   var updateToggleConditionalFormatRule_ = function (toggle, range)
+      {
+      var rule = getConditionalFormatRuleByRange(range);
+      var builder = rule.gasConditionalFormatRule.copy();
+      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.valueCached?',FALSE)':',TRUE)'));
+      rule.gasConditionalFormatRule = builder.build();
+      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
+      return range;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    this.ReadToggle = function (name)
       {
@@ -201,6 +185,8 @@ function Agent (sheet_, config_)
          return undefined;
          }
       };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    this.WriteToggle = function (name, value)
       {
@@ -228,16 +214,27 @@ function Agent (sheet_, config_)
          }
       };
 
-   var updateToggleConditionalFormatRule_ = function (toggle, range)
+/*************************************************************************************************************************************
+******         ***   ****         ***   *********      *******************************************************************************
+******   *********   ****   *********   *********   ***   ****************************************************************************
+******   *********   ****   *********   *********   ****   ***************************************************************************
+******       *****   ****       *****   *********   ****   ***************************************************************************
+******   *********   ****   *********   *********   ****   ***************************************************************************
+******   *********   ****   *********   *********   ***   ****************************************************************************
+******   *********   ****         ***         ***      *******************************************************************************
+*************************************************************************************************************************************/
+
+   var updateFieldConditionalFormatRule_ = function (field, range)
       {
       var rule = getConditionalFormatRuleByRange(range);
       var builder = rule.gasConditionalFormatRule.copy();
-      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(range.getRow(), range.getColumn()) +(toggle.valueCached?',FALSE)':',TRUE)'));
+      builder.whenTextEqualTo(field.valueCached);
       rule.gasConditionalFormatRule = builder.build();
       sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
-      return range;
       };
-   
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.ReadField = function (name)
       {
       try
@@ -260,24 +257,8 @@ function Agent (sheet_, config_)
          return undefined;
          }
       };
-   
-   this.ReadArrayIndexFromField = function (name, mArrayLength)
-      {
-      var value = self_.ReadField(name);
-      if (Util_isNumber(value))
-         {
-         value = value >>> 0;
-         if (value > mArrayLength - 1)
-            {
-            return undefined;
-            }
-         return value;
-         }
-      else
-         {
-         return undefined;
-         }
-      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
    
    this.WriteField = function (name, value)
       {
@@ -298,14 +279,35 @@ function Agent (sheet_, config_)
          }
       };
 
-   var updateFieldConditionalFormatRule_ = function (field, range)
+//------------------------------------------------------------------------------------------------------------------------------------
+   
+   this.ReadArrayIndexFromField = function (name, mArrayLength)
       {
-      var rule = getConditionalFormatRuleByRange(range);
-      var builder = rule.gasConditionalFormatRule.copy();
-      builder.whenTextEqualTo(field.valueCached);
-      rule.gasConditionalFormatRule = builder.build();
-      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
+      var value = self_.ReadField(name);
+      if (Util_isNumber(value))
+         {
+         value = value >>> 0;
+         if (value > mArrayLength - 1)
+            {
+            return undefined;
+            }
+         return value;
+         }
+      else
+         {
+         return undefined;
+         }
       };
+
+/*************************************************************************************************************************************
+******    *****   *****     *****            *         *******************************************************************************
+******  *   ***   ***   ****   *******   *****   *************************************************************************************
+******   *   **   *   ********   *****   *****   *************************************************************************************
+******   **   *   *   ********   *****   *****       *********************************************************************************
+******   ***  *   *   ********   *****   *****   *************************************************************************************
+******   ****  *  ***   *****   ******   *****   *************************************************************************************
+******   ******   *****     **********   *****         *******************************************************************************
+*************************************************************************************************************************************/
    
    this.ReadNote = function (name)
       {
@@ -325,6 +327,8 @@ function Agent (sheet_, config_)
          }
       };
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.ReadObjectFromNote = function (name)
       {
       try
@@ -336,7 +340,9 @@ function Agent (sheet_, config_)
          return {};
          }
       };
-   
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.WriteNote = function (name)
       {
       try
@@ -351,7 +357,17 @@ function Agent (sheet_, config_)
          }
       };
 
-   var mcColumns_ = sheet_.getMaxColumns();
+
+/*************************************************************************************************************************************
+******      *****         *   *   ****   *****   ****     ****************************************************************************
+******   ***   **   *******  ****   **   *****   **  ****   **************************************************************************
+******   ****   *   *******  *****   *   *****   *   *********************************************************************************
+******   ****   *       ***    *  ****   *****   *   *********************************************************************************
+******   ****   *   *******  *****   *   *****   *   ***     *************************************************************************
+******   ***   **   *******  ******  *   *****   **   ****  **************************************************************************
+******      *****         *     *   ****      ******      ****************************************************************************
+*************************************************************************************************************************************/
+
    var irNewMessage_ = sheet_.getFrozenRows() + 1;
 
    var writeOutputFirstTime_ = function (args)
@@ -363,7 +379,7 @@ function Agent (sheet_, config_)
       writeOutput_ = writeOutputNormal_;
       return range;
       };
-   
+
    const startsFromArgCount = [[],[ 2],[ 2,21],[ 2,21,36],[ 2,21,29,40]];
    const countsFromArgCount = [[],[48],[19,29],[19,15,14],[19, 7,10, 9]];
 
@@ -389,6 +405,8 @@ function Agent (sheet_, config_)
    
    var writeOutput_ = writeOutputFirstTime_;
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.Verbose = function (callback)
       {
       if (self_.isVerbose_())
@@ -402,21 +420,27 @@ function Agent (sheet_, config_)
          writeOutput_(output).setFontColor('#b6d7a8').setBackground('black');
          }
       };
-   
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    // writes debug text to the output log for this sheet
    this.Log = function (message)
       {
       console.log.apply(console, arguments);
       writeOutput_(arguments).setFontColor('#00ff00').setBackground('black');
       };
-   
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    // writes an informational message to the output log for this sheet
    this.Info = function (message)
       {
       console.info.apply(console, arguments);
       writeOutput_(arguments).setFontColor('white').setBackground('black');
       };
-   
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    // writes a warning to the output log for this sheet
    this.Warn = function (message)
       {
@@ -424,12 +448,83 @@ function Agent (sheet_, config_)
       writeOutput_(arguments).setFontColor('yellow').setBackground('#38340a');
       };
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
    // writes an error message to the output log for this sheet
    this.Error = function (message)
       {
       console.error.apply(console, arguments);
       writeOutput_(arguments).setFontColor('red').setBackground('#3d0404');
       };
+
+/*************************************************************************************************************************************
+**********     ******        ***         *        ***********  *******            *         ******************************************
+********   ****   ***   ****   *   *******   ****   ********  *  **********   *****   ************************************************
+******   ********   *   ****   *   *******   ****   *******  **   *********   *****   ************************************************
+******   ********   *        ***       ***  *   **********   ***   ********   *****       ********************************************
+******   ********   *   ********   *******   **   *******       *   *******   *****   ************************************************
+********   *****   **   ********   *******   ****   ****   *******   ******   *****   ************************************************
+**********     ******   ********         *   ******   *   *********   *****   *****         ******************************************
+*************************************************************************************************************************************/
+
+   this.UrlAgentInstructionsGet = function (kName) // this is a tricky function to replace cleanly, but I'd like to get rid of it somehow
+      {
+      return memory_.urlAgentInstructions;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   this.Reboot = function ()
+      {
+      self_.Save();
+      if (config_.shouldReuseMemoryPointer)
+         {
+         delete config_.memory;
+         var newConfig = JSON.parse(JSON.stringify(config_));
+         newConfig.memory = memory_;
+         }
+      else
+         {
+         var newConfig = JSON.parse(JSON.stringify(config_));
+         }
+      newConfig.memory.utsLastSaved = 0;  // eliminate all caches
+      console.log('newConfig', newConfig);
+      var rvAgentAndMemory = [new Agent(sheet_, newConfig), newConfig.memory];
+      sheet_ = null;
+      config_ = null;
+      memory_ = null;
+      return rvAgentAndMemory;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   this.Save = function ()
+      {
+      memory_.utsLastSaved = utsPlatycoreNow;
+      properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   this.Uninstall = function ()
+      {
+      if (memory_.hasOwnProperty('uninstall'))
+         {
+         self_.Verbose(function () { return [memory_.uninstall] });
+         try
+            {
+            eval(memory_.uninstall);
+            }
+         catch (e)
+            {
+            }
+         }
+      properties_.deleteProperty('platycoreAgent' + self_.getSheetId());
+      sheet_.getParent().deleteSheet(sheet_);
+      sheet_ = null;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    this.TurnOn = function ()
       {
@@ -478,6 +573,8 @@ function Agent (sheet_, config_)
       return isThisOn_;
       };
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.TurnOff = function ()
       {
       if (!isThisOn_)
@@ -500,6 +597,8 @@ function Agent (sheet_, config_)
          }
       self_.Save();
       };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    this.Step = function ()
       {
@@ -533,16 +632,19 @@ function Agent (sheet_, config_)
       
       };
 
-   this.SetNext = function (scriptName)
-      {
-      };
-   
-   this.Reset = function ()
-      {
-      if (!isThisOn_)
-         {
-         throw "must be on"
-         }
-      };
 
+/*************************************************************************************************************************************
+**********     ******   *****   *            *        ***   *****   *            *****************************************************
+********   ****   ***   *****   ******   *****   ****   *   *****   ******   *********************************************************
+******   ********   *   *****   ******   *****   ****   *   *****   ******   *********************************************************
+******   ********   *   *****   ******   *****        ***   *****   ******   *********************************************************
+******   ********   *   *****   ******   *****   ********   *****   ******   *********************************************************
+********   *****   **   *****   ******   *****   ********   *****   ******   *********************************************************
+**********     ********      *********   *****   **********      *********   *********************************************************
+*************************************************************************************************************************************/
+
+
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
    }
