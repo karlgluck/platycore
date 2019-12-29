@@ -4,14 +4,15 @@
          "TOOLBAR",  1,
            "RANGE",  {"r": 8, "c":1, "w":4, "merge":"across", "t": " MESSAGES"},
 
-          "TOGGLE",  {"r": 1, "c": 9, "k":"STEP", "w": 3},
-          "SCRIPT",  "RESET",
-                     1,
+             "REM", "Reset Script",
+     "RAINBOW_BOX",  {"r": 2, "c": 1}, 0, "0",
+            "NOTE",  "RESET.0",
                      {"r": 2, "c": 1},
-                        [
-                        "agent.writeToggle('STEP', false);",
-                        "agent.Log('off you go! lock = ', agent.readField('LOCK'));"
-                        ],
+                     [
+                     "agent.WriteToggle('STEP', false);",
+                     "agent.Log('off you go! lock = ', agent.ReadField('LOCK'));"
+                     ],
+          "SCRIPT",  "RESET", ["RESET.0"],
 
           "TOGGLE",  {"r": 1, "c": 7, "k":"IN", "w": 2, "isReadonly": true},
            "GO_EN",  {"r": 1, "c": 1},

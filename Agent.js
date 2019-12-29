@@ -9,10 +9,10 @@ function Agent (sheet_, config_)
    var properties_ = PropertiesService.getDocumentProperties();
    var self_ = this;
 
-   if (!!config_.shouldReuseMemoryPointer)            // If the user asks for it explicitly, we can carefully
-      {                                               // preserve the memory pointer so that outside sources
-      var [config_, memory_] = (function (config)     // can continue to edit the insides of the agent. By
-         {                                            // default, agents are isolated to prevent accidents.
+   if (Util_isObjectFlagTruthy(config_, 'shouldReuseMemoryPointer')) // If the user asks for it explicitly, we can carefully
+      {                                                              // preserve the memory pointer so that outside sources
+      var [config_, memory_] = (function (config)                    // can continue to edit the insides of the agent. By
+         {                                                           // default, agents are isolated to prevent accidents.
          if (config.hasOwnProperty('memory'))
             {
             var memory = config.memory;
@@ -67,31 +67,18 @@ function Agent (sheet_, config_)
 
       console.log('isCacheExpired', isCacheExpired);
 
-      ['toggleFromName', 'fieldFromName'].forEach(function (kDictionary)
+      ['toggleFromName', 'fieldFromName', 'noteFromName'].forEach(function (kDictionary)
          {
          var eDictionary = memory_[kDictionary];
          
          Object.keys(eDictionary).forEach(function (kName)   // clear hasBeenRead from all of the interactables
             {
-            var toggle = eDictionary[kName];
-            delete toggle.hasBeenRead;
-            if (isCacheExpired) delete toggle.valueCached;
+            var dictionary = eDictionary[kName];
+            delete dictionary.hasBeenRead; // won't apply to all of them but it doesn't hurt
+            if (isCacheExpired) delete dictionary.valueCached; // this is really what we want to do
             });
          
          })
-
-      if (isCacheExpired) // clear valueCached from all code blocks
-         {
-         Object.keys(memory_.scriptFromName).forEach(function (kName)
-            {
-            var eScript = memory_.scriptFromName[kName];
-            eScript.blocks.forEach(function (eBlock)
-               {
-               delete eBlock.valueCached;
-               })
-            })
-         }
-
 
       })('undefined' === typeof config_.utsSheetLastUpdated
             || memory_.utsLastSaved < config_.utsSheetLastUpdated);
@@ -243,46 +230,54 @@ function Agent (sheet_, config_)
 
    this.ReadToggle = function (name)
       {
-      var toggle = toggleFromNameP_(name);
-      if (!toggle.hasOwnProperty('valueCached'))
+      try
          {
-         toggle.valueCached = !!range.getValue();
-         }
-      if (!toggle.hasOwnProperty('hasBeenRead'))
-         {
-         updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
-         toggle.hasBeenRead = true;
-         }
-      return toggle.valueCached;
-      };
-
-   this.PeekToggleP = function (name)
-      {
-      var toggle = toggleFromNameP_(name);
-      if (toggle.hasOwnProperty('valueCached'))
-         {
+         var toggle = memory_.toggleFromName[name];
+         if (!toggle.hasOwnProperty('valueCached'))
+            {
+            toggle.valueCached = !!sheet_.getRange(toggle.r, toggle.c).getValue();
+            }
+         if (!toggle.hasOwnProperty('hasBeenRead'))
+            {
+            updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
+            toggle.hasBeenRead = true;
+            }
          return toggle.valueCached;
          }
-      return toggle.valueCached = !!sheet_.getRange(toggle.r, toggle.c, 1, 1).getValue();
+      catch (e)
+         {
+         console.warn(e, e.stack);
+         }
+      finally
+         {
+         return false;
+         }
       };
 
-   this.writeToggle = function (name, value)
+   this.WriteToggle = function (name, value)
       {
-      value = !!value;
-      var toggle = toggleFromNameP_(name);
-      delete toggle.valueCached;
-      var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
-      if (toggle.isReadonly)
+      try
          {
-         checkboxRange.setFormula(value ? '=TRUE' : '=FALSE');
+         value = !!value;
+         var toggle = memory_.toggleFromName[name];
+         toggle.hasBeenRead = false;
+         var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
+         if (toggle.isReadonly)
+            {
+            checkboxRange.setFormula(value ? '=TRUE' : '=FALSE');
+            }
+         else
+            {
+            checkboxRange.setValue(value);
+            }
+         updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
+         toggle.valueCached = value;
+         toggle.hasBeenRead = true;
          }
-      else
+      catch (e)
          {
-         checkboxRange.setValue(value);
+         console.warn(e, e.stack);
          }
-      toggle.valueCached = value;
-      toggle.hasBeenRead = true;
-      updateToggleConditionalFormatRule_(toggle, sheet_.getRange(toggle.r, toggle.c, 1, toggle.w));
       };
 
    var updateToggleConditionalFormatRule_ = function (toggle, range)
@@ -295,24 +290,35 @@ function Agent (sheet_, config_)
       return range;
       };
    
-   this.readField = function (name)
+   this.ReadField = function (name)
       {
-      var field = fieldFromNameP_(name);
-      if (!field.hasOwnProperty('valueCached'))
+      try
          {
-         field.valueCached = String(sheet_.getRange(field.r, field.c).getValue());
+         var field = memory_.fieldFromName[name];
+         if (!field.hasOwnProperty('valueCached'))
+            {
+            field.valueCached = String(sheet_.getRange(field.r, field.c).getValue());
+            }
+         if (!field.hasOwnProperty('hasBeenRead'))
+            {
+            updateFieldConditionalFormatRule_(field, sheet_.getRange(field.r, field.c, field.h, field.w));
+            field.hasBeenRead = true;
+            }
+         return field.valueCached;
          }
-      if (!field.hasOwnProperty('hasBeenRead'))
+      catch (e)
          {
-         updateFieldConditionalFormatRule_(field, sheet_.getRange(field.r, field.c, field.h, field.w));
-         field.hasBeenRead = true;
+         console.warn(e, e.stack);
          }
-      return field.valueCached;
+      finally
+         {
+         return '';
+         }
       };
    
-   this.readFieldAsArrayIndex = function (name, mArrayLength)
+   this.ReadFieldAsArrayIndex = function (name, mArrayLength)
       {
-      var value = self_.readField(name);
+      var value = self_.ReadField(name);
       if (Util_isNumber(value))
          {
          value = value >>> 0;
@@ -323,47 +329,86 @@ function Agent (sheet_, config_)
          return value;
          }
       else
-         return null;
-      };
-
-   this.peekFieldP = function (name)
-      {
-      var field = fieldFromNameP_(name);
-      if (!field.hasOwnProperty('valueCached'))
          {
-         field.valueCached = String(sheet_.getRange(field.r, field.c).getValue());;
+         return null;
          }
-      return field.valueCached;
       };
    
-   this.writeField = function (name, value)
+   this.WriteField = function (name, value)
       {
-      value = String(value);
-      var field = fieldFromNameP_(name);
-      field.value = value;
-      field.hasBeenRead = true;
-      var range = sheet_.getRange(field.r, field.c, 1, field.w);
-      range.setValue(value);
-      updateFieldConditionalFormatRule_(field, sheet_.getRange(field.r, field.c, field.h, field.w));
+      try
+         {
+         value = String(value);
+         var field = memory_.fieldFromName[name];
+         field.hasBeenRead = false;
+         var fieldRange = sheet_.getRange(field.r, field.c, field.h, field.w);
+         fieldRange.setValue(value);
+         updateFieldConditionalFormatRule_(field, fieldRange);
+         field.valueCached = value;
+         field.hasBeenRead = true;
+         }
+      catch (e)
+         {
+         console.warn(e, e.stack);
+         }
       };
 
-   var updateFieldConditionalFormatRule_ = function (input, range)
+   var updateFieldConditionalFormatRule_ = function (field, range)
       {
       var rule = getConditionalFormatRuleByRange(range);
       var builder = rule.gasConditionalFormatRule.copy();
-      builder.whenTextEqualTo(input.value);
+      builder.whenTextEqualTo(field.valueCached);
       rule.gasConditionalFormatRule = builder.build();
       sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
       };
    
    this.readScriptBlock = function (name, iBlockIndex)
       {
-      var block = scriptBlockFromNameP_(name, iBlockIndex);
-      if (!block.hasOwnProperty('valueCached'))
+      try
          {
-         block.valueCached = String(sheet_.getRange(block.r, block.c).getNote());
+         var block = memory_.scriptFromName[name].blocks[iBlockIndex];
+         if (!block.hasOwnProperty('valueCached'))
+            {
+            block.valueCached = String(sheet_.getRange(block.r, block.c).getNote());
+            }
+         return block.valueCached;
          }
-      return block.valueCached;
+      catch (e)
+         {
+         return '';
+         }
+      };
+   
+   this.readNote = function (name)
+      {
+      try
+         {
+         var note = memory_.noteFromName[name];
+         if (!note.hasOwnProperty('valueCached'))
+            {
+            note.valueCached = String(sheet_.getRange(note.r, note.c).getNote());
+            }
+         return note.valueCached;
+         }
+      catch (e)
+         {
+         console.warn(e, e.stack);
+         return '';
+         }
+      };
+   
+   this.writeNote = function (name)
+      {
+      try
+         {
+         var note = memory_.noteFromName[name];
+         sheet_.getRange(note.r, note.c).setNote(note);
+         note.valueCached = value;
+         }
+      catch (e)
+         {
+         console.warn(e, e.stack);
+         }
       };
 
    var mcColumns_ = sheet_.getMaxColumns();
@@ -476,7 +521,7 @@ function Agent (sheet_, config_)
                {
                console.warn('previous lock on platycoreAgent' + sheet_.getSheetId() + ' aged out and is being ignored');
                }
-            lockRange.setValue(lockField.value = new Date().getTime());
+            self_.writeField('LOCK', new Date().getTime());
             onRange.setFormula('=TRUE');
             onToggle.valueCached = onValue = true;
             }
@@ -529,19 +574,19 @@ function Agent (sheet_, config_)
          {
          throw "must be on"
          }
-      var iScriptIndex = self_.readFieldAsArrayIndex('SI', memory_.scriptNames.length);
-      if (null === iScriptIndex)
+      var iScriptIndex = self_.ReadFieldAsArrayIndex('SI', memory_.scriptNames.length);
+      if (memory_.scriptNames.hasOwnProperty(iScriptIndex))
+         {
+         var script = scriptFromNameP_(memory_.scriptNames[iScriptIndex]);
+         }
+      else
          {
          iScriptIndex = memory_.scriptNames.indexOf('RESET');
          self_.writeField('SI', iScriptIndex);
          var script = scriptFromNameP_('RESET');
          }
-      else
-         {
-         var script = scriptFromNameP_(memory_.scriptNames[iScriptIndex]);
-         }
-      var iBlockIndex = self_.readFieldAsArrayIndex('BI', script.blocks.length);
-      if (null === iBlockIndex)
+      var iBlockIndex = self_.ReadFieldAsArrayIndex('BI', script.blocks.length);
+      if (!script.blocks.hasOwnProperty(iBlockIndex))
          {
          iBlockIndex = 0;
          self_.writeField('BI', iBlockIndex);

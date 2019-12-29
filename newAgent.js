@@ -27,6 +27,7 @@ function newAgent (urlAgentInstructions, origin)
             toggleFromName: {},
             scriptFromName: {},
             scriptNames: [],
+            noteFromName: {},
             utsLastSaved: utsNow
             };
       var agent = new Agent(sheet, {
@@ -174,15 +175,17 @@ function newAgent (urlAgentInstructions, origin)
                   delete field.bg;
                   if (field.hasOwnProperty('value'))
                      {
-                     range.setValue(field.value);
+                     field.valueCached = field.value;
+                     delete field.value;
+                     range.setValue(field.valueCached);
                      }
                   else if (field.hasOwnProperty('f'))
                      {
                      range.setFormula(field.f);
                      }
-                  if (!field.hasOwnProperty('value'))
+                  else
                      {
-                     field.value = '';
+                     field.valueCached = '';
                      }
                   var textStyleBuilder = range.getTextStyle().copy();
                   if (field.isReadonly)
@@ -198,7 +201,7 @@ function newAgent (urlAgentInstructions, origin)
                   range.setTextStyle(textStyleBuilder.build());
                   conditionalFormatRules.push(SpreadsheetApp.newConditionalFormatRule()
                         .setRanges([range])
-                        .whenTextEqualTo(field.value)
+                        .whenTextEqualTo(field.valueCached)
                         .setFontColor(fontColor));
                   delete field.fg;
                   })(agentInstructions[++iAgentInstruction]);
@@ -229,26 +232,36 @@ function newAgent (urlAgentInstructions, origin)
                   sheet.getRange(en.r, en.c, 1, 2).setFontColor('#00ffff');
                   })(agentInstructions[++iAgentInstruction]);
                break;
-
-            case 'SCRIPT': // SCRIPT "<name>" <qBlockCount> [{"r": "<riRow>", "c": "<ciCol>"} [<"code"> [, <"code">] ...for each line of code]] ...for each section
+            
+            case 'NOTE': // NOTE "<name>"  {"r": "<riRow>", "c": "<ciCol>"} <any>
                var kName = agentInstructions[++iAgentInstruction];
-               var qBlockCount = agentInstructions[++iAgentInstruction];
-               var script = {blocks:[]};
-               var backgroundColor = Util_rainbowColorFromAnyP(Object.keys(memory.scriptFromName).length);
-               for (var iBlock = 0; iBlock < qBlockCount; ++iBlock)
-                  {
-                  var blockProperties = agentInstructions[++iAgentInstruction];
-                  var code = agentInstructions[++iAgentInstruction].join('\n');
-                  blockProperties.valueCached = code;
-                  script.blocks.push(blockProperties);
-                  sheet.getRange(blockProperties.r, blockProperties.c)
-                        .setVerticalAlignment('middle')
-                        .setHorizontalAlignment('center')
-                        .setNote(code)
-                        .setBackground(backgroundColor)
-                        .setBorder(true, true, true, true, true, true, '#434343', SpreadsheetApp.BorderStyle.SOLID_THICK)
-                        .setValue(iBlock);
-                  }
+               var location = agentInstructions[++iAgentInstruction];
+               var value = agentInstructions[++iAgentInstruction];
+               var note = JSON.parse(JSON.stringify(location));
+               note.valueCached = value;
+               memory.noteFromName[kName] = note;
+               sheet.getRange(location.r, location.c).setNote(JSON.stringify(value));
+               break;
+            
+            case 'RAINBOW_BOX':
+               var location = agentInstructions[++iAgentInstruction];
+               var color = Util_rainbowColorFromAnyP(agentInstructions[++iAgentInstruction]);
+               var value = agentInstructions[++iAgentInstruction];
+               sheet.getRange(location.r, location.c)
+                     .setVerticalAlignment('middle')
+                     .setHorizontalAlignment('center')
+                     .setBackground(color)
+                     .setValue(value)
+                     .setBorder(true, true, true, true, true, true, '#434343', SpreadsheetApp.BorderStyle.SOLID_THICK);
+               break;
+            
+            case 'REM':
+               console.log('REM ' + agentInstructions[++iAgentInstruction]);
+               break;
+
+            case 'SCRIPT': // SCRIPT "<name>" <qBlockCount>
+               var kName = agentInstructions[++iAgentInstruction];
+               var script = {blockNoteNames:agentInstructions[++iAgentInstruction]};
                agent.Log('+script: ' + kName, script.blocks);
                memory.scriptFromName[kName] = script;
                memory.scriptNames.push(kName);

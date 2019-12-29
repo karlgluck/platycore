@@ -4,13 +4,16 @@
          "TOOLBAR",  1,
 
           "TOGGLE",  {"r": 1, "c": 9, "k":"STEP", "w": 3},
-          "SCRIPT",  "RESET",
-                     1,
-                     {"r": 1, "c": 23},
-                        [
-                        "agent.writeToggle('STEP', false);",
-                        "agent.Log('Nope! STEP off.', new Date().getTime());"
-                        ],
+
+             "REM", "[RESET]",
+     "RAINBOW_BOX",  {"r": 2, "c": 1}, 0, "0",
+            "NOTE",  "RESET.0",
+                     {"r": 2, "c": 1},
+                     [
+                     "agent.WriteToggle('STEP', false);",
+                     "agent.Log('off you go! lock = ', agent.ReadField('LOCK'));"
+                     ],
+          "SCRIPT",  "RESET", ["RESET.0"],
 
           "TOGGLE",  {"r": 1, "c": 7, "k":"IN", "w": 2, "isReadonly": true},
            "GO_EN",  {"r": 1, "c": 1},

@@ -36,9 +36,19 @@ function Util_base64FromObject(objectToEncode)
    }
 
 // https://stackoverflow.com/questions/1303646/check-whether-variable-is-number-or-string-in-javascript/20373925
-function Util_isNumber(n)
+function Util_isNumber(v)
    {
-   return !isNaN(parseFloat(n)) && !isNaN(n - 0)
+   return !isNaN(parseFloat(v)) && !isNaN(v - 0)
+   }
+
+function Util_isObject(v)
+   {
+   return typeof (v) === 'object' && v !== null;
+   }
+
+function Util_isObjectFlagTruthy(v, flagName)
+   {
+   return typeof (v) === 'object' && v !== null && !!v[flagName];
    }
 
 function Util_utsNowGet()
