@@ -1,15 +1,29 @@
 [
-            "name",  "Power On Self Test Machine no. 8 (POSTM8)",
-          "freeze",  12,
-          "toggle", {"r": 1, "c": 1, "k":"EN"},
-          "toggle", {"r": 1, "c": 3, "k":"ON",  "value": true},
-          "toggle", {"r": 3, "c": 3, "k":"MAKE AGENT"},
-            "eval",  "this is where you install the data to the platycore settings that adds the menu item for this agent, then toast to reboot",
-       "uninstall",  [
+            "NAME",  "Power On Self Test Machine no. 8 (POSTM8)",
+          "FREEZE",  1,
+         "TOOLBAR",  1,
+
+          "TOGGLE",  {"r": 1, "c": 9, "k":"STEP", "w": 3},
+
+             "REM", "[RESET]",
+     "RAINBOW_BOX",  {"r": 1, "c": 24}, 0, "0",
+            "NOTE",  "RESET.0",
+                     {"r": 1, "c": 24}, 
+                     [
+                     "GmailApp.getInboxThreads().slice(0,1).forEach(function (e) { agent.Log(e.getFirstMessageSubject()) });",
+                     "agent.WriteToggle('STEP', false);"
                      ],
-            "eval",  "agent.WriteToggle('HELLO', true)",
-           "range",  {"r":3, "c":2, "t": "every"},
-           "field",  {"r":1, "c":5, "w": 5, "k": "LOCKED", "value": "now"},
-            "eval",  "agent.WriteToggle('ON', false)",
-          "reboot"
+          "SCRIPT",  "RESET", ["RESET.0"],
+
+          "TOGGLE",  {"r": 1, "c": 7, "k":"IN", "w": 2, "isReadonly": true},
+           "GO_EN",  {"r": 1, "c": 1},
+           "FIELD",  {"r": 1, "c":12, "w": 5, "k": "LOCK", "isReadonly": true},
+           "RANGE",  {"r": 1, "c":17, "w": 2, "merge": "across", "t": "LOCK", "fg": "#000000"},
+          "TOGGLE",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "value": true, "isReadonly": true},
+           "FIELD",  {"r": 1, "c":19, "k": "SI"},
+           "RANGE",  {"r": 1, "c":20, "t": "SI", "fg": "#dadfe8"},
+           "FIELD",  {"r": 1, "c":21, "k": "BI"},
+           "RANGE",  {"r": 1, "c":22, "t": "BI", "fg": "#dadfe8"},
+             "OFF"
 ]
+

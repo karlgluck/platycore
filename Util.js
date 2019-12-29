@@ -68,6 +68,11 @@ function Util_isObjectPropertyTruthy(v, flagName)
    return 'object' === typeof v  && null !== v && !!v[flagName];
    }
 
+function Util_isObjectPropertyArray(v, flagName)
+   {
+   return 'object' === typeof v  && null !== v && Array.isArray(v[flagName]);
+   }
+
 function Util_utsNowGet()
    {
    return new Date().getTime();

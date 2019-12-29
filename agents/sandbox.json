@@ -1,28 +1,12 @@
 [
-            "NAME",  "sandbox",
-          "FREEZE",  8,
+            "NAME",  "Power On Self Test Machine no. 8 (POSTM8)",
+          "FREEZE",  1,
          "TOOLBAR",  1,
-           "RANGE",  {"r": 8, "c":1, "w":4, "merge":"across", "t": " MESSAGES"},
 
-             "REM", "Reset Script",
-     "RAINBOW_BOX",  {"r": 2, "c": 1}, 0, "0",
-            "NOTE",  "RESET.0",
-                     {"r": 2, "c": 1},
-                     [
-                     "agent.WriteToggle('STEP', false);",
-                     "agent.Log('off you go! lock = ', agent.ReadField('LOCK'));"
+            "EVAL",  [
+                     "GmailApp.getInboxThreads().slice(0,1).forEach(function (e) { console.log(e.getFirstMessageSubject()) });"
                      ],
-          "SCRIPT",  "RESET", ["RESET.0"],
 
-          "TOGGLE",  {"r": 1, "c": 7, "k":"IN", "w": 2, "isReadonly": true},
-           "GO_EN",  {"r": 1, "c": 1},
-           "FIELD",  {"r": 1, "c":12, "w": 5, "k": "LOCK", "isReadonly": true},
-           "RANGE",  {"r": 1, "c":17, "w": 2, "merge": "across", "t": "LOCK", "fg": "#000000"},
-          "TOGGLE",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "value": true, "isReadonly": true},
-           "FIELD",  {"r": 1, "c":19, "k": "SI"},
-           "RANGE",  {"r": 1, "c":20, "t": "SI", "fg": "#dadfe8"},
-           "FIELD",  {"r": 1, "c":21, "k": "BI"},
-           "RANGE",  {"r": 1, "c":22, "t": "BI", "fg": "#dadfe8"},
              "OFF"
 ]
 

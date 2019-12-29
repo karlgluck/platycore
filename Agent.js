@@ -2,6 +2,7 @@
 
 function Agent (sheet_, config_)
    {
+   console.log('agent starting up: ' + sheet_.getSheetId(), config_);
    var self_ = this;
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -9,15 +10,14 @@ function Agent (sheet_, config_)
 //
 //
 
-   if (Util_isObjectPropertyTruthy(config_, 'shouldReusePointers'))  // If the user asks for it explicitly, we can carefully
-      {                                                              // preserve pointers from the config so that outside sources
-      config_ = (function (config)                                   // can continue to edit the insides of the agent. By
-         {                                                           // default, agents are isolated to prevent accidents.
+   if (Util_isObjectPropertyArray(config_, 'reusePointers'))  // If the user asks for it explicitly, we can carefully
+      {                                                       // preserve pointers from the config so that outside sources
+      config_ = (function (config)                            // can continue to edit the insides of the agent. By
+         {                                                    // default, agents are isolated to prevent accidents.
          var saved = {};
-         var savedKeys = ['memory', 'conditionalFormatRules'];
-         savedKeys.forEach(function (eKey) { saved[eKey] = config[eKey]; });
+         config_.reusePointers.forEach(function (eKey) { saved[eKey] = config[eKey]; });
          var rvConfig = JSON.parse(JSON.stringify(config));
-         savedKeys.forEach(function (eKey)
+         config_.reusePointers.forEach(function (eKey)
             {
             if ('undefined' === typeof saved[eKey])
                {
@@ -30,10 +30,6 @@ function Agent (sheet_, config_)
             });
          return rvConfig;
          })(config_);
-      if (!Util_isArray(config_.conditionalFormatRules))
-         {
-         console.error('when requesting shouldReusePointers, you need to have a reason such as initializing a new agent (and also to provide conditionalFormatRules)');
-         }
       }
    else
       {
@@ -43,6 +39,7 @@ function Agent (sheet_, config_)
 
    if (!Util_isArray(config_.conditionalFormatRules))
       {
+      console.error('mapping conditional format rules from sheet');
       config_.conditionalFormatRules = sheet_.getConditionalFormatRules().map(function (eRule)
          {
          return{
@@ -67,10 +64,15 @@ function Agent (sheet_, config_)
    var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
       {
       var rules = config_.conditionalFormatRules;
+      console.log('looking for ' + irRow + ',' + icColumn + ' ' + qrHeight + ',' + irRow + ' in ' + rules.length + ' conditional formatting rules');
       for (var i = 0, n = rules.length; i < n; ++i)
          {
          var eConditionalFormatRule = rules[i];
          var ranges = eConditionalFormatRule.ranges;
+         if (ranges.length >= 1)
+            {
+            console.log('rule ' + i + ' has ' + ranges.length + ' ' + ranges + ', first is: ' + ranges[0].r + ',' + ranges[0].c + ' ' + ranges[0].h + ',' + ranges[0].w);
+            }
          if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
             {
             return eConditionalFormatRule;
@@ -105,7 +107,7 @@ function Agent (sheet_, config_)
       {
       config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty('platycoreAgent' + this.getSheetId()));
       }
-   var memory_ = config_.memory;
+   const memory_ = config_.memory;
    memory_.toggleFromName = memory_.toggleFromName || {};
    memory_.fieldFromName = memory_.fieldFromName || {};
    memory_.scriptFromName = memory_.scriptFromName || {};
@@ -197,7 +199,7 @@ function Agent (sheet_, config_)
          }
       catch (e)
          {
-         console.warn(e, e.stack);
+         console.warn('ReadToggle suppressed', e, e.stack);
          return undefined;
          }
       };
@@ -226,7 +228,7 @@ function Agent (sheet_, config_)
          }
       catch (e)
          {
-         console.warn(e, e.stack);
+         console.warn('WriteToggle suppressed', e, e.stack);
          }
       };
 
@@ -269,7 +271,7 @@ function Agent (sheet_, config_)
          }
       catch (e)
          {
-         console.warn(e, e.stack);
+         console.warn('ReadField suppressed', e, e.stack);
          return undefined;
          }
       };
@@ -291,7 +293,7 @@ function Agent (sheet_, config_)
          }
       catch (e)
          {
-         console.warn(e, e.stack);
+         console.warn('WriteField suppressed', e, e.stack);
          }
       };
 
@@ -493,18 +495,14 @@ function Agent (sheet_, config_)
    this.Reboot = function ()
       {
       self_.Save();
-      if (config_.shouldReuseMemoryPointer)
+      var newConfig = JSON.parse(JSON.stringify(config_));
+      if (Util_isObjectPropertyArray(config_, 'reusePointers'))
          {
-         delete config_.memory;
-         var newConfig = JSON.parse(JSON.stringify(config_));
-         newConfig.memory = memory_;
-         }
-      else
-         {
-         var newConfig = JSON.parse(JSON.stringify(config_));
+         config_.reusePointers.forEach(function (eKey) {
+            newConfig[eKey] = config_[eKey];
+            });
          }
       newConfig.memory.utsLastSaved = 0;  // eliminate all caches
-      console.log('newConfig', newConfig);
       var rvAgentAndMemory = [new Agent(sheet_, newConfig), newConfig.memory];
       sheet_ = null;
       config_ = null;

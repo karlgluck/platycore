@@ -28,14 +28,25 @@ function onOpen()
                ui.createMenu("Debug")
                   .addItem("Write Agent Memory", "menuWriteAgentMemory")
                   .addItem("Read Agent Memory", "menuReadAgentMemory")
-                  .addItem("Test", "menuDebugTest")
+                  .addSeparator()
+                  .addItem("Verify Permissions", "menuDebugVerifyPermissions")
+                  .addSeparator()
+                  .addItem("Sandbox", "menuDebugSandbox")
                )
          .addToUi();
    
    }
 
 
-function menuDebugTest()
+function menuDebugVerifyPermissions()
    {
-   SpreadsheetApp.getActiveSheet().getRange(1, 49).setFormula('=VALUE(NOW())')
+   SpreadsheetApp.getActiveSheet().getRange(1, 49).setFormula('=VALUE(NOW())');
+   console.log('GmailApp.getInboxUnreadCount() = ' + GmailApp.getInboxUnreadCount());
+   }
+
+
+
+
+function menuDebugSandbox()
+   {
    }

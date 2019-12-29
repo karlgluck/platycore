@@ -10,6 +10,10 @@ function menuStepAgent()
             {
             agent.Step();
             }
+         catch (e)
+            {
+            agent.Error('Step', e, e.stack);
+            }
          finally
             {
             agent.TurnOff();
@@ -19,13 +23,5 @@ function menuStepAgent()
    catch (e)
       {
       SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
-      try
-         {
-         agent.error('menuStepAgent', e, e.stack);
-         }
-      catch (ignore)
-         {
-         console.error('menuStepAgent',e, e.stack);
-         }
       }
    }

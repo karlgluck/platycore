@@ -34,9 +34,9 @@ function newAgent (urlAgentInstructions, origin)
       var agent = new Agent(sheet, {
             origin: origin || 'newAgent',
             utsSheetLastUpdated: utsNow,
-            conditionalFormatRules: conditionalFormatRules,
             memory: memory,
-            shouldReusePointers: true,
+            conditionalFormatRules: conditionalFormatRules,
+            reusePointers: ['memory','conditionalFormatRules'],
             verbose: true,
             forceThisOn: true
             });
@@ -57,6 +57,9 @@ function newAgent (urlAgentInstructions, origin)
          {
          var eAgentInstruction = agentInstructions[iAgentInstruction];
 
+         console.log('verifying memory ptr', iAgentInstruction, agent.VerifyMemoryPointer(memory));
+         console.log('verifying rules ptr', iAgentInstruction, agent.VerifyRulesPointer(conditionalFormatRules));
+
          if ('REBOOT' === eAgentInstruction || 'OFF' === eAgentInstruction || iAgentInstruction + 1 == nAgentInstructionCount) // save the conditional formatting rules before switching off
             {
             sheet.setConditionalFormatRules(conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
@@ -66,6 +69,10 @@ function newAgent (urlAgentInstructions, origin)
 
          switch (eAgentInstruction)
             {
+            default:
+               agent.Error('invalid instruction', eAgentInstruction);
+               break;
+
             case 'NAME':
                var name = agentInstructions[++iAgentInstruction];
                memory.name = name;
@@ -113,8 +120,11 @@ function newAgent (urlAgentInstructions, origin)
 
             case 'EVAL':
                var code = agentInstructions[++iAgentInstruction];
-               agent.Log(code);
-               eval(code);
+               (function (agent)
+                  {
+                  agent.Log('eval(' + code + ')');
+                  eval(code);
+                  })(agent);
                break;
 
             case 'RANGE':
@@ -214,6 +224,7 @@ function newAgent (urlAgentInstructions, origin)
                               .setFontColor(fontColor)
                               .build()
                         });
+                  console.log('there are now ' + conditionalFormatRules.length + ' conditional formatting rules');
                   })(agentInstructions[++iAgentInstruction]);
                break;
 
