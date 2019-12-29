@@ -1,9 +1,9 @@
 
 function menuStepAgent()
    {
-   var agent = new Agent(SpreadsheetApp.getActiveSheet(), {origin:'menuStepAgent'});
    try
       {
+      var agent = new Agent(SpreadsheetApp.getActiveSheet(), {origin:'menuStepAgent'});
       if (agent.TurnOn())
          {
          try
@@ -18,7 +18,14 @@ function menuStepAgent()
       }
    catch (e)
       {
-      console.error('menuStepAgent', e, e.stack);
       SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
+      try
+         {
+         agent.error('menuStepAgent', e, e.stack);
+         }
+      catch (ignore)
+         {
+         console.error('menuStepAgent',e, e.stack);
+         }
       }
    }

@@ -134,21 +134,6 @@ function Agent (sheet_, config_)
       sheet_ = null;
       }
 
-   var toggleFromNameP_ = function (name)
-      {
-      try
-         {
-         var rvToggle = memory_.toggleFromName[name];
-         }
-      catch (e)
-         {
-         }
-      finally
-         {
-         return rvToggle || { hasBeenRead: true, valueCached: false, r:1, c:49, w:1, t:'' };
-         }
-      };
-
    var scriptFromNameP_ = function (name)
       {
       try
@@ -160,41 +145,7 @@ function Agent (sheet_, config_)
          }
       finally
          {
-         return rvScript || { blocks: [] };
-         }
-      };
-
-   var scriptBlockFromNameP_ = function (name, iBlockIndex)
-      {
-      try
-         {
-         var rvScriptBlock = memory_.scriptFromName[name].blocks[iBlockIndex];
-         }
-      catch (e)
-         {
-         }
-      finally
-         {
-         return rvScriptBlock || { valueCached: '', r:1, c:49, w:1, h:1 };
-         }
-      };
-   
-   // Each field contains:
-   //    hasBeenRead - if it exists, the field has been read from its true value during this execution
-   //    valueCached - 
-   //
-   var fieldFromNameP_ = function (name)
-      {
-      try
-         {
-         var rvField = memory_.fieldFromName[name];
-         }
-      catch (e)
-         {
-         }
-      finally
-         {
-         return rvField || { valueCached: '', r:1, c:49, w:1, h:1 };
+         return rvScript || { blockCodeNoteNames: [] };
          }
       };
 
@@ -529,7 +480,6 @@ function Agent (sheet_, config_)
 
    this.TurnOff = function ()
       {
-      self_.Verbose(function () { return ['shutting down...', isThisOn_, JSON.stringify(memory_)] });
       if (!isThisOn_)
          {
          return;
