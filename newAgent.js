@@ -18,7 +18,7 @@ function newAgent (urlAgentInstructions, origin)
 
    try
       {
-      var utsNow = new Date().getTime();
+      var utsNow = utsPlatycoreNow;
       var memory = {
             sheetName: sheetName,
             sheetId: sheet.getSheetId(),
@@ -57,7 +57,7 @@ function newAgent (urlAgentInstructions, origin)
          {
          var eAgentInstruction = agentInstructions[iAgentInstruction];
 
-         if ('reboot' === eAgentInstruction || 'turnOff' === eAgentInstruction) // save the conditional formatting rules before switching off
+         if ('REBOOT' === eAgentInstruction || 'OFF' === eAgentInstruction || iAgentInstruction + 1 == nAgentInstructionCount) // save the conditional formatting rules before switching off
             {
             sheet.setConditionalFormatRules(conditionalFormatRules);
             }
@@ -323,10 +323,6 @@ function newAgent (urlAgentInstructions, origin)
       }
    finally
       {
-      memory.utsLastSaved = new Date().getTime();
-      PropertiesService.getDocumentProperties().setProperty(
-            'platycoreAgent' + memory.sheetId,
-            JSON.stringify(memory)
-            );
+      agent.Save();
       }
    }

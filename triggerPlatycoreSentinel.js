@@ -1,4 +1,7 @@
 
+
+var utsPlatycoreNow = Util_utsNowGet(); // fix the "now" point in time so that changes get picked up while this sentinel executes
+
 function triggerPlatycoreSentinel ()
    {
    GAS_deleteTriggerByName('triggerPlatycoreSentinel');
@@ -6,7 +9,6 @@ function triggerPlatycoreSentinel ()
    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
    var file = DriveApp.getFileById(spreadsheet.getId());
    var properties = PropertiesService.getDocumentProperties();
-   var utsNow = new Date().getTime();
    var platycore = JSON.parse(properties.getProperty('platycore') || '{}');
    var keys = properties.getKeys()
          .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' });
@@ -106,6 +108,6 @@ function triggerPlatycoreSentinel ()
          }
       }
 
-   platycore.utsLastUpdated = new Date().getTime();
+   platycore.utsLastUpdated = utsPlatycoreNow;
    properties.setProperty('platycore', JSON.stringify(platycore));
    }

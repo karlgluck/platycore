@@ -46,9 +46,7 @@ function Agent (sheet_, config_)
    //
 
    Util_makeLazyConstantMethod(this, 'getSheetId', function () { return sheet_.getSheetId() });
-   Util_makeLazyConstantMethod(this, 'isVerbose_', function () { return !!config_.verbose && !self_.ReadToggle('VERBOSE') });
-
-   self_.isVerbose_ = function () { return true; };
+   Util_makeLazyConstantMethod(this, 'isVerbose_', function () { return !!config_.verbose || !self_.ReadToggle('VERBOSE') });
 
    //
    // Load memory_ for this execution (clear cache, reserved flags, etc.)
@@ -127,6 +125,7 @@ function Agent (sheet_, config_)
    
    this.Save = function ()
       {
+      memory_.utsLastSaved = utsPlatycoreNow;
       properties_.setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };
    
@@ -345,7 +344,7 @@ function Agent (sheet_, config_)
       field.hasBeenRead = true;
       var range = sheet_.getRange(field.r, field.c, 1, field.w);
       range.setValue(value);
-      updateFieldConditionalFormatRule_(field, sheet_.getRange(field.r, field.c, field.h, field.w).getValue());
+      updateFieldConditionalFormatRule_(field, sheet_.getRange(field.r, field.c, field.h, field.w));
       };
 
    var updateFieldConditionalFormatRule_ = function (input, range)
