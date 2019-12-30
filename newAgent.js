@@ -18,27 +18,27 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
 
    try
       {
-      var utsNow = utsPlatycoreNow;
+      var utsNow = Global_utsPlatycoreNow;
       var memory = {
-            sheetName: sheetName,
-            sheetId: sheet.getSheetId(),
-            urlAgentInstructions: urlAgentInstructions,
             fieldFromName: {},
-            toggleFromName: {},
+            noteFromName: {},
             scriptFromName: {},
             scriptNames: [],
-            noteFromName: {},
+            sheetName: sheetName,
+            sheetId: sheet.getSheetId(),
+            toggleFromName: {},
+            urlAgentInstructions: urlAgentInstructions,
             utsLastSaved: utsNow
             };
       var conditionalFormatRules = [];
       var agent = new Agent(sheet, {
-            origin: origin || 'newAgent',
-            utsSheetLastUpdated: utsNow,
-            memory: memory,
             conditionalFormatRules: conditionalFormatRules,
+            forceThisOn: true,
+            memory: memory,
+            origin: origin || 'newAgent',
             reusePointers: ['memory','conditionalFormatRules'],
-            verbose: true,
-            forceThisOn: true
+            utsSheetLastUpdated: utsNow,
+            verbose: true
             });
       agent.Save();
       agent.Info('Fetching ' + Util_clampStringLengthP(urlAgentInstructions, 50));

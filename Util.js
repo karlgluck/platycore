@@ -10,7 +10,7 @@ function Util_clampStringLengthP(text, length)
 
 function Util_rainbowColorFromAnyP(v)
    {
-   const colors = ['#ff0000','#ff9900','#ffff00','#00ff00','#00ffff','#4a86e8','#9900ff'];
+   var colors = ['#ff0000','#ff9900','#ffff00','#00ff00','#00ffff','#4a86e8','#9900ff'];
    return colors[((v >>> 0) % colors.length)];
    }
 

@@ -106,7 +106,7 @@ function Agent (sheet_, config_)
       {
       config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty('platycoreAgent' + this.getSheetId()));
       }
-   const memory_ = config_.memory;
+   var memory_ = config_.memory;
    memory_.toggleFromName = memory_.toggleFromName || {};
    memory_.fieldFromName = memory_.fieldFromName || {};
    memory_.scriptFromName = memory_.scriptFromName || {};
@@ -450,8 +450,8 @@ function Agent (sheet_, config_)
       return range;
       };
 
-   const startsFromArgCount = [[],[ 2],[ 2,21],[ 2,21,36],[ 2,21,29,40]];
-   const countsFromArgCount = [[],[48],[19,29],[19,15,14],[19, 7,10, 9]];
+   var startsFromArgCount = [[],[ 2],[ 2,21],[ 2,21,36],[ 2,21,29,40]];
+   var countsFromArgCount = [[],[48],[19,29],[19,15,14],[19, 7,10, 9]];
 
    var writeOutputNormal_ = function (args)
       {
@@ -566,7 +566,7 @@ function Agent (sheet_, config_)
 
    this.Save = function ()
       {
-      memory_.utsLastSaved = utsPlatycoreNow;
+      memory_.utsLastSaved = Global_utsPlatycoreNow;
       PropertiesService.getDocumentProperties().setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };
 
@@ -697,6 +697,30 @@ function Agent (sheet_, config_)
          eval(code);
          })(self_);
       
+      };
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// When snoozing, the agent may be woken up any point
+// in the future (including immediately). This is what
+// would make it distinct from Sleep, which would always
+// last for a minimum duration.
+//
+// Snoozing for a duration simply asks Platycore to
+// check in on the agent in the future and step it.
+// Snoozing forever disables this check, but the agent
+// can still be woken up other ways.
+//
+
+   this.Snooze = function (milliseconds)
+      {
+      self_.WriteField('WAKE', Global_utsPlatycoreNow + milliseconds);
+      };
+
+   this.SnoozeForever = function ()
+      {
+      self_.WriteField('WAKE', 'SNOOZE');
       };
 
 

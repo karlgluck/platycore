@@ -1,13 +1,41 @@
 
 /*
 
+// query gmail using query (karlgluck + anything @ gmail.com, newer than [last time updated])
+// forward to channel
+
+// channels exist for every sheet
+// additional channels exist
+   // they can be created implicitly!!
+   // they can be virtual...
+   // if they are not virtual, they are in a sheet
+   // platycore can make channels virtual or not (swap back and forth)
+// all channel to agent wake-pairs are stored in a sheet managed using GAS_SheetMatrix
+
+function GAS_SheetKeyValueStore ()
+   {
+   // can remove old keys (to help garbage collection)
+   }
+
+function GAS_SheetTable ()
+   {
+   // append or replace modes
+   // can remove old keys (to help garbage collection)
+   }
+
+// used to interface with the sheet as A+B=C
+function GAS_SheetMatrix ()
+   {
+   // can remove old keys (to help garbage collection)
+   }
+
  ==== HARDENING PHASE RIGHT NOW === WOOP WOOP ======
 
 - randomly generate scripts
 - test all operations to see if they break shit
 - boil down ideas and delete loose ends so we have a fresh slate
 
-- figure out why EVAL doesn't like getinboxthreads
+
 - be able to set next SI / BI
 - be able to set a 'wake timer'
 

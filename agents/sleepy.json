@@ -1,0 +1,22 @@
+[
+            "NAME",  "sleepy",
+          "FREEZE",  4,
+         "TOOLBAR",  1,
+
+             "REM", "[RESET]",
+            "NOTE",  "RESET.0",
+                     {"fVirtual": null},
+                     [
+                     "agent.Log('Sleepy woke up at ' + new Date());",
+                     "agent.Snooze(60 * 1000);"
+                     ],
+          "SCRIPT",  "RESET", ["RESET.0"],
+
+           "GO_EN",  {"r": 1, "c": 1},
+            "EVAL",  ["agent.WriteToggle('EN', true)"],
+           "FIELD",  {"r": 3, "c":3, "k": "USER_INPUT", "w":43, "h":1},
+          "TOGGLE",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "value": true, "isReadonly": true},
+            "EVAL",  ["agent.Snooze(0)"],
+             "OFF"
+]
+

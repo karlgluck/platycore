@@ -1,6 +1,6 @@
 
 
-var utsPlatycoreNow = Util_utsNowGet(); // fix the "now" point in time so that changes get picked up while this sentinel executes
+var Global_utsPlatycoreNow = Util_utsNowGet(); // fix the "now" point in time so that changes get picked up while this sentinel executes
 
 function triggerPlatycoreSentinel ()
    {
@@ -13,6 +13,7 @@ function triggerPlatycoreSentinel ()
    var keys = properties.getKeys()
          .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' });
 
+   var utsNextWakeTime = Number.POSITIVE_INFINITY;
 
    // TODO: this loop continues going as long as any agent is GO
 
@@ -75,10 +76,22 @@ function triggerPlatycoreSentinel ()
          }
       
       var isIdle = true !== agentMemory.toggleFromName.GO.valueCached;
-      var shouldWake = agentMemory.fieldFromName.hasOwnProperty('WAKE') && agentMemory.fieldFromName.WAKE.valueCached < utsPlatycoreNow;
+      if (agentMemory.fieldFromName.hasOwnProperty('WAKE'))
+         {                                               // Check for a number so that we can disable
+         var wake = agentMemory.fieldFromName.WAKE;      // automatic wake-up using 'SNOOZE'
+         var shouldWake = Util_isNumber(wake.valueCached) && wake.valueCached < Global_utsPlatycoreNow;
+         }
+      else
+         {
+         var shouldWake = false;
+         }
       console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?(shouldWake?'WAKE':'IDLE'):'UPDATE'), agentMemory);
       if (isIdle && !shouldWake)
          {
+         if (Util_isObject(wake) && Util_isNumber(wake.valueCached))
+            {
+            utsNextWakeTime = Math.min(utsNextWakeTime, wake.valueCached);
+            }
          return;
          }
       if ('object' !== typeof sheet || null === sheet)
@@ -86,11 +99,23 @@ function triggerPlatycoreSentinel ()
          sheet = spreadsheet.getSheetByName(agentMemory.sheetName);
          }
       try{
-         var agent = new Agent(sheet, {origin:'triggerPlatycoreSentinel',utsSheetLastUpdated: utsLastUpdated, memory: agentMemory});
+         var agent = new Agent(sheet, {
+               memory: agentMemory,
+               origin:'triggerPlatycoreSentinel',
+               utsSheetLastUpdated: utsLastUpdated
+               });
+         agentMemory = null; // no longer valid
+         wake = null;        // no longer valid
          if (agent.TurnOn())
             {
             try{
                agent.Step();
+               var wakeValue = agent.ReadField('WAKE');
+               if (Util_isNumber(wakeValue))
+                  {
+                  utsNextWakeTime = Math.min(utsNextWakeTime, wakeValue);
+                  }
+               wakeValue = null;
                }
             catch (e)
                {
@@ -107,8 +132,16 @@ function triggerPlatycoreSentinel ()
          console.error(e, e.stack);
          throw e;
          }
-      }
+         
+      } // ePlatycoreAgentKey for every agent in the spreadsheet
 
-   platycore.utsLastUpdated = utsPlatycoreNow;
+   platycore.utsLastUpdated = Global_utsPlatycoreNow;
    properties.setProperty('platycore', JSON.stringify(platycore));
+   GAS_deleteTriggerByName('triggerPlatycoreSentinel');
+   var dtSnoozeDelay = Math.min(2/*days*/*1000*60*60*24, utsNextWakeTime - Global_utsPlatycoreNow);
+   console.log('PLATYCORE IS GOING TO SLEEP for ' + dtSnoozeDelay);
+   ScriptApp.newTrigger('triggerPlatycoreSentinel')
+         .timeBased()
+         .after(dtSnoozeDelay)
+         .create();
    }
