@@ -69,3 +69,31 @@ var GAS_updateConditionalFormatRule = function (sheet, irRow, icColumn, wcWidth,
       }
    sheet.setConditionalFormatRules(rules);
    }
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+GAS_ObjectsFromSheetP = function (sheet)
+   {
+   return Util_ObjectsFromTableP(GAS_TableFromSheetP(sheet));
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+GAS_DictionaryFromSheetP = function (sheet, key)
+   {
+   return Util_DictionaryFromTableP(GAS_TableFromSheetP(sheet), key);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+GAS_TableFromSheetP = function (sheet)
+   {
+   var irHeaders = Math.max(1, sheet.getFrozenRows());
+   var qRows = sheet.getLastRow() - irHeaders;
+   var icLast = sheet.getLastColumn();
+   return qRows <= 0 ? [] : sheet.getRange(irHeaders, 1, qRows, icLast).getValues();
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+

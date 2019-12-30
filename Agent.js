@@ -743,7 +743,7 @@ function Agent (sheet_, config_)
          utsNewWakeTime = dtMilliseconds + utsMaybePreviousWakeTime; // dtMilliseconds first coerces utsMaybePreviousWakeTime
          }                                                           // into being a number (otherwise the + can mean "string append")
       // self_.Log('utsNewWakeTime', utsNewWakeTime);
-      self_.Log('Snoozing, alarm is set for ' + (utsNewWakeTime - Util_utsNowGet())/(1000*60*60) + ' hours from now ' + Util_moonPhaseFromDate(new Date(utsNewWakeTime)), utsNewWakeTime);
+      self_.Log(Util_moonPhaseFromDate(new Date(utsNewWakeTime)) + ' Snoozing, alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now ', utsNewWakeTime);
       self_.WriteField('WAKE', utsNewWakeTime);
 
       delete self_.Snooze; // this function can only be called once, otherwise the field WAKE has already been written and that might do Weird Things (TM) this could be fixed perhaps in less time than it took to write this comment but I'm not sure if anyone will ever care... so, goodbye function!
@@ -753,7 +753,7 @@ function Agent (sheet_, config_)
 
    this.SnoozeForever = function ()
       {
-      self_.Log('Snoozing, no alarm... ' + Util_moonPhaseFromDate(new Date()));
+      self_.Log(Util_moonPhaseFromDate(new Date()) + 'Snoozing, no alarm... ');
       self_.WriteField('WAKE', 'SNOOZE');
       };
 

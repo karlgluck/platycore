@@ -10,6 +10,8 @@
 // in a format that depends on what kind of sheet it is (key/value store, table, etc.)
 
 // (so that I can use this project to control the watering outside)
+// also to run Soundscape... the ability to provide a web interface that can
+// upload and download files, and interact with a database...
 
 // Sheet configuration is stored in platycore.
 
