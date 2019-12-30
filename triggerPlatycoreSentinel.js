@@ -16,6 +16,11 @@ function triggerPlatycoreSentinel ()
    var utsNextWakeTime = Number.POSITIVE_INFINITY;
 
    // TODO: this loop continues going as long as any agent is GO
+   //
+
+
+   // cherries:
+   //    - total execution time for each agent is saved as 'ONLINE'
 
    for (var iKey = 0, nKeyCount = keys.length; iKey < nKeyCount; ++iKey)
       {
@@ -28,7 +33,7 @@ function triggerPlatycoreSentinel ()
       var agentMemory = JSON.parse(properties.getProperty(ePlatycoreAgentKey));
       if (!isPlatycoreMemoryLatest)
          {
-         console.log('[' + ePlatycoreAgentKey + ']: syncing platycore memory');
+         console.warn('[' + ePlatycoreAgentKey + ']: syncing platycore memory (this should not happen frequently; if it does, utsLastSaved should be set further into the future when the agent terminates)');
          if (agentMemory.hasOwnProperty('sheetName')) // use the sheetName hint for direct lookup
             {
             sheet = spreadsheet.getSheetByName(agentMemory.sheetName);
@@ -139,6 +144,11 @@ function triggerPlatycoreSentinel ()
          console.error(e, e.stack);
          throw e; // this is a problem because it skips the rescheduler
          }
+
+      //
+      // Invariants
+      //
+      // assert(Util_isNumber(Global_utsPlatycoreNow))
          
       } // ePlatycoreAgentKey for every agent in the spreadsheet
 

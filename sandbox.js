@@ -9,6 +9,10 @@
 // A GET request for the sheet will just return the sheet's data as a JSON blob
 // in a format that depends on what kind of sheet it is (key/value store, table, etc.)
 
+// (so that I can use this project to control the watering outside)
+
+// Sheet configuration is stored in platycore.
+
 // query gmail using query (karlgluck + anything @ gmail.com, newer than [last time updated])
 // forward to channel
 

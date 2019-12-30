@@ -63,7 +63,6 @@ function Agent (sheet_, config_)
    var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
       {
       var rules = config_.conditionalFormatRules;
-      console.log('looking for ' + irRow + ',' + icColumn + ' ' + qrHeight + ',' + irRow + ' in ' + rules.length + ' conditional formatting rules');
       for (var i = 0, n = rules.length; i < n; ++i)
          {
          var eConditionalFormatRule = rules[i];
@@ -175,6 +174,11 @@ function Agent (sheet_, config_)
    var updateToggleConditionalFormatRule_ = function (toggle)
       {
       var rule = getConditionalFormatRuleByArea(toggle.r, toggle.c, 1, toggle.w);
+      if (!Util_isObject(rule))
+         {
+         self_.Warn('conditional format rule for toggle could not be updated', toggle);
+         return;
+         }
       var builder = rule.gasConditionalFormatRule.copy();
       builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) +(toggle.valueCached?',FALSE)':',TRUE)'));
       rule.gasConditionalFormatRule = builder.build();
@@ -267,6 +271,11 @@ function Agent (sheet_, config_)
    var updateFieldConditionalFormatRule_ = function (field)
       {
       var rule = getConditionalFormatRuleByArea(field.r, field.c, field.h, field.w);
+      if (!Util_isObject(rule))
+         {
+         self_.Warn('conditional format rule for field could not be updated', field);
+         return;
+         }
       var builder = rule.gasConditionalFormatRule.copy();
       builder.whenTextEqualTo(field.valueCached);
       rule.gasConditionalFormatRule = builder.build();

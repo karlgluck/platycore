@@ -16,12 +16,34 @@ But more efficiently this time!
 
 Agents save a bunch of stuff in their memory. There are a lot to remember, so here's a few of 'em:
 
---------------------------
 | Property | Description |
---------------------------
-|||
-|||
-|||
-|||
-|||
---------------------------
+| --------:| ----------- |
+|`fieldFromName`|Dictionary turning a field name like "LOCK" into a field description|
+
+## Field Description
+
+| Property | Description |
+| --------:| ----------- |
+|`fVirtual`|A flag (its presence or absence indicates true/false). If this property exists, the field is not written to the spreadsheet anywhere, and the members `r`,`c`,`w`, and `h` will not be present|
+|`fRuleIsSynced`|A flag (its presence or absence indicates true/false). If this property exists, the field's conditional formatting rule used to indicate unrecognized changes to the user has not been synced with its current value. This can be either because the field has not been read yet (so we don't know if the user has changed something) or the field was written, but an error caused the rule not to update. This flag should always be set if the field is virtual|
+|`r`|First row of the range to which this field is synced. Does not exist if this is a virtual field.|
+|`c`|First column of the range to which this field is synced. Does not exist if this is a virtual field.|
+|`w`|Column width of the range to which this field is synced. Does not exist if this is a virtual field.|
+|`h`|Row height of the range to which this field is synced. Does not exist if this is a virtual field.|
+
+# Truthiness
+
+Here's some other stuff that's also true!
+
+- When the Platycore sentinel runs, the global time reference in `Global_utsPlatycoreNow` is used as a baseline for all "instantaneous" operations
+- For every `GO` or `WAKE`-able agent, in sequence, the sentinel will `TurnOn`, `Step` and `TurnOff` the agent
+- The sentinel will execute until either:
+      A. The total execution time is such that stepping another
+         agent is too likely to get cut off by Google.
+            - print warnings if an agent uses more than 75%
+               of the buffer zone normally left.
+      B. No agent is WAKE-able or can GO
+- if the first situation occurs, the sentinel will reschedule
+   itself as soon as possible in the future
+- if the second situation occurs, the sentinel will reschedule
+   itself at the earliest time among all snooze alarms for all agents
