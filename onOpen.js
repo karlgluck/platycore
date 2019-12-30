@@ -24,6 +24,8 @@ function onOpen()
                )
          .addSubMenu(
                ui.createMenu("Debug")
+                  .addItem("Clear Output", "menuClearAgentOutput")
+                  .addSeparator()
                   .addItem("Write Agent Memory", "menuWriteAgentMemory")
                   .addItem("Read Agent Memory", "menuReadAgentMemory")
                   .addSeparator()

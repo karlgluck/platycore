@@ -617,7 +617,7 @@ function Agent (sheet_, config_)
          {
          var onValue = self_.ReadToggle('ON');
          var lockValue = self_.ReadField('LOCK');
-         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (new Date().getTime() - lockValue);
+         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (Util_utsNowGet() - lockValue);
          isThisOn_ = (!onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
          if (isThisOn_)
             {
@@ -625,7 +625,7 @@ function Agent (sheet_, config_)
                {
                console.warn('previous lock on platycoreAgent' + sheet_.getSheetId() + ' aged out and is being ignored');
                }
-            self_.WriteField('LOCK', new Date().getTime());
+            self_.WriteField('LOCK', Util_utsNowGet());
             self_.WriteToggle('ON', true);
             }
          else
@@ -734,12 +734,16 @@ function Agent (sheet_, config_)
    this.Snooze = function (dtMilliseconds)
       {
       var utsMaybePreviousWakeTime = self_.ReadField('WAKE');
-      var utsNewWakeTime = Global_utsPlatycoreNow + dtMilliseconds;
+      // self_.Log('Util_utsNowGet()', Util_utsNowGet());
+      // self_.Log('Global_utsPlatycoreNow', Global_utsPlatycoreNow);
+      // self_.Log('utsMaybePreviousWakeTime', utsMaybePreviousWakeTime);
+      var utsNewWakeTime = dtMilliseconds + Global_utsPlatycoreNow;
       if (Util_isNumber(utsMaybePreviousWakeTime) && Math.abs(Global_utsPlatycoreNow - utsMaybePreviousWakeTime) < dtMilliseconds)
-         {
-         utsNewWakeTime = utsMaybePreviousWakeTime + dtMilliseconds; // create a regular cadence
-         }
-      self_.Log('Snoozing, alarm is set', new Date(utsNewWakeTime), utsNewWakeTime);
+         {                                                           // Create a regular cadence. Also, putting
+         utsNewWakeTime = dtMilliseconds + utsMaybePreviousWakeTime; // dtMilliseconds first coerces utsMaybePreviousWakeTime
+         }                                                           // into being a number (otherwise the + can mean "string append")
+      // self_.Log('utsNewWakeTime', utsNewWakeTime);
+      self_.Log('Snoozing, alarm is set for ' + (utsNewWakeTime - Util_utsNowGet())/(1000*60*60) + ' hours from now ' + Util_moonPhaseFromDate(new Date(utsNewWakeTime)), utsNewWakeTime);
       self_.WriteField('WAKE', utsNewWakeTime);
 
       delete self_.Snooze; // this function can only be called once, otherwise the field WAKE has already been written and that might do Weird Things (TM) this could be fixed perhaps in less time than it took to write this comment but I'm not sure if anyone will ever care... so, goodbye function!

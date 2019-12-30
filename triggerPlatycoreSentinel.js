@@ -5,7 +5,7 @@ var Global_utsPlatycoreNow = Util_utsNowGet(); // fix the "now" point in time so
 function triggerPlatycoreSentinel ()
    {
    GAS_deleteTriggerByName('triggerPlatycoreSentinel');
-   // TODO: re-schedule the sentinel
+
    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
    var file = DriveApp.getFileById(spreadsheet.getId());
    var properties = PropertiesService.getDocumentProperties();
@@ -18,17 +18,14 @@ function triggerPlatycoreSentinel ()
    // TODO: this loop continues going as long as any agent is GO
    //
 
-
-   // cherries:
-   //    - total execution time for each agent is saved as 'ONLINE'
-
    for (var iKey = 0, nKeyCount = keys.length; iKey < nKeyCount; ++iKey)
       {
-      
+
       var utsLastUpdated = file.getLastUpdated().getTime();
       var isPlatycoreMemoryLatest = platycore.hasOwnProperty('utsLastSaved') && (platycore.utsLastSaved >= utsLastUpdated);
 
       var ePlatycoreAgentKey = keys[iKey];
+      console.log('checking agent ' + ePlatycoreAgentKey);
       var sheet = undefined;
       var agentMemory = JSON.parse(properties.getProperty(ePlatycoreAgentKey));
       if (!isPlatycoreMemoryLatest)
@@ -97,53 +94,56 @@ function triggerPlatycoreSentinel ()
          {
          var shouldWake = false;
          }
-      console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?(shouldWake?'WAKE':'IDLE'):'UPDATE'), agentMemory);
+      console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?(shouldWake?'WAKE':'IDLE'):'UPDATE'));
       if (isIdle && !shouldWake)
          {
          if (Util_isObject(wake) && Util_isNumber(wake.valueCached))
             {
             utsNextWakeTime = Math.min(utsNextWakeTime, wake.valueCached);
+            console.log('agent ' + ePlatycoreAgentKey + ' is snoozing for another ' + (utsNextWakeTime - Global_utsPlatycoreNow) / (1000) + ' seconds', utsNextWakeTime);
             }
-         return;
          }
-      if ('object' !== typeof sheet || null === sheet)
+      else
          {
-         sheet = spreadsheet.getSheetByName(agentMemory.sheetName);
-         }
-      try{
-         var agent = new Agent(sheet, {
-               memory: agentMemory,
-               origin:'triggerPlatycoreSentinel',
-               utsSheetLastUpdated: utsLastUpdated
-               });
-         agentMemory = null; // no longer valid
-         wake = null;        // no longer valid
-         if (agent.TurnOn())
+         if ('object' !== typeof sheet || null === sheet)
             {
-            try{
-               agent.Step();
-               }
-            catch (e)
-               {
-               agent.Error(ePlatycoreAgentKey + ': Step', e, e.stack);
-               }
-            finally
-               {
-               var wakeValue = agent.ReadField('WAKE');
-               if (Util_isNumber(wakeValue))
-                  {
-                  utsNextWakeTime = Math.min(utsNextWakeTime, wakeValue);
-                  }
-               wakeValue = null;
-               agent.TurnOff();
-               }
+            sheet = spreadsheet.getSheetByName(agentMemory.sheetName);
             }
-         }
-      catch (e)
-         {
-         console.error(e, e.stack);
-         throw e; // this is a problem because it skips the rescheduler
-         }
+         try{
+            var agent = new Agent(sheet, {
+                  memory: agentMemory,
+                  origin:'triggerPlatycoreSentinel',
+                  utsSheetLastUpdated: utsLastUpdated
+                  });
+            agentMemory = null; // no longer valid
+            wake = null;        // no longer valid
+            if (agent.TurnOn())
+               {
+               try{
+                  agent.Step();
+                  }
+               catch (e)
+                  {
+                  agent.Error(ePlatycoreAgentKey + ': Step', e, e.stack);
+                  }
+               finally
+                  {
+                  var wakeValue = agent.ReadField('WAKE');
+                  if (Util_isNumber(wakeValue))
+                     {
+                     utsNextWakeTime = Math.min(utsNextWakeTime, wakeValue);
+                     }
+                  wakeValue = null;
+                  agent.TurnOff();
+                  }
+               }
+            } // try - running the agent through a full cycle
+         catch (e)
+            {
+            console.error(e, e.stack);
+            throw e; // this is a problem because it skips the rescheduler
+            }
+         } // is GO or wake
 
       //
       // Invariants
