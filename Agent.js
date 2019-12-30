@@ -67,10 +67,6 @@ function Agent (sheet_, config_)
          {
          var eConditionalFormatRule = rules[i];
          var ranges = eConditionalFormatRule.ranges;
-         if (ranges.length >= 1)
-            {
-            console.log('rule ' + i + ' has ' + ranges.length + ' ' + ranges + ', first is: ' + ranges[0].r + ',' + ranges[0].c + ' ' + ranges[0].h + ',' + ranges[0].w);
-            }
          if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
             {
             return eConditionalFormatRule;
@@ -743,7 +739,7 @@ function Agent (sheet_, config_)
          {
          utsNewWakeTime = utsMaybePreviousWakeTime + dtMilliseconds; // create a regular cadence
          }
-      console.log('Snooze scheduled until ' + new Date(utsNewWakeTime), utsNewWakeTime);
+      self_.Log('Snoozing, alarm is set', new Date(utsNewWakeTime), utsNewWakeTime);
       self_.WriteField('WAKE', utsNewWakeTime);
 
       delete self_.Snooze; // this function can only be called once, otherwise the field WAKE has already been written and that might do Weird Things (TM) this could be fixed perhaps in less time than it took to write this comment but I'm not sure if anyone will ever care... so, goodbye function!
@@ -753,6 +749,7 @@ function Agent (sheet_, config_)
 
    this.SnoozeForever = function ()
       {
+      self_.Log('Snoozing, no alarm... ' + Util_moonPhaseFromDate(new Date()));
       self_.WriteField('WAKE', 'SNOOZE');
       };
 
