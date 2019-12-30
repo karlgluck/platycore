@@ -19,9 +19,7 @@ function onOpen()
          .addSeparator()
          .addSubMenu(
                ui.createMenu("Sentinel")
-                     .addItem("Run", "menuPlatycoreSentinel")
-                     .addSeparator()
-                     .addItem("Refresh", "menuRefreshSentinel")
+                     .addItem("Run", "menuRunSentinel")
                      .addItem("Stop", "menuStopSentinel")
                )
          .addSubMenu(
@@ -34,6 +32,11 @@ function onOpen()
                   .addItem("Sandbox", "menuDebugSandbox")
                )
          .addToUi();
+
+   if (!GAS_isFunctionTriggeredP('triggerPlatycoreSentinel'))
+      {
+      SpreadsheetApp.getActiveSpreadsheet().toast('Platycore Sentinel is not running; turn in on with Platycore > Sentinel > Refresh');
+      }
    
    }
 
@@ -43,8 +46,6 @@ function menuDebugVerifyPermissions()
    SpreadsheetApp.getActiveSheet().getRange(1, 49).setFormula('=VALUE(NOW())');
    console.log('GmailApp.getInboxUnreadCount() = ' + GmailApp.getInboxUnreadCount());
    }
-
-
 
 
 function menuDebugSandbox()

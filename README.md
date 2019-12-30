@@ -10,3 +10,18 @@ So why not let Google take care of the infrastructure part and Github take care 
 Then I can get back to the work I was supposed to be doing...
 
 But more efficiently this time!
+
+
+# Agent Properties
+
+Agents save a bunch of stuff in their memory. There are a lot to remember, so here's a few of 'em:
+
+--------------------------
+| Property | Description |
+--------------------------
+|||
+|||
+|||
+|||
+|||
+--------------------------

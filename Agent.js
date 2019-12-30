@@ -85,7 +85,7 @@ function Agent (sheet_, config_)
 // Apply defaults
 //
 
-   if (!config_.hasOwnProperty('dtLockWait')) config_.dtLockWait = 15000;
+   if (!config_.hasOwnProperty('dtLockWaitMillis')) config_.dtLockWaitMillis = 15000;
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -603,7 +603,7 @@ function Agent (sheet_, config_)
       var sentinelRange = sheet_.getRange(1, 49);
       sentinelRange.setValue(sentinel);
       var lock = LockService.getDocumentLock();
-      if (!lock.tryLock(config_.dtLockWait))
+      if (!lock.tryLock(config_.dtLockWaitMillis))
          {
          console.warn('lock prevented turnOn');
          return false;
@@ -650,7 +650,7 @@ function Agent (sheet_, config_)
          }
       isThisOn_ = false;
       var lock = LockService.getDocumentLock();
-      if (lock.tryLock(config_.dtLockWait))
+      if (lock.tryLock(config_.dtLockWaitMillis))
          {
          try
             {                                // There is only one line of content right now and
