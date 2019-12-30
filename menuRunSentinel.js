@@ -2,9 +2,6 @@ function menuRunSentinel ()
    {
    try
       {
-      // next up: unify refresh and run into simply run (to go with stop)
-      // run will run in the user context, and a successful run will
-      //     reschedule the trigger for the next time it needs to go
       //
       // also, make the following true (and document):
       //    - the platycore sentinel runs all steps using a single time
@@ -28,7 +25,7 @@ function menuRunSentinel ()
 
       GAS_deleteTriggerByName('triggerPlatycoreSentinel');
       triggerPlatycoreSentinel();
-      SpreadsheetApp.getActiveSpreadsheet().toast('There are ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
+      SpreadsheetApp.getActiveSpreadsheet().toast('There are now ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
       }
    catch (e)
       {

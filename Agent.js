@@ -223,7 +223,7 @@ function Agent (sheet_, config_)
             {
             var toggle = memory_.toggleFromName[name] = {
                   fVirtual: null,
-                  fRuleIsSynced: true
+                  fRuleIsSynced: null
                   };
             }
          if (toggle.hasOwnProperty('fVirtual'))
@@ -313,7 +313,7 @@ function Agent (sheet_, config_)
             {
             var field = memory_.fieldFromName[name] = {
                   fVirtual: null,
-                  fRuleIsSynced: true
+                  fRuleIsSynced: null
                   };
             }
          if (field.hasOwnProperty('fVirtual'))

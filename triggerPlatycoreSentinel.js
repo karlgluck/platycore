@@ -28,11 +28,10 @@ function triggerPlatycoreSentinel ()
       var agentMemory = JSON.parse(properties.getProperty(ePlatycoreAgentKey));
       if (!isPlatycoreMemoryLatest)
          {
-         console.log('syncing platycore memory with ' + ePlatycoreAgentKey, agentMemory);
+         console.log('[' + ePlatycoreAgentKey + ']: syncing platycore memory');
          if (agentMemory.hasOwnProperty('sheetName')) // use the sheetName hint for direct lookup
             {
             sheet = spreadsheet.getSheetByName(agentMemory.sheetName);
-            console.log('sheet = ' + (!!sheet ? '' + sheet.getSheetId(): 'null'));
             if (!sheet || sheet.getSheetId() != agentMemory.sheetId)
                {
                console.warn(ePlatycoreAgentKey + ' sheet had the wrong ID');
@@ -70,6 +69,7 @@ function triggerPlatycoreSentinel ()
          if (!go.hasOwnProperty('fVirtual'))
             {
             go.valueCached = !!sheet.getRange(go.r, go.c).getValue();
+            console.log('[' + ePlatycoreAgentKey + ']: read GO = ' + go.valueCached);
             }
          if (agentMemory.fieldFromName.hasOwnProperty('WAKE'))
             {
@@ -77,6 +77,7 @@ function triggerPlatycoreSentinel ()
             if (!wake.hasOwnProperty('fVirtual'))
                {
                wake.valueCached = sheet.getRange(wake.r, wake.c).getValue();
+               console.log('[' + ePlatycoreAgentKey + ']: read WAKE = ' + wake.valueCached);
                }
             }
          }
@@ -136,7 +137,7 @@ function triggerPlatycoreSentinel ()
       catch (e)
          {
          console.error(e, e.stack);
-         throw e;
+         throw e; // this is a problem because it skips the rescheduler
          }
          
       } // ePlatycoreAgentKey for every agent in the spreadsheet
@@ -145,7 +146,7 @@ function triggerPlatycoreSentinel ()
    properties.setProperty('platycore', JSON.stringify(platycore));
    GAS_deleteTriggerByName('triggerPlatycoreSentinel');
    var dtSnoozeDelay = Math.min(2/*days*/*1000*60*60*24, utsNextWakeTime - Global_utsPlatycoreNow);
-   console.log('PLATYCORE IS GOING TO SLEEP for ' + dtSnoozeDelay);
+   console.warn('PLATYCORE IS GOING TO SLEEP for ' + dtSnoozeDelay, new Date(Global_utsPlatycoreNow+dtSnoozeDelay).toString());
    ScriptApp.newTrigger('triggerPlatycoreSentinel')
          .timeBased()
          .after(dtSnoozeDelay)
