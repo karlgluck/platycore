@@ -67,11 +67,17 @@ function triggerPlatycoreSentinel ()
             continue;
             }
          var go = agentMemory.toggleFromName.GO;
-         go.valueCached = !!sheet.getRange(go.r, go.c).getValue();
+         if (!go.hasOwnProperty('fVirtual'))
+            {
+            go.valueCached = !!sheet.getRange(go.r, go.c).getValue();
+            }
          if (agentMemory.fieldFromName.hasOwnProperty('WAKE'))
             {
             var wake = agentMemory.fieldFromName.WAKE;
-            wake.valueCached = sheet.getRange(wake.r, wake.c).getValue();
+            if (!wake.hasOwnProperty('fVirtual'))
+               {
+               wake.valueCached = sheet.getRange(wake.r, wake.c).getValue();
+               }
             }
          }
       
