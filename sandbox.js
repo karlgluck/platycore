@@ -1,15 +1,25 @@
 
 /*
 
+
+// each Sheet creates an API endpoint with its sheet ID as the key
+// the API endpoint is
+//    ?api=sheet&sheetId=<id>
+// The commands available are all via POST requests
+// A GET request for the sheet will just return the sheet's data as a JSON blob
+// in a format that depends on what kind of sheet it is (key/value store, table, etc.)
+
 // query gmail using query (karlgluck + anything @ gmail.com, newer than [last time updated])
 // forward to channel
 
-// channels exist for every sheet
+// the platycore channel for the main matrix 
+
+// channels exist for every Sheet
 // additional channels exist
    // they can be created implicitly!!
    // they can be virtual...
    // if they are not virtual, they are in a sheet
-   // platycore can make channels virtual or not (swap back and forth)
+   // platycore can make channels virtual or not (swap back and forth) 
 // all channel to agent wake-pairs are stored in a sheet managed using GAS_SheetMatrix
 
 function GAS_SheetKeyValueStore ()

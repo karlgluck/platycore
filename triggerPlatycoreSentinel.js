@@ -117,12 +117,6 @@ function triggerPlatycoreSentinel ()
             {
             try{
                agent.Step();
-               var wakeValue = agent.ReadField('WAKE');
-               if (Util_isNumber(wakeValue))
-                  {
-                  utsNextWakeTime = Math.min(utsNextWakeTime, wakeValue);
-                  }
-               wakeValue = null;
                }
             catch (e)
                {
@@ -130,6 +124,12 @@ function triggerPlatycoreSentinel ()
                }
             finally
                {
+               var wakeValue = agent.ReadField('WAKE');
+               if (Util_isNumber(wakeValue))
+                  {
+                  utsNextWakeTime = Math.min(utsNextWakeTime, wakeValue);
+                  }
+               wakeValue = null;
                agent.TurnOff();
                }
             }
@@ -142,10 +142,10 @@ function triggerPlatycoreSentinel ()
          
       } // ePlatycoreAgentKey for every agent in the spreadsheet
 
-   platycore.utsLastUpdated = Global_utsPlatycoreNow;
+   platycore.utsLastSaved = Global_utsPlatycoreNow;
    properties.setProperty('platycore', JSON.stringify(platycore));
    GAS_deleteTriggerByName('triggerPlatycoreSentinel');
-   var dtSnoozeDelay = Math.min(2/*days*/*1000*60*60*24, utsNextWakeTime - Global_utsPlatycoreNow);
+   var dtSnoozeDelay = Math.max(0, Math.min(2/*days*/*1000*60*60*24, utsNextWakeTime - Global_utsPlatycoreNow));
    console.warn('PLATYCORE IS GOING TO SLEEP for ' + dtSnoozeDelay, new Date(Global_utsPlatycoreNow+dtSnoozeDelay).toString());
    ScriptApp.newTrigger('triggerPlatycoreSentinel')
          .timeBased()

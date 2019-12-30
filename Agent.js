@@ -666,6 +666,12 @@ function Agent (sheet_, config_)
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+//
+// Execute the code indicated by SI (Script Index) and BI (Block
+// Index) in the agent. SI and BI can be in the sheet, virtual,
+// or can simply not exist. An invalid SI causes the agent to
+// run its RESET routine, and an invalid BI selects the first block.
+//
 
    this.Step = function ()
       {
@@ -702,21 +708,39 @@ function Agent (sheet_, config_)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
-// When snoozing, the agent may be woken up any point
-// in the future (including immediately). This is what
-// would make it distinct from Sleep, which would always
-// last for a minimum duration.
-//
-// Snoozing for a duration simply asks Platycore to
-// check in on the agent in the future and step it.
-// Snoozing forever disables this check, but the agent
-// can still be woken up other ways.
+// When snoozing, the agent may be woken up any point in the future
+// (including immediately). This is what would make it distinct from
+// Sleep, which would always last for a minimum duration.
+// 
+// Snoozing for a duration simply asks Platycore to check in on this
+// agent in the future. Snoozing forever disables this check, but
+// the agent can still be woken up other ways.
+// 
+// Anyway, the point is that it's handy for the kinds of things
+// agents do to be able to schedule regular and irregular execution,
+// so that's what this does.
+// 
+// Snoozing automatically adjusts for the unreliable cadence of
+// timer execution in Google's environment. As a result, requesting
+// a snooze of 60 000 milliseconds (1 minute) is the same thing as
+// setting a timer that triggers every minute.
 //
 
-   this.Snooze = function (milliseconds)
+   this.Snooze = function (dtMilliseconds)
       {
-      self_.WriteField('WAKE', Global_utsPlatycoreNow + milliseconds);
+      var utsMaybePreviousWakeTime = self_.ReadField('WAKE');
+      var utsNewWakeTime = Global_utsPlatycoreNow + dtMilliseconds;
+      if (Util_isNumber(utsMaybePreviousWakeTime) && Math.abs(Global_utsPlatycoreNow - utsMaybePreviousWakeTime) < dtMilliseconds)
+         {
+         utsNewWakeTime = utsMaybePreviousWakeTime + dtMilliseconds; // create a regular cadence
+         }
+      console.log('Snooze scheduled until ' + new Date(utsNewWakeTime), utsNewWakeTime);
+      self_.WriteField('WAKE', utsNewWakeTime);
+
+      delete self_.Snooze; // this function can only be called once, otherwise the field WAKE has already been written and that might do Weird Things (TM) this could be fixed perhaps in less time than it took to write this comment but I'm not sure if anyone will ever care... so, goodbye function!
       };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    this.SnoozeForever = function ()
       {
