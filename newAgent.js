@@ -11,6 +11,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
       spreadsheet.deleteSheet(sheet);
       }
    sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
+   PropertiesService.getDocumentProperties().setProperty('platycoreAgent' + sheet.getSheetId(), JSON.stringify({urlAgentInstructions:urlAgentInstructions})); // Save a minimal agent first so that reinstall always works
    sheet.activate();
    sheet.insertColumns(1, 23);
    var cellSize = sheet.getRowHeight(1);
@@ -262,8 +263,8 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                      var eField = memory.fieldFromName[kName];
                      return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.value).replace('"', '""') + '")';
                      });
-                  var en = memory.toggleFromName['EN'] = { r: goen.r, c: goen.c + 2, w: 2, h: 1, t: 'EN', isReadonly: false };
-                  var go = memory.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true };
+                  var en = memory.toggleFromName['EN'] = { r: goen.r, c: goen.c + 2, w: 2, h: 1, t: 'EN', isReadonly: false, valueCached: false };
+                  var go = memory.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true, valueCached: false };
                   sheet.getRange(goen.r, goen.c).insertCheckboxes()
                         .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ',OR(FALSE,' + toggles.concat(fields).join(',') + '))');
                   sheet.getRange(go.r, en.c).insertCheckboxes()
@@ -271,7 +272,21 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                   sheet.getRange(go.r, go.c+1)
                         .setFormula('=platycoreScheduler('+GAS_A1AddressFromCoordinatesP(go.r, go.c)+')');
                   sheet.getRange(en.r, en.c+1).setValue('EN');
-                  sheet.getRange(en.r, en.c, 1, 2).setFontColor('#00ffff');
+                  var enRange = sheet.getRange(en.r, en.c, 1, 2).setFontColor('#00ffff');
+                  conditionalFormatRules.push({
+                        ranges:[{                                 // This is a copy-paste from the 'TOGGLE' branch,
+                              gasRange: enRange,                  // so we should really move it somewhere else
+                              r:en.r,                             // and refactor this into a single function.
+                              c:en.c,
+                              h:en.h,
+                              w:en.w
+                        }],
+                        gasConditionalFormatRule: SpreadsheetApp.newConditionalFormatRule()
+                              .setRanges([enRange])
+                              .whenFormulaSatisfied((en.valueCached ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ')')
+                              .setFontColor('#ff00ff')
+                              .build()
+                        });
                   })(agentInstructions[++iAgentInstruction]);
                break;
             
@@ -407,6 +422,11 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
       try
          {
          agent.Save();
+         var wakeValue = agent.ReadField('WAKE');
+         if (Util_isNumber(wakeValue))
+            {
+            ScriptApp.newTrigger('triggerPlatycoreSentinel').timeBased().after(wakeValue - Util_utsNowGet()).create();
+            }
          }
       catch (e)
          {

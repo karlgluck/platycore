@@ -50,6 +50,13 @@ function Util_base64FromObject(objectToEncode)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+function Util_isDate(v)
+   {
+   return v instanceof Date && !isNaN(v.getTime());
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 // https://stackoverflow.com/questions/1303646/check-whether-variable-is-number-or-string-in-javascript/20373925
 function Util_isNumber(v)
    {

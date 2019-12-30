@@ -472,9 +472,8 @@ function Agent (sheet_, config_)
          {
          sheet_.getRange(irNewMessage_, starts[iArg], 1, counts[iArg]).mergeAcross().setValue(args[iArg]).setHorizontalAlignment('left');
          }
-      //.setValue('▪').setVerticalAlignment('middle')
-      sheet_.getRange(irNewMessage_, 1).setNote(JSON.stringify([new Date().toISOString(),Util_stackTraceGet(2)].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
-      //sheet_.setRowHeight(irNewMessage_, cellSize_);
+      sheet_.getRange(irNewMessage_, 1)
+            .setNote(JSON.stringify([new Date().toISOString(),Util_stackTraceGet(2)].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
       return sheet_.getRange(irNewMessage_, 1, 1, 49);
       };
    
@@ -497,8 +496,10 @@ function Agent (sheet_, config_)
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+//
+// Writes debug text to the output log for this sheet
+//
 
-   // writes debug text to the output log for this sheet
    this.Log = function (message)
       {
       console.log.apply(console, arguments);
@@ -506,8 +507,10 @@ function Agent (sheet_, config_)
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+//
+// Writes an informational message to the output log for this sheet
+//
 
-   // writes an informational message to the output log for this sheet
    this.Info = function (message)
       {
       console.info.apply(console, arguments);
@@ -515,21 +518,39 @@ function Agent (sheet_, config_)
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+//
+// Writes a warning to the output log for this sheet
+//
 
-   // writes a warning to the output log for this sheet
    this.Warn = function (message)
       {
       console.warn.apply(console, arguments);
       writeOutput_(arguments).setFontColor('yellow').setBackground('#38340a');
+      self_.BadgeLastOutput('⚠️');
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+//
+// Writes an error message to the output log for this sheet
+//
 
-   // writes an error message to the output log for this sheet
    this.Error = function (message)
       {
       console.error.apply(console, arguments);
       writeOutput_(arguments).setFontColor('red').setBackground('#3d0404');
+      self_.BadgeLastOutput('❌');
+      };
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Adds a single-character emoji to the left column of the last
+// output, where the note that holds the JSON is attached.
+//
+
+   this.BadgeLastOutput = function (badge)
+      {
+      sheet_.getRange(irNewMessage_, 1).setValue(badge);
       };
 
 /*************************************************************************************************************************************
@@ -739,11 +760,12 @@ function Agent (sheet_, config_)
       // self_.Log('utsMaybePreviousWakeTime', utsMaybePreviousWakeTime);
       var utsNewWakeTime = dtMilliseconds + Global_utsPlatycoreNow;
       if (Util_isNumber(utsMaybePreviousWakeTime) && Math.abs(Global_utsPlatycoreNow - utsMaybePreviousWakeTime) < dtMilliseconds)
-         {                                                           // Create a regular cadence. Also, putting
-         utsNewWakeTime = dtMilliseconds + utsMaybePreviousWakeTime; // dtMilliseconds first coerces utsMaybePreviousWakeTime
-         }                                                           // into being a number (otherwise the + can mean "string append")
+         {                                                            // Create a regular cadence. Also, coerce
+         utsNewWakeTime = dtMilliseconds + +utsMaybePreviousWakeTime; // utsMaybePreviousWakeTime into being a number
+         }                                                            // (otherwise the + can mean "string append")
       // self_.Log('utsNewWakeTime', utsNewWakeTime);
-      self_.Log(Util_moonPhaseFromDate(new Date(utsNewWakeTime)) + ' Snoozing, alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now ', utsNewWakeTime);
+      self_.Log('Snoozing, alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now ', utsNewWakeTime);
+      self_.BadgeLastOutput(Util_moonPhaseFromDate(new Date(utsNewWakeTime)));
       self_.WriteField('WAKE', utsNewWakeTime);
 
       delete self_.Snooze; // this function can only be called once, otherwise the field WAKE has already been written and that might do Weird Things (TM) this could be fixed perhaps in less time than it took to write this comment but I'm not sure if anyone will ever care... so, goodbye function!
@@ -753,7 +775,7 @@ function Agent (sheet_, config_)
 
    this.SnoozeForever = function ()
       {
-      self_.Log(Util_moonPhaseFromDate(new Date()) + 'Snoozing, no alarm... ');
+      self_.Log( Util_moonPhaseFromDate(new Date()) + 'Snoozing, no alarm... ');
       self_.WriteField('WAKE', 'SNOOZE');
       };
 

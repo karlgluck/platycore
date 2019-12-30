@@ -7,9 +7,9 @@
             "NOTE",  "RESET.0",
                      {"fVirtual": null},
                      [
-                     "Sleepy woke up at ' + new Date());",
-                     "agent.Snooze(60 * 1000);",
-                     "agent.Log('Sleepy will wake up next at ' + new Date(Global_utsPlatycoreNow + 60 * 1000));"
+                     "agent.Log('Sleepy woke up at ' + new Date());",
+                     "agent.Snooze(5 * 60 * 1000);",
+                     "agent.Log('Sleepy will wake up next at ' + new Date(Global_utsPlatycoreNow + 5 * 60 * 1000));"
                      ],
           "SCRIPT",  "RESET", ["RESET.0"],
 
