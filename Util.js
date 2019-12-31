@@ -56,8 +56,8 @@ function Util_isDate(v)
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
-
 // https://stackoverflow.com/questions/1303646/check-whether-variable-is-number-or-string-in-javascript/20373925
+
 function Util_isNumber(v)
    {
    return !isNaN(parseFloat(v)) && !isNaN(v - 0)
@@ -67,24 +67,47 @@ function Util_isNumber(v)
 
 function Util_stopwatchStringFromDuration(dtDuration)
    {
-   var rvString = new Date(dtDuration).toISOString().substr(11, 8);
-   return (rvString.substring(0,3) === '00:') ? rvString.substring(3) : rvString;
-   }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-function Util_stopwatchStringFromDurationInSeconds(dtSeconds)
-   {
-   var rvString = new Date(1000 * dtSeconds).toISOString().substr(11, 8);
-   return (rvString.substring(0,3) === '00:') ? rvString.substring(3) : rvString;
+   return Util_stopwatchStringFromDurationInSeconds(dtDuration / 1000000);
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 function Util_stopwatchStringFromDurationInMillis(dtMilliseconds)
    {
-   var rvString = new Date(1000 * 1000 * dtMilliseconds).toISOString().substr(11, 8);
-   return (rvString.substring(0,3) === '00:') ? rvString.substring(3) : rvString;
+   return Util_stopwatchStringFromDurationInSeconds(dtMilliseconds / 1000);
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+// https://stackoverflow.com/questions/6312993/javascript-seconds-to-time-string-with-format-hhmmss
+
+function Util_stopwatchStringFromDurationInSeconds(dtSeconds)
+   {
+    var s = parseInt(dtSeconds, 10);
+    if (s < 0)
+      {
+      var prefix = '-';
+      s = -s;
+      }
+   else
+      {
+      var prefix = '+';
+      }
+    var hours   = Math.floor(s / 3600);
+    var minutes = Math.floor((s - (hours * 3600)) / 60);
+    var seconds = s - (hours * 3600) - (minutes * 60);
+
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+
+    if (hours > 0)
+      {
+      if (hours < 10) {hours   = "0"+hours;}
+      return prefix+hours+':'+minutes+':'+seconds;
+      }
+   else
+      {
+      return prefix+minutes+':'+seconds;
+      }
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -102,16 +125,16 @@ function Util_isArray(v)
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
-
 // https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
+
 function Util_isFunction(v)
    {
    return v && {}.toString.call(v) === '[object Function]';
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
-
 // https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
+
 function Util_isString(v)
    {
    return 'string' === typeof v || v instanceof String;
@@ -164,8 +187,8 @@ var Util_stackTraceGet = function (qLevelsUp)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-
 // http://community.facer.io/t/moon-phase-formula-updated/35691/5
+
 function Util_moonPhaseFromDate (date)
    {
    var moonPhases = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
@@ -184,8 +207,8 @@ function Util_moonPhaseFromDate (date)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-
 // https://gist.github.com/wteuber/6241786
+
 function Util_fmodP(a, b)
    {
    return Number((a - (Math.floor(a / b) * b)).toPrecision(8));

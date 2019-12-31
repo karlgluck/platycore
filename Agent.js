@@ -36,6 +36,7 @@ function Agent (sheet_, config_)
       config_ = JSON.parse(JSON.stringify(config_ || {}));
       }
    var isThisOn_ = !!config_.forceThisOn;
+   config_.utsNow = Util_isNumber(config_.utsNow) ? config_.utsNow : Util_utsNowGet();
 
    if (!Util_isArray(config_.conditionalFormatRules))
       {
@@ -592,7 +593,7 @@ function Agent (sheet_, config_)
 
    this.Save = function ()
       {
-      memory_.utsLastSaved = Global_utsPlatycoreNow;
+      memory_.utsLastSaved = config_.utsNow;
       PropertiesService.getDocumentProperties().setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };
 
@@ -754,17 +755,17 @@ function Agent (sheet_, config_)
 
    this.Snooze = function (dtMilliseconds)
       {
+      var dt = dtMilliseconds * 1000;
       var utsMaybePreviousWakeTime = self_.ReadField('WAKE');
       // self_.Log('Util_utsNowGet()', Util_utsNowGet());
-      // self_.Log('Global_utsPlatycoreNow', Global_utsPlatycoreNow);
       // self_.Log('utsMaybePreviousWakeTime', utsMaybePreviousWakeTime);
-      var utsNewWakeTime = dtMilliseconds + Global_utsPlatycoreNow;
-      if (Util_isNumber(utsMaybePreviousWakeTime) && Math.abs(Global_utsPlatycoreNow - utsMaybePreviousWakeTime) < dtMilliseconds)
-         {                                                            // Create a regular cadence. Also, coerce
-         utsNewWakeTime = dtMilliseconds + +utsMaybePreviousWakeTime; // utsMaybePreviousWakeTime into being a number
-         }                                                            // (otherwise the + can mean "string append")
+      var utsNewWakeTime = dt + config_.utsNow;
+      if (Util_isNumber(utsMaybePreviousWakeTime) && Math.abs(config_.utsNow - utsMaybePreviousWakeTime) < dtMilliseconds)
+         {                                                              // Create a regular cadence. Also, coerce
+         utsNewWakeTime = dt + parseInt(utsMaybePreviousWakeTime, 10);  // utsMaybePreviousWakeTime into being a number
+         }                                                              // (otherwise the + can mean "string append")
       // self_.Log('utsNewWakeTime', utsNewWakeTime);
-      self_.Log('Snoozing, alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now ', utsNewWakeTime);
+      self_.Log('Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now ', utsNewWakeTime);
       self_.BadgeLastOutput(Util_moonPhaseFromDate(new Date(utsNewWakeTime)));
       self_.WriteField('WAKE', utsNewWakeTime);
 

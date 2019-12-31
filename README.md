@@ -40,7 +40,6 @@ Here's some other stuff that's also true!
  * Dark gray (text) means readonly value
  * Colored box with dark gray border means code
 
-- When the Platycore sentinel runs, the global time reference in `Global_utsPlatycoreNow` is used as a baseline for all "instantaneous" operations
 - For every `GO` or `WAKE`-able agent, in sequence, the sentinel will `TurnOn`, `Step` and `TurnOff` the agent
 - The sentinel will execute until either:
       A. The total execution time is such that stepping another

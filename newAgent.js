@@ -19,7 +19,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
 
    try
       {
-      var utsNow = Global_utsPlatycoreNow;
+      var utsNow = Util_utsNowGet();
       var memory = {
             fieldFromName: {},
             noteFromName: {},
@@ -38,6 +38,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
             memory: memory,
             origin: origin || 'newAgent',
             reusePointers: ['memory','conditionalFormatRules'],
+            utsNow: utsNow,
             utsSheetLastUpdated: utsNow,
             verbose: true
             });
@@ -261,7 +262,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                   var fields = Object.keys(memory.fieldFromName).map(function (kName)
                      {
                      var eField = memory.fieldFromName[kName];
-                     return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.value).replace('"', '""') + '")';
+                     return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.valueCached).replace('"', '""') + '")';
                      });
                   var en = memory.toggleFromName['EN'] = { r: goen.r, c: goen.c + 2, w: 2, h: 1, t: 'EN', isReadonly: false, valueCached: false };
                   var go = memory.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true, valueCached: false };
@@ -422,11 +423,14 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
       try
          {
          agent.Save();
-         var wakeValue = agent.ReadField('WAKE');
-         if (Util_isNumber(wakeValue))
+         var utsWakeValue = agent.ReadField('WAKE');
+         if (Util_isNumber(utsWakeValue))
             {
-            ScriptApp.newTrigger('triggerPlatycoreSentinel').timeBased().after(wakeValue - Util_utsNowGet()).create();
+            var dtMilliseconds = Math.max(15000, (utsWakeValue - Util_utsNowGet()) / 1000);
+            console.log('Scheduling sentinel after ' + Util_stopwatchStringFromDurationInMillis(dtMilliseconds) + ' = ' + dtMilliseconds);
+            ScriptApp.newTrigger('triggerPlatycoreSentinel').timeBased().after(dtMilliseconds).create();
             }
+         spreadsheet.toast('platycoreAgent' + sheet.getSheetId() + ' installed successfully.');
          }
       catch (e)
          {
