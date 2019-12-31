@@ -7,7 +7,7 @@
             "NOTE",  "RESET.0",
                      {"fVirtual": null},
                      [
-                     "agent.Log('Sleepy woke up at ' + new Date());",
+                     "agent.Log('Sleepy woke up at ' + new Date() + ' from a nap set for ' + agent.ReadField('WAKE'));",
                      "var minutes = parseInt(agent.ReadField('MINUTES'), 10);",
                      "agent.Snooze(minutes * 60 * 1000);",
                      "agent.Log('Sleepy will wake up next at ' + new Date(new Date().getTime() + minutes * 60 * 1000 * 1000));"

@@ -20,8 +20,8 @@ function triggerPlatycoreSentinel ()
    console.log('triggerPlatycoreSentinel ' + utsNow, utsNow);
    var utsNextWakeTime = Number.POSITIVE_INFINITY;
    var dtSingleBlockRuntimeLimit = 60/*seconds*/ * 1000;
-   var utsExecutionCutoffTime = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit; // print a
-   var dtSingleBlockRuntimeWarningThreshold = 0.70/*percent*/ * dtSingleBlockRuntimeLimit; // print a warning if the agent runs longer than this amount
+   var utsExecutionCutoffTime = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit; // print an error if any agent executes longer than this time
+   var dtSingleBlockRuntimeWarningThreshold = 0.70/*percent*/ * dtSingleBlockRuntimeLimit; // print a warning if the agent runs longer than this time
 
    var nKeyCount = keys.length;
    var qIterations = 0;
@@ -92,19 +92,20 @@ function triggerPlatycoreSentinel ()
             if (!wake.hasOwnProperty('fVirtual'))
                {
                wake.valueCached = sheet.getRange(wake.r, wake.c).getValue();
-               console.log('[' + ePlatycoreAgentKey + ']: read WAKE = ' + wake.valueCached);
                }
+            console.log('[' + ePlatycoreAgentKey + ']: read WAKE = ' + wake.valueCached);
             }
          }
       
       var isIdle = true !== agentMemory.toggleFromName.GO.valueCached;
       if (agentMemory.fieldFromName.hasOwnProperty('WAKE'))
          {                                               // Check for a number so that we can disable
-         wake = agentMemory.fieldFromName.WAKE;      // automatic wake-up using 'SNOOZE'
+         wake = agentMemory.fieldFromName.WAKE;          // automatic wake-up using 'SNOOZE'
          var shouldWake = Util_isNumber(wake.valueCached) && wake.valueCached < utsNow;
          }
       else
          {
+         wake = null;
          var shouldWake = false;
          }
       console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?(shouldWake?'WAKE':'IDLE'):'UPDATE'));
@@ -112,8 +113,8 @@ function triggerPlatycoreSentinel ()
          {
          if (Util_isObject(wake) && Util_isNumber(wake.valueCached))
             {
-            utsNextWakeTime = Math.min(utsNextWakeTime, wake.valueCached);
-            console.log('agent ' + ePlatycoreAgentKey + ' is snoozing for ' + Util_stopwatchStringFromDuration(wake.valueCached - utsNow), wake.valueCached);
+            utsNextWakeTime = Math.min(utsNextWakeTime, parseInt(wake.valueCached));
+            console.log('agent ' + ePlatycoreAgentKey + ' is snoozing for another ' + Util_stopwatchStringFromDuration(wake.valueCached - utsNow), wake.valueCached);
             }
          }
       else
@@ -173,11 +174,24 @@ function triggerPlatycoreSentinel ()
    
    // update the save 
 
-   platycore.utsLastSaved = Util_utsNowGet();
-   properties.setProperty('platycore', JSON.stringify(platycore));
+   var documentLock = LockService.getDocumentLock();
+   if (documentLock.tryLock(30000))
+      {
+      var savedPlatycore = platycore = JSON.parse(properties.getProperty('platycore') || '{}');
+      savedPlatycore.utsLastSaved = Util_utsNowGet();
+      var unsavedKeys = Object.keys(platycore).filter(function (e) { return !savedPlatycore.hasOwnProperty(e) });
+      (function (unsavedKeys) {
+         if (unsavedKeys.length > 0)
+            {
+            console.warn('Possibly unsaved key(s) in platycore config: ', unsavedKeys);
+            }
+         })();
+      properties.setProperty('platycore', JSON.stringify(platycore));
+      documentLock.unlock();
+      }
    GAS_deleteTriggerByName('triggerPlatycoreSentinel');
    var dtSnoozeDelayMilliseconds = Math.max(1000, Math.min(2/*days*/*1000*60*60*24, (utsNextWakeTime - platycore.utsLastSaved) / 1000));
-   console.warn('it is now ' + new Date(platycore.utsLastSaved) + ' Platycore is going to sleep for ' + Util_stopwatchStringFromDurationInMillis(dtSnoozeDelayMilliseconds) + ' (' + dtSnoozeDelayMilliseconds + ')', new Date(platycore.utsLastSaved+dtSnoozeDelayMilliseconds*1000));
+   console.warn('it is now ' + new Date(platycore.utsLastSaved) + ' and Platycore is going to sleep for ' + Util_stopwatchStringFromDurationInMillis(dtSnoozeDelayMilliseconds) + ' (' + dtSnoozeDelayMilliseconds + ')', new Date(platycore.utsLastSaved+dtSnoozeDelayMilliseconds*1000, (platycore.utsLastSaved + dtSnoozeDelayMilliseconds * 1000)));
    ScriptApp.newTrigger('triggerPlatycoreSentinel')
          .timeBased()
          .after(dtSnoozeDelayMilliseconds)

@@ -96,6 +96,11 @@ function Util_stopwatchStringFromDurationInSeconds(dtSeconds)
     var minutes = Math.floor((s - (hours * 3600)) / 60);
     var seconds = s - (hours * 3600) - (minutes * 60);
 
+    if (hours === 0 && minutes === 0 && seconds === 0)
+      {
+      return "00:0" + (s / 1000.0).toFixed(3);
+      }
+
     if (minutes < 10) {minutes = "0"+minutes;}
     if (seconds < 10) {seconds = "0"+seconds;}
 

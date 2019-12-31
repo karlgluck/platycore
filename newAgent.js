@@ -430,7 +430,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
             console.log('Scheduling sentinel after ' + Util_stopwatchStringFromDurationInMillis(dtMilliseconds) + ' = ' + dtMilliseconds);
             ScriptApp.newTrigger('triggerPlatycoreSentinel').timeBased().after(dtMilliseconds).create();
             }
-         spreadsheet.toast('platycoreAgent' + sheet.getSheetId() + ' installed successfully.');
+         spreadsheet.toast('platycoreAgent' + sheet.getSheetId() + ' installed successfully. There are now ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
          }
       catch (e)
          {
