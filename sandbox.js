@@ -1,6 +1,6 @@
 
 /*
-
+Breaker schedule: if something fails, try again in periods increasing by 1.2x the time each period- use metadata to track, reset if sheet changes (to try all again). This effect only occurs when entirely in automation  mode
 
 // each Sheet creates an API endpoint with its sheet ID as the key
 // the API endpoint is
