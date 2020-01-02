@@ -20,7 +20,7 @@ function triggerPlatycoreSentinel ()
    console.log('triggerPlatycoreSentinel ' + utsNow, utsNow);
    var utsNextWakeTime = Number.POSITIVE_INFINITY;
    var dtSingleBlockRuntimeLimit = 60/*seconds*/ * 1000;
-   var utsExecutionCutoffTime = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit; // print an error if any agent executes longer than this time
+   var utsExecutionCutoffTime = utsNow + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit; // print an error if any agent executes longer than this time
    var dtSingleBlockRuntimeWarningThreshold = 0.70/*percent*/ * dtSingleBlockRuntimeLimit; // print a warning if the agent runs longer than this time
 
    var nKeyCount = keys.length;
@@ -151,6 +151,7 @@ function triggerPlatycoreSentinel ()
                      }
                   wakeValue = null;
                   var dtRuntime = Util_utsNowGet() - utsIterationStarted;
+                  agent.Verbose(function () { return 'turned off after ' + Util_stopwatchStringFromDuration(dtRuntime)});
                   if (dtRuntime > dtSingleBlockRuntimeWarningThreshold)
                      {
                      agent.Warn('agent is starting to run for a long time');
@@ -177,16 +178,16 @@ function triggerPlatycoreSentinel ()
    var documentLock = LockService.getDocumentLock();
    if (documentLock.tryLock(30000))
       {
-      var savedPlatycore = platycore = JSON.parse(properties.getProperty('platycore') || '{}');
+      var savedPlatycore = JSON.parse(properties.getProperty('platycore') || '{}');
       savedPlatycore.utsLastSaved = Util_utsNowGet();
-      var unsavedKeys = Object.keys(platycore).filter(function (e) { return !savedPlatycore.hasOwnProperty(e) });
       (function (unsavedKeys) {
          if (unsavedKeys.length > 0)
             {
             console.warn('Possibly unsaved key(s) in platycore config: ', unsavedKeys);
             }
-         })();
-      properties.setProperty('platycore', JSON.stringify(platycore));
+         })(Object.keys(platycore).filter(function (e) { return !savedPlatycore.hasOwnProperty(e) }));
+      properties.setProperty('platycore', JSON.stringify(savedPlatycore));
+      platycore = savedPlatycore;
       documentLock.unlock();
       }
    GAS_deleteTriggerByName('triggerPlatycoreSentinel');

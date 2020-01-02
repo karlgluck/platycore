@@ -639,7 +639,7 @@ function Agent (sheet_, config_)
          {
          var onValue = self_.ReadToggle('ON');
          var lockValue = self_.ReadField('LOCK');
-         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (Util_utsNowGet() - lockValue);
+         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (config_.utsNow - lockValue);
          isThisOn_ = (!onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
          if (isThisOn_)
             {
@@ -647,7 +647,7 @@ function Agent (sheet_, config_)
                {
                console.warn('previous lock on platycoreAgent' + sheet_.getSheetId() + ' aged out and is being ignored');
                }
-            self_.WriteField('LOCK', Util_utsNowGet());
+            self_.WriteField('LOCK', config_.utsNow);
             self_.WriteToggle('ON', true);
             }
          else
@@ -757,14 +757,15 @@ function Agent (sheet_, config_)
       {
       var dt = dtMilliseconds * 1000;
       var utsMaybePreviousWakeTime = self_.ReadField('WAKE');
-      // self_.Log('Util_utsNowGet()', Util_utsNowGet());
-      // self_.Log('utsMaybePreviousWakeTime', utsMaybePreviousWakeTime);
+      self_.Log('Util_utsNowGet()', Util_utsNowGet());
+      self_.Log('config_.utsNow', config_.utsNow);
+      self_.Log('utsMaybePreviousWakeTime', utsMaybePreviousWakeTime);
       var utsNewWakeTime = dt + config_.utsNow;
-      if (Util_isNumber(utsMaybePreviousWakeTime) && Math.abs(config_.utsNow - utsMaybePreviousWakeTime) < dtMilliseconds)
-         {                                                              // Create a regular cadence. Also, coerce
-         utsNewWakeTime = dt + parseInt(utsMaybePreviousWakeTime, 10);  // utsMaybePreviousWakeTime into being a number
-         }                                                              // (otherwise the + can mean "string append")
-      // self_.Log('utsNewWakeTime', utsNewWakeTime);
+      // if (Util_isNumber(utsMaybePreviousWakeTime) && Math.abs(config_.utsNow - utsMaybePreviousWakeTime) < dtMilliseconds)
+      //    {                                                              // Create a regular cadence. Also, coerce
+      //    utsNewWakeTime = dt + parseInt(utsMaybePreviousWakeTime, 10);  // utsMaybePreviousWakeTime into being a number
+      //    }                                                              // (otherwise the + can mean "string append")
+      self_.Log('utsNewWakeTime', utsNewWakeTime);
       self_.Log('Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now at ', new Date(utsNewWakeTime), utsNewWakeTime);
       self_.BadgeLastOutput(Util_moonPhaseFromDate(new Date(utsNewWakeTime)));
       self_.WriteField('WAKE', utsNewWakeTime);
@@ -776,7 +777,7 @@ function Agent (sheet_, config_)
 
    this.SnoozeForever = function ()
       {
-      self_.Log( Util_moonPhaseFromDate(new Date()) + 'Snoozing, no alarm... ');
+      self_.Log(Util_moonPhaseFromDate(config_.utsNow) + 'Snoozing, no alarm... ');
       self_.WriteField('WAKE', 'SNOOZE');
       };
 
