@@ -161,7 +161,7 @@ function Util_isObjectPropertyTruthy(v, flagName)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_isObjectPropertyArray(v, flagName)
+function Util_IsArrayInObjectPropertyP(v, flagName)
    {
    return 'object' === typeof v  && null !== v && Array.isArray(v[flagName]);
    }
