@@ -695,22 +695,32 @@ function Agent (sheet_, config_)
 //------------------------------------------------------------------------------------------------------------------------------------
 // 
 
-   this.FormulaDetectingAnyChanges_Get() = function ()
+   this.FormulaDetectingAnyChanges_GetP() = function (ignoredNames)
       {
       var toggles = Object.keys(memory_.toggleFromName).map(function (kName)
          {
+         if (Util_ContainsElementInArray())
+         var value = self_.ReadToggle(kName);
+         if (Util_isUndefined(value))
+            {
+            return "FALSE";
+            }
          var eToggle = memory_.toggleFromName[kName];
-         return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (eToggle.valueCached ? ",TRUE)" : ",FALSE)");
+         return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (value ? ",TRUE)" : ",FALSE)");
          });
       var fields = Object.keys(memory_.fieldFromName).map(function (kName)
          {
+         var value = self_.ReadField(kName);
+         if (Util_isUndefined(value))
+            {
+            return "FALSE"
+            }
          var eField = memory_.fieldFromName[kName];
-         return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.valueCached).replace('"', '""') + '")';
+         return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(value).replace('"', '""') + '")';
          });
 
-      var go = memory_.toggleFromName.GO;
       var en = memory_.toggleFromName.EN;
-      
+      return '=AND(' + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ',OR(FALSE,' + toggles.concat(fields).join(',') + '))';
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------

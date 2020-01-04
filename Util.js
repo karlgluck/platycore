@@ -117,6 +117,13 @@ function Util_stopwatchStringFromDurationInSeconds(dtSeconds)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+function Util_isUndefined(v)
+   {
+   return 'undeined' === typeof v;
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 function Util_isObject(v)
    {
    return 'object' === typeof v && null !== v;

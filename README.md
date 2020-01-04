@@ -46,7 +46,7 @@ Agents save a bunch of stuff in their memory. There are a lot to remember, so he
 | -----------:| ----------- |
 |`EN`|Enables or disables the agent. If `false`, the agent will never execute unless manually stepped using the menu.|
 |`ON`|*(Readonly*) Whether or not the agent is currently online and executing|
-|`GO`|Requests that the main loop step this agent when next available due to changes in the editable properties of the agent. This field is automatically set whenever any field is edited, and cleared when all values are updated by the agent.|
+|`GO`|Requests that the main loop step this agent when next available due to changes in the editable properties of the agent. Whenever this flag is changed to `true` by an action on the agent's sheet, an execution will be scheduled for the near future to make sure it gets picked up.|
 |`VERBOSE`|*(Optional)* If specified, the agent will use this flag to switch on or off verbose logging output.|
 
 ## `scriptFromName` Field Values
