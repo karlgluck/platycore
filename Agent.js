@@ -680,9 +680,9 @@ function Agent (sheet_, config_)
       if (lock.tryLock(config_.dtLockWaitMillis))
          {
          try
-            {                                // There is only one line of content right now and
-            self_.WriteToggle('ON', false);  // it doesn't throw, but it's good practice to have
-            }                                // this ready to go for future teradown code.
+            {
+            self_.WriteToggle('ON', false);
+            }
          finally
             {
             lock.releaseLock();
@@ -690,6 +690,27 @@ function Agent (sheet_, config_)
             }
          }
       self_.Save();
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+// 
+
+   this.FormulaDetectingAnyChanges_Get() = function ()
+      {
+      var toggles = Object.keys(memory_.toggleFromName).map(function (kName)
+         {
+         var eToggle = memory_.toggleFromName[kName];
+         return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (eToggle.valueCached ? ",TRUE)" : ",FALSE)");
+         });
+      var fields = Object.keys(memory_.fieldFromName).map(function (kName)
+         {
+         var eField = memory_.fieldFromName[kName];
+         return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.valueCached).replace('"', '""') + '")';
+         });
+
+      var go = memory_.toggleFromName.GO;
+      var en = memory_.toggleFromName.EN;
+      
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------

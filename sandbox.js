@@ -9,6 +9,14 @@ Breaker schedule: if something fails, try again in periods increasing by 1.2x th
 // A GET request for the sheet will just return the sheet's data as a JSON blob
 // in a format that depends on what kind of sheet it is (key/value store, table, etc.)
 
+// Each Agent also creates an API endpoint with its AgentID (sheet ID) as the key
+//   ?api=agent&agentId=<id>
+// Commands are forwarded through internally to the sheet
+// To invoke a routine for interaction via JSON, specify &routine=<ROUTINE> 
+// To invoke a routine to generate a webpage via HTML, specify &page=<ROUTINE>
+// All parameters get forwarded to routine in the WEB_POSTVARS and WEB_GETVARS variables of
+// the agent.
+
 // (so that I can use this project to control the watering outside)
 // also to run Soundscape... the ability to provide a web interface that can
 // upload and download files, and interact with a database...

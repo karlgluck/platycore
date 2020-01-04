@@ -20,7 +20,7 @@ Agents save a bunch of stuff in their memory. There are a lot to remember, so he
 | --------:| ----------- |
 |`fieldFromName`|Dictionary turning a field name like "LOCK" into a field description|
 
-## Field Description
+## `fieldFromName` Field Description
 
 | Property | Description |
 | --------:| ----------- |
@@ -30,6 +30,31 @@ Agents save a bunch of stuff in their memory. There are a lot to remember, so he
 |`c`|First column of the range to which this field is synced. Does not exist if this is a virtual field.|
 |`w`|Column width of the range to which this field is synced. Does not exist if this is a virtual field.|
 |`h`|Row height of the range to which this field is synced. Does not exist if this is a virtual field.|
+
+## `fieldFromName` Field Values
+
+| Field Name | Description |
+| ----------:| ----------- |
+|`LOCK`|Unix Timestamp at which the agent was last accessed, mostly so that we can use the field information from DocumentProperties rather than having to query from the sheet every single time the script runs. That dramatically lowers our number of calls to the google API.|
+|`WAKE`|Unix Timestamp after which the agent should be woken up and stepped. If an agent does not need to wake up on its own, this value is `SNOOZE`|
+|`SI`|Script Index of which script should be executed|
+|`BI`|Block Index of which block of code inside the script should be executed. Scripts are broken into multiple blocks, each of which must complete in less than the maximum execution time. Chunking work in this way allows Platycore to automatically schedule long-running processing jobs.|
+
+## `toggleFromName` Field Values
+
+| Toggle Name | Description |
+| -----------:| ----------- |
+|`EN`|Enables or disables the agent. If `false`, the agent will never execute unless manually stepped using the menu.|
+|`ON`|*(Readonly*) Whether or not the agent is currently online and executing|
+|`GO`|Requests that the main loop step this agent when next available due to changes in the editable properties of the agent. This field is automatically set whenever any field is edited, and cleared when all values are updated by the agent.|
+|`VERBOSE`|*(Optional)* If specified, the agent will use this flag to switch on or off verbose logging output.|
+
+## `scriptFromName` Field Values
+
+| Script Name | Description |
+| -----------:| ----------- |
+|`RESET`|Executed by default if nothing else is available or if a problem occurs with `SI` or `BI`|
+
 
 # Truthiness
 

@@ -67,7 +67,7 @@ function Util_isNumber(v)
 
 function Util_stopwatchStringFromDuration(dtDuration)
    {
-   return Util_stopwatchStringFromDurationInSeconds(dtDuration / 1000000);
+   return Util_stopwatchStringFromDurationInSeconds(dtDuration / 1000);
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -182,7 +182,7 @@ var Util_makeLazyConstantMethod = function (self, name, valueCallback)
 
 var Util_stackTraceGet = function (qLevelsUp)
    {
-   try {
+   try{
       undefined.hasOwnProperty(null)
       }
    catch (e)
@@ -212,6 +212,28 @@ function Util_moonPhaseFromDate (date)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+
+function Util_StringFromTimestamp(utsTime)
+   {
+   var date = new Date(utsTime);
+   if (date instanceof Date && !isNaN(date.getTime()))
+      {
+      return date.toUTCString() + ' (=' + String(utsTime) + ')';
+      }
+   else
+      {
+      return '<invalid date> (=' + String(utsTime) + ')';
+      }
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function Util_StringFromDate(date)
+   {
+   return Util_isDate(date) ? date.toUTCString() + ' (=' + String(utsTime) + ')' : '<invalid date>';
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
 // https://gist.github.com/wteuber/6241786
 
 function Util_fmodP(a, b)
@@ -224,7 +246,7 @@ function Util_fmodP(a, b)
 function Util_loopingIndexFromPercentP(nCount, pPercent)
    {
    var rvIndex = Math.max(0, Math.floor(nCount * pPercent + 1 / nCount) % nCount);
-   return Util_isNumber(rvIndex) && rvIndex < nCount ? rvIndex : undefined;
+   return Number(rvIndex) < nCount ? rvIndex : undefined;
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------

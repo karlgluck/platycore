@@ -266,9 +266,9 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                      });
                   var en = memory.toggleFromName['EN'] = { r: goen.r, c: goen.c + 2, w: 2, h: 1, t: 'EN', isReadonly: false, valueCached: false };
                   var go = memory.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true, valueCached: false };
-                  sheet.getRange(goen.r, goen.c).insertCheckboxes()
+                  sheet.getRange(go.r, go.c).insertCheckboxes()
                         .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ',OR(FALSE,' + toggles.concat(fields).join(',') + '))');
-                  sheet.getRange(go.r, en.c).insertCheckboxes()
+                  sheet.getRange(en.r, en.c).insertCheckboxes()
                         .setValue('false');
                   sheet.getRange(go.r, go.c+1)
                         .setFormula('=platycoreScheduler('+GAS_A1AddressFromCoordinatesP(go.r, go.c)+')');
@@ -300,7 +300,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                   {
                   // value = value;
                   }
-               else if (Util_isArray(value) && value.every(function (e) { return Util_isString(e) }))
+               else if (Util_isArray(value) && value.every(Util_isString(e)))
                   {
                   value = value.join('\n'); // this is an array of strings, so turn it into lines of text
                   }
@@ -308,7 +308,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                   {
                   value = JSON.stringify(value);
                   }
-               agent.Log(note);
+               agent.Log('+note: ' + kName, Util_clampStringLengthP(value, 50));
                if (!note.hasOwnProperty('fVirtual'))
                   {
                   sheet.getRange(note.r, note.c).setNote(value);
