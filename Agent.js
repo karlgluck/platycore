@@ -10,63 +10,35 @@ function Agent (sheet_, config_)
 // 
 // 
 
-   if (Util_IsArrayInObjectPropertyP(config_, 'reusePointers'))  // If the user asks for it explicitly, we can carefully
-      {                                                       // preserve pointers from the config so that outside sources
-      config_ = (function (config)                            // can continue to edit the insides of the agent. By
-         {                                                    // default, agents are isolated to prevent accidents.
-         var saved = {};
-         config_.reusePointers.forEach(function (eKey) { saved[eKey] = config[eKey]; });
-         var rvConfig = JSON.parse(JSON.stringify(config));
-         config_.reusePointers.forEach(function (eKey)
-            {
-            if ('undefined' === typeof saved[eKey])
-               {
-               delete rvConfig[eKey];
-               }
-            else
-               {
-               rvConfig[eKey] = saved[eKey];
-               }
-            });
-         return rvConfig;
-         })(config_);
-      }
-   else
-      {
-      config_ = JSON.parse(JSON.stringify(config_ || {}));
-      }
+   config_ = JSON.parse(JSON.stringify(config_ || {}));
    var isThisOn_ = !!config_.forceThisOn;
    config_.utsNow = Util_isNumber(config_.utsNow) ? config_.utsNow : Util_utsNowGet();
 
-   if (!Util_isArray(config_.conditionalFormatRules))
+   var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
       {
-      config_.conditionalFormatRules = sheet_.getConditionalFormatRules().map(function (eRule)
-         {
-         return{
-               gasConditionalFormatRule: eRule,
-               ranges: eRule.getRanges().map(function (eRange)
-                  {
-                  return{
-                        r: eRange.getRow(),
-                        c: eRange.getColumn(),
-                        w: eRange.getWidth(),
-                        h: eRange.getHeight(),
-                        gasRange: eRange
-                        }
-                  })
-               }
-         });
-      }
+      return{
+            gasConditionalFormatRule: eRule,
+            ranges: eRule.getRanges().map(function (eRange)
+               {
+               return{
+                     r: eRange.getRow(),
+                     c: eRange.getColumn(),
+                     w: eRange.getWidth(),
+                     h: eRange.getHeight(),
+                     gasRange: eRange
+                     }
+               })
+            }
+      });
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
       {
-      var rules = config_.conditionalFormatRules;
-      for (var i = 0, n = rules.length; i < n; ++i)
+      for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
          {
-         var eConditionalFormatRule = rules[i];
+         var eConditionalFormatRule = conditionalFormatRules_[i];
          var ranges = eConditionalFormatRule.ranges;
          if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
             {
@@ -90,6 +62,7 @@ function Agent (sheet_, config_)
 //
 
    Util_makeLazyConstantMethod(this, 'getSheetId', function () { return sheet_.getSheetId() });
+   Util_makeLazyConstantMethod(this, 'kSheetId_Get', function () { return sheet_.getSheetId() });
    Util_makeLazyConstantMethod(this, 'isVerbose_', function () { return !!config_.verbose || self_.ReadToggle('VERBOSE') });
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -178,7 +151,7 @@ function Agent (sheet_, config_)
       var builder = rule.gasConditionalFormatRule.copy();
       builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) +(toggle.valueCached?',FALSE)':',TRUE)'));
       rule.gasConditionalFormatRule = builder.build();
-      sheet_.setConditionalFormatRules(config_.conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
+      writeConditionalFormatRules();
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -275,7 +248,7 @@ function Agent (sheet_, config_)
       var builder = rule.gasConditionalFormatRule.copy();
       builder.whenTextEqualTo(field.valueCached);
       rule.gasConditionalFormatRule = builder.build();
-      sheet_.setConditionalFormatRules(config_.conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
+      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -574,18 +547,12 @@ function Agent (sheet_, config_)
       {
       self_.Save();
       var newConfig = JSON.parse(JSON.stringify(config_));
-      if (Util_IsArrayInObjectPropertyP(config_, 'reusePointers'))
-         {
-         config_.reusePointers.forEach(function (eKey) {
-            newConfig[eKey] = config_[eKey];
-            });
-         }
       newConfig.memory.utsLastSaved = 0;  // eliminate all caches
-      var rvAgentAndMemory = [new Agent(sheet_, newConfig), newConfig.memory];
+      var rvAgent = new Agent(sheet_, newConfig)
       sheet_ = null;
       config_ = null;
       memory_ = null;
-      return rvAgentAndMemory;
+      return rvAgent;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -640,7 +607,7 @@ function Agent (sheet_, config_)
          var onValue = self_.ReadToggle('ON');
          var lockValue = self_.ReadField('LOCK');
          var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (config_.utsNow - lockValue);
-         isThisOn_ = (!onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
+         isThisOn_ = (false === onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
          if (isThisOn_)
             {
             if (onValue)
@@ -846,17 +813,17 @@ function Agent (sheet_, config_)
       
       for (var iInstruction = 0, nInstructionCount = instructions.length; iInstruction < nInstructionCount; ++iInstruction)
          {
-         var eAgentInstruction = instructions[iInstruction];
+         var eInstruction = instructions[iInstruction];
 
-         if ('REBOOT' === eAgentInstruction || 'OFF' === eAgentInstruction || iInstruction + 1 == nInstructionCount) // save the conditional formatting rules before switching off
+         if ('REBOOT' === eInstruction || 'OFF' === eInstruction || iInstruction + 1 == nInstructionCount) // save the conditional formatting rules before switching off
             {
             sheet.setConditionalFormatRules(conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
             }
 
-         switch (eAgentInstruction)
+         switch (eInstruction)
             {
             default:
-               agent.Error('invalid instruction', eAgentInstruction);
+               agent.Error('invalid instruction', eInstruction);
                break;
 
             case 'NAME':
@@ -888,12 +855,14 @@ function Agent (sheet_, config_)
                      .setFontFamily('Courier New')
                      .setVerticalAlignment('top')
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-               [agent, memory] = agent.Reboot();
-               break;
+               return agent.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
 
             case 'REBOOT':
                agent.Verbose(function () { return 'reboot'; });
-               [agent, memory] = agent.Reboot();
+               return agent.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
+            
+            case 'VERBOSE':
+               agent.Verbose(function () { return instructions[++iInstruction] });
                break;
             
             case 'OFF':
@@ -902,6 +871,14 @@ function Agent (sheet_, config_)
 
             case 'INFO':
                agent.Info(instructions[++iInstruction]);
+               break;
+
+            case 'WARN':
+               agent.Warn(instructions[++iInstruction]);
+               break;
+
+            case 'ERROR':
+               agent.Error(instructions[++iInstruction]);
                break;
 
             case 'REINSTALL': // execute code if this is a reinstall operation; guarantee access to the variable previousInstallMemory
@@ -956,8 +933,7 @@ function Agent (sheet_, config_)
             case 'UNINSTALL':
                var uninstallScript = instructions[++iInstruction].join('\n');
                memory.uninstall = uninstallScript;
-               [agent, memory] = agent.Reboot();
-               break;
+               return agent.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
 
             case 'FIELD':
                (function (field)

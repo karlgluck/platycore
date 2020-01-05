@@ -1,9 +1,9 @@
 
 
 
-function triggerPlatycoreSentinel ()
+function triggerBlockPump ()
    {
-   GAS_deleteTriggerByName('triggerPlatycoreSentinel');
+   GAS_deleteTriggerByName('triggerBlockPump');
 
    // TODO: MAKE SURE ACCESS TO THE PLATYCORE PROPERTIES IS MUTEXED
    // WE HAVE CONCURRENCY PROBLEMS HERE 
@@ -17,7 +17,7 @@ function triggerPlatycoreSentinel ()
          .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' });
 
    var utsNow = Util_utsNowGet();
-   console.log('triggerPlatycoreSentinel ' + utsNow, utsNow);
+   console.log('triggerBlockPump ' + utsNow, utsNow);
    var utsNextWakeTime = Number.POSITIVE_INFINITY;
    var dtSingleBlockRuntimeLimit = 60/*seconds*/ * 1000;
    var utsExecutionCutoffTime = utsNow + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit; // print an error if any agent executes longer than this time
@@ -132,7 +132,7 @@ function triggerPlatycoreSentinel ()
             var agent = new Agent(sheet, {
                   utsNow: utsNow,
                   memory: agentMemory,
-                  origin:'triggerPlatycoreSentinel',
+                  origin:'triggerBlockPump',
                   utsSheetLastUpdated: utsLastUpdated
                   });
             agentMemory = null; // no longer valid
@@ -213,13 +213,13 @@ function triggerPlatycoreSentinel ()
          // Reschedule the trigger
          //
 
-         GAS_deleteTriggerByName('triggerPlatycoreSentinel');
+         GAS_deleteTriggerByName('triggerBlockPump');
          var dtSnoozeDelayMilliseconds = Math.max(1000, Math.min(2/*days*/*1000*60*60*24, utsNextWakeTime - platycore.utsLastSave));
          console.warn('at ' + new Date(platycore.utsLastSaved) + ', Platycore is going to sleep for ' + Util_stopwatchStringFromDurationInMillis(dtSnoozeDelayMilliseconds) + ' (' + dtSnoozeDelayMilliseconds + ')', new Date(platycore.utsLastSaved+dtSnoozeDelayMilliseconds*1000, (platycore.utsLastSaved + dtSnoozeDelayMilliseconds * 1000)));
-         ScriptApp.newTrigger('triggerPlatycoreSentinel')
+         ScriptApp.newTrigger('triggerBlockPump')
                .timeBased()
                .after(dtSnoozeDelayMilliseconds)
-               .everyMinutes(15/*minutes*/ * 60*1000)
+               .everyMinutes(5)
                .create();
          }
       finally

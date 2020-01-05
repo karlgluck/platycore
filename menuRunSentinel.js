@@ -2,8 +2,8 @@ function menuRunSentinel ()
    {
    try
       {
-      GAS_deleteTriggerByName('triggerPlatycoreSentinel');
-      triggerPlatycoreSentinel();
+      GAS_deleteTriggerByName('triggerBlockPump');
+      triggerBlockPump();
       SpreadsheetApp.getActiveSpreadsheet().toast('There are now ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
       }
    catch (e)

@@ -13,16 +13,13 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
    sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
    PropertiesService.getDocumentProperties().setProperty('platycoreAgent' + sheet.getSheetId(), JSON.stringify({urlAgentInstructions:urlAgentInstructions})); // Save a minimal agent first so that reinstall always works
    sheet.activate();
-   sheet.insertColumns(1, 23);
-   var cellSize = sheet.getRowHeight(1);
-   sheet.setColumnWidths(1, 49, cellSize);
+   sheet.insertColumns(1, 23); // add to the default 26 columns (A-Z)
+   sheet.setColumnWidths(1, 49, sheet.getRowHeight(1)); // square the cells
 
    try
       {
       var utsNow = Util_utsNowGet();
-      var conditionalFormatRules = [];
       var agent = new Agent(sheet, {
-            conditionalFormatRules: conditionalFormatRules,
             forceThisOn: true,
             memory: {
                   fieldFromName: {},
@@ -69,7 +66,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
             {
             var dtMilliseconds = Math.max(15000, (utsWakeValue - Util_utsNowGet()) / 1000);
             console.log('Scheduling sentinel after ' + Util_stopwatchStringFromDurationInMillis(dtMilliseconds) + ' = ' + dtMilliseconds);
-            ScriptApp.newTrigger('triggerPlatycoreSentinel').timeBased().after(dtMilliseconds).create();
+            ScriptApp.newTrigger('triggerBlockPump').timeBased().after(dtMilliseconds).everyMinutes(5).create();
             }
          spreadsheet.toast('platycoreAgent' + sheet.getSheetId() + ' installed successfully. There are now ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
          }

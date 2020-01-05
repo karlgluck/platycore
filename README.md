@@ -59,20 +59,28 @@ Agents save a bunch of stuff in their memory. There are a lot to remember, so he
 # Truthiness
 
 Here's some other stuff that's also true!
+ * Platycore agent sheets are designed to be usable on a 1080x1920 monitor (portrait-oriented 1080p)
  * Green means output
  * Cyan means editable
  * Magenta means changed
  * Dark gray (text) means readonly value
  * Colored box with dark gray border means code
-
-- For every `GO` or `WAKE`-able agent, in sequence, the sentinel will `TurnOn`, `Step` and `TurnOff` the agent
-- The sentinel will execute until either:
+ * For every `GO` or `WAKE`-able agent, in sequence, the RunLane will `TurnOn`, `Step` and `TurnOff` the agent
+ * The RunLane will execute platycore agent blocks until either:
       A. The total execution time is such that stepping another
          agent is too likely to get cut off by Google.
-            - print warnings if an agent uses more than 75%
-               of the buffer zone normally left.
-      B. No agent is WAKE-able or can GO
-- if the first situation occurs, the sentinel will reschedule
-   itself as soon as possible in the future
-- if the second situation occurs, the sentinel will reschedule
+      B. No agent is `WAKE`-able or can `GO`
+ * If the first situation occurs, the RunLane will terminate and automatically resume after the next 5-minute interval.
+ * If the second situation occurs, the RunLane will reschedule
    itself at the earliest time among all snooze alarms for all agents
+
+
+# Notes
+
+Here are some ideas I'm tossing around at the moment:
+ * Breaker schedule: If something fails, try again in periods increasing by 1.2x the time each period- use metadata to track, reset if sheet changes (to try all again). This effect only occurs when entirely in a RunLane.
+ * Multiple agents can write to the same sheet, but only if they are in the same RunLane
+
+
+
+

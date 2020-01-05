@@ -1,13 +1,13 @@
 
 /*
-Breaker schedule: if something fails, try again in periods increasing by 1.2x the time each period- use metadata to track, reset if sheet changes (to try all again). This effect only occurs when entirely in automation  mode
 
-// each Sheet creates an API endpoint with its sheet ID as the key
-// the API endpoint is
-//    ?api=sheet&sheetId=<id>
-// The commands available are all via POST requests
-// A GET request for the sheet will just return the sheet's data as a JSON blob
-// in a format that depends on what kind of sheet it is (key/value store, table, etc.)
+
+each Sheet creates an API endpoint with its sheet ID as the key
+the API endpoint is
+   ?api=sheet&sheetId=<id>
+The commands available are all via POST requests
+A GET request for the sheet will just return the sheet's data as a JSON blob
+in a format that depends on what kind of sheet it is (key/value store, table, etc.)
 
 // Each Agent also creates an API endpoint with its AgentID (sheet ID) as the key
 //   ?api=agent&agentId=<id>
