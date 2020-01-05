@@ -828,7 +828,7 @@ function Agent (sheet_, config_)
 
             case 'NAME':
                var name = instructions[++iInstruction];
-               memory.name = name;
+               memory_.name = name;
                agent.Info('Building agent "' + name + '" (platycoreAgent' + sheet.getSheetId() + ')');
                break;
             
@@ -932,7 +932,7 @@ function Agent (sheet_, config_)
 
             case 'UNINSTALL':
                var uninstallScript = instructions[++iInstruction].join('\n');
-               memory.uninstall = uninstallScript;
+               memory_.uninstall = uninstallScript;
                return agent.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
 
             case 'FIELD':
@@ -946,14 +946,14 @@ function Agent (sheet_, config_)
                      {
                      field.h = 1;
                      }
-                  if (memory.fieldFromName.hasOwnProperty(field.k))
+                  if (memory_.fieldFromName.hasOwnProperty(field.k))
                      {
                      if (!field.hasOwnProperty('value')) // borrow the value from the existing one, if necessary (this lets us make virtual into "visible" fields)
                         {
-                        field.value = memory.fieldFromName[field.k].valueCached;
+                        field.value = memory_.fieldFromName[field.k].valueCached;
                         }
                      }
-                  memory.fieldFromName[field.k] = field;
+                  memory_.fieldFromName[field.k] = field;
                   if (field.hasOwnProperty('fVirtual'))
                      {
                      agent.Log('+field [VIRTUAL]: ' + field.k);
@@ -1018,18 +1018,18 @@ function Agent (sheet_, config_)
             case 'GO_EN':
                (function (goen)
                   {
-                  var toggles = Object.keys(memory.toggleFromName).map(function (kName)
+                  var toggles = Object.keys(memory_.toggleFromName).map(function (kName)
                      {
-                     var eToggle = memory.toggleFromName[kName];
+                     var eToggle = memory_.toggleFromName[kName];
                      return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (eToggle.valueCached ? ",TRUE)" : ",FALSE)");
                      });
-                  var fields = Object.keys(memory.fieldFromName).map(function (kName)
+                  var fields = Object.keys(memory_.fieldFromName).map(function (kName)
                      {
-                     var eField = memory.fieldFromName[kName];
+                     var eField = memory_.fieldFromName[kName];
                      return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.valueCached).replace('"', '""') + '")';
                      });
-                  var en = memory.toggleFromName['EN'] = { r: goen.r, c: goen.c + 2, w: 2, h: 1, t: 'EN', isReadonly: false, valueCached: false };
-                  var go = memory.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true, valueCached: false };
+                  var en = memory_.toggleFromName['EN'] = { r: goen.r, c: goen.c + 2, w: 2, h: 1, t: 'EN', isReadonly: false, valueCached: false };
+                  var go = memory_.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true, valueCached: false };
                   sheet.getRange(go.r, go.c).insertCheckboxes()
                         .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ',OR(FALSE,' + toggles.concat(fields).join(',') + '))');
                   sheet.getRange(en.r, en.c).insertCheckboxes()
@@ -1059,7 +1059,7 @@ function Agent (sheet_, config_)
                var kName = instructions[++iInstruction];
                var note = JSON.parse(JSON.stringify(instructions[++iInstruction]));
                var value = instructions[++iInstruction];
-               memory.noteFromName[kName] = note;
+               memory_.noteFromName[kName] = note;
                if (Util_isString(value))
                   {
                   // value = value;
@@ -1100,8 +1100,8 @@ function Agent (sheet_, config_)
                var kName = instructions[++iInstruction];
                var script = {blockCodeNoteNames:instructions[++iInstruction]};
                agent.Log('+script: ' + kName, script.blockCodeNoteNames);
-               memory.scriptFromName[kName] = script;
-               memory.scriptNames.push(kName);
+               memory_.scriptFromName[kName] = script;
+               memory_.scriptNames.push(kName);
                break;
 
             case 'TOAST':
@@ -1111,7 +1111,7 @@ function Agent (sheet_, config_)
             case 'TOGGLE':
                (function (toggle)
                   {
-                  memory.toggleFromName[toggle.k] = toggle;
+                  memory_.toggleFromName[toggle.k] = toggle;
                   var toggleText = toggle.t || toggle.k;
                   toggle.isReadonly = !!toggle.isReadonly;
                   toggle.valueCached = !!toggle.value;
