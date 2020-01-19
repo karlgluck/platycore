@@ -18,7 +18,10 @@ Agents save a bunch of stuff in their memory. There are a lot to remember, so he
 
 | Property | Description |
 | --------:| ----------- |
-|`fieldFromName`|Dictionary turning a field name like "LOCK" into a field description|
+|`fieldFromName`|Dictionary turning a field name into a Field Description for properties that are stored as cell values|
+|`scriptFromName`|Dictionary turning a script name into a Script Description for runnable code|
+|`noteFromName`|Dictionary turning a note name into a Note Description for additional data on cells|
+|`toggleFromName`|Dictionary turning a toggle name into a Toggle Description for checkboxes|
 
 ## Field Description
 

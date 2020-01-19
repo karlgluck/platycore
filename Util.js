@@ -117,6 +117,13 @@ function Util_stopwatchStringFromDurationInSeconds(dtSeconds)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+function Util_average(numbers)
+   {
+   return Array.isArray(numbers) ? numbers.reduce(function (prev, current) { return prev + current}, 0) / numbers.length : undefined;
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 function Util_isObject(v)
    {
    return 'object' === typeof v && null !== v;
