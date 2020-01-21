@@ -18,7 +18,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
 
    try
       {
-      var utsNow = Util_utsNowGet();
+      var utsAgentCreated = Util_utsNowGet();
       var agent = new Agent(sheet, {
             forceThisOn: true,
             memory: {
@@ -30,11 +30,10 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                   sheetId: sheet.getSheetId(),
                   toggleFromName: {},
                   urlAgentInstructions: urlAgentInstructions,
-                  utsLastSaved: utsNow
+                  utsLastSaved: utsAgentCreated
                   },
             origin: origin || 'newAgent',
-            utsNow: utsNow,
-            utsSheetLastUpdated: utsNow,
+            utsSheetLastUpdated: utsAgentCreated,
             verbose: true
             });
       agent.Save();

@@ -34,11 +34,6 @@ function onOpen()
                   .addItem("Sandbox", "menuDebugSandbox")
                )
          .addToUi();
-
-   if (!GAS_isFunctionTriggeredP('triggerBlockPump'))
-      {
-      SpreadsheetApp.getActiveSpreadsheet().toast('Platycore Sentinel is not running; turn in on with Platycore > Sentinel > Refresh');
-      }
    
    }
 

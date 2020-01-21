@@ -180,15 +180,6 @@ function triggerBlockPump ()
    // update the save
 
    var documentLock = LockService.getDocumentLock();
-   if (!documentLock.tryLock(dtSingleBlockRuntimeLimit/4))
-      {
-      try{
-         var savedPlatycore = JSON.parse(properties.getProperty('platycore') || '{}');
-         }
-      catch (e)
-         {
-         }
-      }
    if (documentLock.tryLock(dtSingleBlockRuntimeLimit/4))
       {
       try{
