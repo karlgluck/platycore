@@ -17,7 +17,6 @@ function triggerBlockPump ()
    var keys = properties.getKeys()
          .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' });
 
-   console.log('triggerBlockPump ' + utsNow, utsNow);
    var utsNextWakeTime = Number.POSITIVE_INFINITY;
    var dtSingleBlockRuntimeLimit = 60/*seconds*/ * 1000;
    var utsExecutionCutoffTime = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit; // print an error if any agent executes longer than this time

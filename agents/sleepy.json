@@ -13,6 +13,8 @@
                      "agent.Log('Sleepy will wake up next at ' + new Date(new Date().getTime() + minutes * 60 * 1000)).toISOString();"
                      ],
           "SCRIPT",  "RESET", ["RESET.0"],
+           "FIELD",  {"r": 1, "c":25, "w": 5, "k": "WAKE"},
+           "RANGE",  {"r": 1, "c":32, "w": 3, "merge": "across", "t": "WAKE"},
            "FIELD",  {"r": 1, "c":12, "w": 5, "k": "MINUTES", "value":"1"},
            "RANGE",  {"r": 1, "c":17, "w": 3, "merge": "across", "t": "MINUTES"},
 

@@ -758,8 +758,8 @@ function Agent (sheet_, config_)
       var dt = Math.max(15000, dtMilliseconds);
       var utsMaybePreviousWakeTime = self_.ReadField('WAKE');
       self_.Log('utsMaybePreviousWakeTime', utsMaybePreviousWakeTime);
-      self_.Log('utsNewWakeTime', utsNewWakeTime);
       var utsNewWakeTime = dt + Util_utsNowGet();
+      self_.Log('utsNewWakeTime', utsNewWakeTime);
       self_.BadgeLastOutput(Util_moonPhaseFromDate(new Date(utsNewWakeTime)));
       self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
       self_.Log('HII - Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now at ', new Date(utsNewWakeTime), utsNewWakeTime);
