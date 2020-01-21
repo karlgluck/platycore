@@ -6,7 +6,6 @@ function platycoreScheduler(go)
    ScriptApp.newTrigger('triggerBlockPump')
       .timeBased()
       .after(1000)
-      .everyMinutes(5)
       .create();
    return 'G'+sentinelTriggers.length;
    }
