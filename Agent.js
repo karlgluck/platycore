@@ -693,7 +693,7 @@ function Agent (sheet_, config_)
 //------------------------------------------------------------------------------------------------------------------------------------
 //
 // Execute the code indicated by SI (Script Index) and BI (Block
-// Index) in the agent. SI and BI can be in the sheet, virtual,
+// Index) in the self_. SI and BI can be in the sheet, virtual,
 // or can simply not exist. An invalid SI causes the agent to
 // run its RESET routine, and an invalid BI selects the first block.
 //
@@ -724,9 +724,9 @@ function Agent (sheet_, config_)
       var code = self_.ReadNote(script.blockCodeNoteNames[iBlockIndex]);
       
       (function (agent)
-         {
-         eval(code);
-         })(self_);
+         {                    // Script code references the "agent" variable,
+         eval(code);          // whereas code here in the script itself uses 
+         })(self_);           // 'self_' (to distinguish it from 'this'!). Clear on all the differences? Good!
       
       };
 
@@ -808,68 +808,68 @@ function Agent (sheet_, config_)
 
          if ('REBOOT' === eInstruction || 'OFF' === eInstruction || iInstruction + 1 == nInstructionCount) // save the conditional formatting rules before switching off
             {
-            sheet.setConditionalFormatRules(conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
+            sheet_.setConditionalFormatRules(conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
             }
 
          switch (eInstruction)
             {
             default:
-               agent.Error('invalid instruction', eInstruction);
+               self_.Error('invalid instruction', eInstruction);
                break;
 
             case 'NAME':
                var name = instructions[++iInstruction];
                memory_.name = name;
-               agent.Info('Building agent "' + name + '" (platycoreAgent' + sheet.getSheetId() + ')');
+               self_.Info('Building agent "' + name + '" (platycoreAgent' + sheet_.getSheetId() + ')');
                break;
             
             case 'TOOLBAR':
                var irToolbar = instructions[++iInstruction];
-               sheet.getRange(irToolbar, 1, 1, 49)
+               sheet_.getRange(irToolbar, 1, 1, 49)
                      .setBackground('#434343')
                      .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
                break;
 
             case 'FREEZE':
                var qrFrozenRows = instructions[++iInstruction];
-               agent.Verbose(function () { return 'freezing ' + qrFrozenRows + ' rows'; });
+               self_.Verbose(function () { return 'freezing ' + qrFrozenRows + ' rows'; });
                var irHeaders = qrFrozenRows;
-               sheet.insertRowsBefore(1, qrFrozenRows);
-               sheet.setFrozenRows(qrFrozenRows);
-               var mrMaxRows = sheet.getMaxRows();
-               var riFirstRowToDelete = Math.max(irHeaders + 2, sheet.getLastRow() + 1);
-               sheet.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
+               sheet_.insertRowsBefore(1, qrFrozenRows);
+               sheet_.setFrozenRows(qrFrozenRows);
+               var mrMaxRows = sheet_.getMaxRows();
+               var riFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
+               sheet_.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
                mrMaxRows = riFirstRowToDelete - 1;
-               sheet.getRange(1, 1, mrMaxRows, 49)
+               sheet_.getRange(1, 1, mrMaxRows, 49)
                      .setFontColor('#00ff00')
                      .setBackground('black')
                      .setFontFamily('Courier New')
                      .setVerticalAlignment('top')
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-               return agent.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
+               return self_.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
 
             case 'REBOOT':
-               agent.Verbose(function () { return 'reboot'; });
-               return agent.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
+               self_.Verbose(function () { return 'reboot'; });
+               return self_.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
             
             case 'VERBOSE':
-               agent.Verbose(function () { return instructions[++iInstruction] });
+               self_.Verbose(function () { return instructions[++iInstruction] });
                break;
             
             case 'OFF':
-               agent.TurnOff();
+               self_.TurnOff();
                break;
 
             case 'INFO':
-               agent.Info(instructions[++iInstruction]);
+               self_.Info(instructions[++iInstruction]);
                break;
 
             case 'WARN':
-               agent.Warn(instructions[++iInstruction]);
+               self_.Warn(instructions[++iInstruction]);
                break;
 
             case 'ERROR':
-               agent.Error(instructions[++iInstruction]);
+               self_.Error(instructions[++iInstruction]);
                break;
 
             case 'REINSTALL': // execute code if this is a reinstall operation; guarantee access to the variable previousInstallMemory
@@ -893,7 +893,7 @@ function Agent (sheet_, config_)
 
             case 'RANGE':
                var rangeCommand = instructions[++iInstruction];
-               var range = sheet.getRange(rangeCommand.r, rangeCommand.c, rangeCommand.h || 1, rangeCommand.w || 1);
+               var range = sheet_.getRange(rangeCommand.r, rangeCommand.c, rangeCommand.h || 1, rangeCommand.w || 1);
                if (rangeCommand.hasOwnProperty('t'))
                   {
                   range.setValue(rangeCommand.t);
@@ -924,7 +924,7 @@ function Agent (sheet_, config_)
             case 'UNINSTALL':
                var uninstallScript = instructions[++iInstruction].join('\n');
                memory_.uninstall = uninstallScript;
-               return agent.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
+               return self_.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
 
             case 'FIELD':
                (function (field)
@@ -947,14 +947,14 @@ function Agent (sheet_, config_)
                   memory_.fieldFromName[field.k] = field;
                   if (field.hasOwnProperty('fVirtual'))
                      {
-                     agent.Log('+field [VIRTUAL]: ' + field.k);
+                     self_.Log('+field [VIRTUAL]: ' + field.k);
                      field.valueCached = field.value;
                      }
                   else
                      {
-                     agent.Log('+field: ' + field.k, field.r, field.c, field.h, field.w);
+                     self_.Log('+field: ' + field.k, field.r, field.c, field.h, field.w);
                      
-                     var range = sheet.getRange(field.r, field.c, field.h, field.w);
+                     var range = sheet_.getRange(field.r, field.c, field.h, field.w);
                      range.merge()
                            .setBackground(field.hasOwnProperty('bg') ? field.bg : '#000000')
                            .setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
@@ -1021,14 +1021,14 @@ function Agent (sheet_, config_)
                      });
                   var en = memory_.toggleFromName['EN'] = { r: goen.r, c: goen.c + 2, w: 2, h: 1, t: 'EN', isReadonly: false, valueCached: false };
                   var go = memory_.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true, valueCached: false };
-                  sheet.getRange(go.r, go.c).insertCheckboxes()
+                  sheet_.getRange(go.r, go.c).insertCheckboxes()
                         .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ',OR(FALSE,' + toggles.concat(fields).join(',') + '))');
-                  sheet.getRange(en.r, en.c).insertCheckboxes()
+                  sheet_.getRange(en.r, en.c).insertCheckboxes()
                         .setValue('false');
-                  sheet.getRange(go.r, go.c+1)
+                  sheet_.getRange(go.r, go.c+1)
                         .setFormula('=platycoreScheduler('+GAS_A1AddressFromCoordinatesP(go.r, go.c)+')');
-                  sheet.getRange(en.r, en.c+1).setValue('EN');
-                  var enRange = sheet.getRange(en.r, en.c, 1, 2).setFontColor('#00ffff');
+                  sheet_.getRange(en.r, en.c+1).setValue('EN');
+                  var enRange = sheet_.getRange(en.r, en.c, 1, 2).setFontColor('#00ffff');
                   conditionalFormatRules.push({
                         ranges:[{                                 // This is a copy-paste from the 'TOGGLE' branch,
                               gasRange: enRange,                  // so we should really move it somewhere else
@@ -1063,10 +1063,10 @@ function Agent (sheet_, config_)
                   {
                   value = JSON.stringify(value);
                   }
-               agent.Log('+note: ' + kName, Util_clampStringLengthP(value, 50));
+               self_.Log('+note: ' + kName, Util_clampStringLengthP(value, 50));
                if (!note.hasOwnProperty('fVirtual'))
                   {
-                  sheet.getRange(note.r, note.c).setNote(value);
+                  sheet_.getRange(note.r, note.c).setNote(value);
                   }
                note.valueCached = value;
                break;
@@ -1075,7 +1075,7 @@ function Agent (sheet_, config_)
                var location = instructions[++iInstruction];
                var color = Util_rainbowColorFromAnyP(instructions[++iInstruction]);
                var value = instructions[++iInstruction];
-               sheet.getRange(location.r, location.c)
+               sheet_.getRange(location.r, location.c)
                      .setVerticalAlignment('middle')
                      .setHorizontalAlignment('center')
                      .setBackground(color)
@@ -1090,7 +1090,7 @@ function Agent (sheet_, config_)
             case 'SCRIPT': // SCRIPT "<name>" <qBlockCount>
                var kName = instructions[++iInstruction];
                var script = {blockCodeNoteNames:instructions[++iInstruction]};
-               agent.Log('+script: ' + kName, script.blockCodeNoteNames);
+               self_.Log('+script: ' + kName, script.blockCodeNoteNames);
                memory_.scriptFromName[kName] = script;
                memory_.scriptNames.push(kName);
                break;
@@ -1107,8 +1107,8 @@ function Agent (sheet_, config_)
                   toggle.isReadonly = !!toggle.isReadonly;
                   toggle.valueCached = !!toggle.value;
                   delete toggle.value;
-                  agent.Log('+toggle: ' + toggle.k + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
-                  var checkboxRange = sheet.getRange(toggle.r, toggle.c).insertCheckboxes();
+                  self_.Log('+toggle: ' + toggle.k + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
+                  var checkboxRange = sheet_.getRange(toggle.r, toggle.c).insertCheckboxes();
                   if (toggle.isReadonly)
                      {
                      checkboxRange.setFormula(toggle.valueCached ? '=TRUE' : '=FALSE');
@@ -1120,9 +1120,9 @@ function Agent (sheet_, config_)
                   var qcColumns = toggle.w - 1;
                   if (qcColumns > 0)
                      {
-                     sheet.getRange(toggle.r, toggle.c+1, 1, qcColumns).mergeAcross().setValue(toggleText);
+                     sheet_.getRange(toggle.r, toggle.c+1, 1, qcColumns).mergeAcross().setValue(toggleText);
                      }
-                  var range = sheet.getRange(toggle.r, toggle.c, 1, toggle.w);
+                  var range = sheet_.getRange(toggle.r, toggle.c, 1, toggle.w);
                   if (toggle.hasOwnProperty('fg'))
                      {
                      range.setFontColor(toggle.fg); // explicit foreground color
