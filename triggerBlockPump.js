@@ -186,7 +186,7 @@ function triggerBlockPump ()
       try{
          var savedPlatycore = JSON.parse(properties.getProperty('platycore') || '{}');
          }
-      catch
+      catch (e)
          {
          }
       }
