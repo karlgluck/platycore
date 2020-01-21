@@ -129,6 +129,8 @@ function Agent (sheet_, config_)
          }
       };
 
+   
+
 
 /*************************************************************************************************************************************
 ******            ****     *********     *******     ****   *******         **********************************************************
@@ -248,6 +250,10 @@ function Agent (sheet_, config_)
       var builder = rule.gasConditionalFormatRule.copy();
       builder.whenTextEqualTo(field.valueCached);
       rule.gasConditionalFormatRule = builder.build();
+      };
+   
+   var writeConditionalFormatRules = function ()
+      {
       sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
       };
 
@@ -808,7 +814,7 @@ function Agent (sheet_, config_)
 
          if ('REBOOT' === eInstruction || 'OFF' === eInstruction || iInstruction + 1 == nInstructionCount) // save the conditional formatting rules before switching off
             {
-            sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
+            writeConditionalFormatRules();
             }
 
          switch (eInstruction)
