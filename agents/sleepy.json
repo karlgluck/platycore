@@ -7,10 +7,10 @@
             "NOTE",  "RESET.0",
                      {"fVirtual": null},
                      [
-                     "agent.Log('Sleepy woke up at ' + new Date() + ' from a nap set for ' + agent.ReadField('WAKE'));",
+                     "agent.Log('Sleepy woke up at ' + new Date().toISOString() + ' from a nap set for ' + agent.ReadField('WAKE'));",
                      "var minutes = parseInt(agent.ReadField('MINUTES'), 10);",
                      "agent.Snooze(minutes * 60 * 1000);",
-                     "agent.Log('Sleepy will wake up next at ' + new Date(new Date().getTime() + minutes * 60 * 1000 * 1000));"
+                     "agent.Log('Sleepy will wake up next at ' + new Date(new Date().getTime() + minutes * 60 * 1000)).toISOString();"
                      ],
           "SCRIPT",  "RESET", ["RESET.0"],
            "FIELD",  {"r": 1, "c":12, "w": 5, "k": "MINUTES", "value":"1"},

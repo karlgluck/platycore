@@ -740,35 +740,26 @@ function Agent (sheet_, config_)
 // Snoozing for a duration simply asks Platycore to check in on this
 // agent in the future. Snoozing forever disables this check, but
 // the agent can still be woken up other ways.
-// 
-// Anyway, the point is that it's handy for the kinds of things
-// agents do to be able to schedule regular and irregular execution,
-// so that's what this does.
-// 
-// Snoozing automatically adjusts for the unreliable cadence of
-// timer execution in Google's environment. As a result, requesting
-// a snooze of 60 000 milliseconds (1 minute) is the same thing as
-// setting a timer that triggers every minute.
+//
+// There are basically no guarantees about the amount of time snoozing
+// actually puts the agent to sleep... but "rest" assured that it does
+// ...something like what you would expect, but with some asterisks.
+//
+// One thing's for sure, though: if you want regular execution intervals,
+// do NOT rely on Snooze.
 //
 
    this.Snooze = function (dtMilliseconds)
       {
-      var dt = dtMilliseconds * 1000;
+      var dt = Math.max(15000, dtMilliseconds);
       var utsMaybePreviousWakeTime = self_.ReadField('WAKE');
       self_.Log('Util_utsNowGet()', Util_utsNowGet());
-      self_.Log('config_.utsNow', config_.utsNow);
       self_.Log('utsMaybePreviousWakeTime', utsMaybePreviousWakeTime);
-      var utsNewWakeTime = dt + config_.utsNow;
-      // if (Util_isNumber(utsMaybePreviousWakeTime) && Math.abs(config_.utsNow - utsMaybePreviousWakeTime) < dtMilliseconds)
-      //    {                                                              // Create a regular cadence. Also, coerce
-      //    utsNewWakeTime = dt + parseInt(utsMaybePreviousWakeTime, 10);  // utsMaybePreviousWakeTime into being a number
-      //    }                                                              // (otherwise the + can mean "string append")
       self_.Log('utsNewWakeTime', utsNewWakeTime);
-      self_.Log('Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now at ', new Date(utsNewWakeTime), utsNewWakeTime);
+      var utsNewWakeTime = dt + Util_utsNowGet();
       self_.BadgeLastOutput(Util_moonPhaseFromDate(new Date(utsNewWakeTime)));
-      self_.WriteField('WAKE', utsNewWakeTime);
-
-      delete self_.Snooze; // this function can only be called once, otherwise the field WAKE has already been written and that might do Weird Things (TM) this could be fixed perhaps in less time than it took to write this comment but I'm not sure if anyone will ever care... so, goodbye function!
+      self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
+      self_.Log('Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now at ', new Date(utsNewWakeTime), utsNewWakeTime);
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
