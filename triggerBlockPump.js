@@ -16,11 +16,10 @@ function triggerBlockPump ()
    var keys = properties.getKeys()
          .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' });
 
-   var utsNow = Util_utsNowGet();
    console.log('triggerBlockPump ' + utsNow, utsNow);
    var utsNextWakeTime = Number.POSITIVE_INFINITY;
    var dtSingleBlockRuntimeLimit = 60/*seconds*/ * 1000;
-   var utsExecutionCutoffTime = utsNow + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit; // print an error if any agent executes longer than this time
+   var utsExecutionCutoffTime = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit; // print an error if any agent executes longer than this time
    var dtSingleBlockRuntimeWarningThreshold = 0.70/*percent*/ * dtSingleBlockRuntimeLimit; // print a warning if the agent runs longer than this time
 
    var nKeyCount = keys.length;
@@ -37,9 +36,10 @@ function triggerBlockPump ()
       var utsLastUpdated = file.getLastUpdated().getTime();
       var isPlatycoreMemoryLatest = platycore.hasOwnProperty('utsLastSaved') && (platycore.utsLastSaved >= utsLastUpdated);
 
-      console.log('checking agent ' + ePlatycoreAgentKey);
       var sheet = undefined;
       var agentMemory = JSON.parse(properties.getProperty(ePlatycoreAgentKey));
+      console.log('checking agent ' + ePlatycoreAgentKey);
+      console.log('agent memory ==>', agentMemory);
       var wake = null;
       if (!isPlatycoreMemoryLatest)
          {
@@ -101,10 +101,10 @@ function triggerBlockPump ()
       if (agentMemory.fieldFromName.hasOwnProperty('WAKE'))
          {                                               // Check for a number so that we can disable
          wake = agentMemory.fieldFromName.WAKE;          // automatic wake-up using 'SNOOZE'
-         var shouldWake = Util_isNumber(wake.valueCached) && wake.valueCached < utsNow;
+         var shouldWake = Util_isNumber(wake.valueCached) && wake.valueCached < Util_utsNowGet();
          console.log(
                 ePlatycoreAgentKey + ': wake.valueCached = ' + Util_StringFromTimestamp(wake.valueCached) + '\n'
-               +ePlatycoreAgentKey + ': utsNow           = ' + Util_StringFromTimestamp(utsNow)
+               +ePlatycoreAgentKey + ': utsNow           = ' + Util_StringFromTimestamp(Util_utsNowGet())
                );
          }
       else
@@ -118,7 +118,7 @@ function triggerBlockPump ()
          if (Util_isObject(wake) && Util_isNumber(wake.valueCached))
             {
             utsNextWakeTime = Math.min(utsNextWakeTime, parseInt(wake.valueCached));
-            console.log('agent ' + ePlatycoreAgentKey + ' is snoozing ' + Util_stopwatchStringFromDuration(wake.valueCached - utsNow) + ' until ' + Util_stopwatchStringFromDuration(wake.valueCached - utsNow));
+            console.log('agent ' + ePlatycoreAgentKey + ' is snoozing ' + Util_stopwatchStringFromDuration(wake.valueCached - Util_utsNowGet()) + ' until ' + Util_stopwatchStringFromDuration(wake.valueCached - Util_utsNowGet()));
             }
          }
       else
@@ -130,7 +130,7 @@ function triggerBlockPump ()
             }
          try{
             var agent = new Agent(sheet, {
-                  utsNow: utsNow,
+                  utsNow: Util_utsNowGet(),
                   memory: agentMemory,
                   origin:'triggerBlockPump',
                   utsSheetLastUpdated: utsLastUpdated

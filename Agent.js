@@ -12,7 +12,6 @@ function Agent (sheet_, config_)
 
    config_ = JSON.parse(JSON.stringify(config_ || {}));
    var isThisOn_ = !!config_.forceThisOn;
-   config_.utsNow = Util_isNumber(config_.utsNow) ? config_.utsNow : Util_utsNowGet();
 
    var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
       {
@@ -565,8 +564,7 @@ function Agent (sheet_, config_)
 
    this.Save = function ()
       {
-      if (!isThisOn_) throw "not turned on";
-      memory_.utsLastSaved = config_.utsNow;
+      memory_.utsLastSaved = Util_utsNowGet();
       PropertiesService.getDocumentProperties().setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
       };
 
@@ -612,7 +610,7 @@ function Agent (sheet_, config_)
          {
          var onValue = self_.ReadToggle('ON');
          var lockValue = self_.ReadField('LOCK');
-         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (config_.utsNow - lockValue);
+         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (Util_utsNowGet() - lockValue);
          isThisOn_ = (false === onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
          if (isThisOn_)
             {
@@ -620,7 +618,7 @@ function Agent (sheet_, config_)
                {
                console.warn('previous lock on platycoreAgent' + sheet_.getSheetId() + ' aged out and is being ignored');
                }
-            self_.WriteField('LOCK', config_.utsNow);
+            self_.WriteField('LOCK', Util_utsNowGet());
             self_.WriteToggle('ON', true);
             }
          else
@@ -646,7 +644,7 @@ function Agent (sheet_, config_)
       {
       if (!isThisOn_)
          {
-         return;
+         throw "cannot turn off; was not on";
          }
       isThisOn_ = false;
       var lock = LockService.getDocumentLock();
@@ -772,7 +770,7 @@ function Agent (sheet_, config_)
 
    this.SnoozeForever = function ()
       {
-      self_.Log(Util_moonPhaseFromDate(config_.utsNow) + 'Snoozing, no alarm... ');
+      self_.Log(Util_moonPhaseFromDate(Util_utsNowGet()) + 'Snoozing, no alarm... ');
       self_.WriteField('WAKE', 'SNOOZE');
       };
 
