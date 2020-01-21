@@ -163,7 +163,7 @@ function Agent (sheet_, config_)
          var toggle = memory_.toggleFromName[name];
          if (!toggle.hasOwnProperty('valueCached'))
             {
-            toggle.valueCached = !!sheet_.getRange(toggle.r, toggle.c).getValue();
+            toggle.valueCached = Util_boolCast(sheet_.getRange(toggle.r, toggle.c).getValue());
             }
          if (!toggle.hasOwnProperty('fRuleIsSynced'))
             {
@@ -186,7 +186,7 @@ function Agent (sheet_, config_)
       try
          {
 
-         value = !!value;
+         value = Util_boolCast(value);
 
          if (memory_.toggleFromName.hasOwnProperty(name))
             {
@@ -269,7 +269,7 @@ function Agent (sheet_, config_)
          var field = memory_.fieldFromName[name];
          if (!field.hasOwnProperty('valueCached'))
             {
-            field.valueCached = String(sheet_.getRange(field.r, field.c).getValue());
+            field.valueCached = Util_stringCast(sheet_.getRange(field.r, field.c).getValue());
             }
          if (!field.hasOwnProperty('fRuleIsSynced'))
             {
@@ -291,7 +291,7 @@ function Agent (sheet_, config_)
       {
       try
          {
-         value = String(value);
+         value = Util_stringCast(value);
          if (memory_.fieldFromName.hasOwnProperty(name))
             {
             var field = memory_.fieldFromName[name];
@@ -360,7 +360,7 @@ function Agent (sheet_, config_)
          var note = memory_.noteFromName[name];
          if (!note.hasOwnProperty('valueCached'))
             {
-            note.valueCached = String(sheet_.getRange(note.r, note.c).getNote());
+            note.valueCached = Util_stringCast(sheet_.getRange(note.r, note.c).getNote());
             }
          return note.valueCached;
          }
@@ -391,6 +391,7 @@ function Agent (sheet_, config_)
       {
       try
          {
+         value = Util_stringCast(value);
          if (memory_.noteFromName.hasOwnProperty(name))
             {
             var note = memory_.noteFromName[name];
@@ -1057,7 +1058,7 @@ function Agent (sheet_, config_)
             case 'NOTE': // NOTE "<name>"  {"r": "<riRow>", "c": "<ciCol>"} <any>
                var kName = instructions[++iInstruction];
                var note = JSON.parse(JSON.stringify(instructions[++iInstruction]));
-               var value = instructions[++iInstruction];
+               var value = Util_stringCast(instructions[++iInstruction]);
                memory_.noteFromName[kName] = note;
                if (Util_isString(value))
                   {
@@ -1113,7 +1114,7 @@ function Agent (sheet_, config_)
                   memory_.toggleFromName[toggle.k] = toggle;
                   var toggleText = toggle.t || toggle.k;
                   toggle.isReadonly = !!toggle.isReadonly;
-                  toggle.valueCached = !!toggle.value;
+                  toggle.valueCached = Util_boolCast(toggle.value);
                   delete toggle.value;
                   self_.Log('+toggle: ' + toggle.k + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
                   var checkboxRange = sheet_.getRange(toggle.r, toggle.c).insertCheckboxes();

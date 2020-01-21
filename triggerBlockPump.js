@@ -83,7 +83,7 @@ function triggerBlockPump ()
          var go = agentMemory.toggleFromName.GO;
          if (!go.hasOwnProperty('fVirtual'))
             {
-            go.valueCached = !!sheet.getRange(go.r, go.c).getValue();
+            go.valueCached = Util_boolCast(sheet.getRange(go.r, go.c).getValue());
             console.log('[' + ePlatycoreAgentKey + ']: read GO = ' + go.valueCached);
             }
          if (agentMemory.fieldFromName.hasOwnProperty('WAKE'))
@@ -91,7 +91,7 @@ function triggerBlockPump ()
             wake = agentMemory.fieldFromName.WAKE;
             if (!wake.hasOwnProperty('fVirtual'))
                {
-               wake.valueCached = sheet.getRange(wake.r, wake.c).getValue();
+               wake.valueCached = Util_intCast(sheet.getRange(wake.r, wake.c).getValue());
                }
             console.log('[' + ePlatycoreAgentKey + ']: read WAKE = ' + wake.valueCached);
             }
