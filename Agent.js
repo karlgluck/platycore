@@ -808,7 +808,7 @@ function Agent (sheet_, config_)
 
          if ('REBOOT' === eInstruction || 'OFF' === eInstruction || iInstruction + 1 == nInstructionCount) // save the conditional formatting rules before switching off
             {
-            sheet_.setConditionalFormatRules(conditionalFormatRules.map(function (e) { return e.gasConditionalFormatRule; }));
+            sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
             }
 
          switch (eInstruction)
@@ -879,7 +879,7 @@ function Agent (sheet_, config_)
                   (function (agent, previousInstallMemory)
                      {
                      eval(code);
-                     })(agent, previousInstallMemory);
+                     })(self_, previousInstallMemory);
                   }
                break;
 
@@ -888,7 +888,7 @@ function Agent (sheet_, config_)
                (function (agent)
                   {
                   eval(code);
-                  })(agent);
+                  })(self_);
                break;
 
             case 'RANGE':
@@ -988,7 +988,7 @@ function Agent (sheet_, config_)
                      delete field.fg;
                      textStyleBuilder.setForegroundColor('#ff00ff');
                      range.setTextStyle(textStyleBuilder.build());
-                     conditionalFormatRules.push({
+                     conditionalFormatRules_.push({
                            ranges:[{
                                  gasRange: range,
                                  r:field.r,
@@ -1029,7 +1029,7 @@ function Agent (sheet_, config_)
                         .setFormula('=platycoreScheduler('+GAS_A1AddressFromCoordinatesP(go.r, go.c)+')');
                   sheet_.getRange(en.r, en.c+1).setValue('EN');
                   var enRange = sheet_.getRange(en.r, en.c, 1, 2).setFontColor('#00ffff');
-                  conditionalFormatRules.push({
+                  conditionalFormatRules_.push({
                         ranges:[{                                 // This is a copy-paste from the 'TOGGLE' branch,
                               gasRange: enRange,                  // so we should really move it somewhere else
                               r:en.r,                             // and refactor this into a single function.
@@ -1137,7 +1137,7 @@ function Agent (sheet_, config_)
                      range.setBackground(toggle.bg);
                      delete toggle.bg;
                      }
-                  conditionalFormatRules.push({
+                  conditionalFormatRules_.push({
                         ranges:[{
                               gasRange: range,
                               r:toggle.r,

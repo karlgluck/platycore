@@ -2,6 +2,8 @@
 /*
 
 
+need to make sure we check in on how conditionalFormatRules_ is being used in Agent.js since we imported code that deals with it and I'm not exactly sure it all works properly.
+
 each Sheet creates an API endpoint with its sheet ID as the key
 the API endpoint is
    ?api=sheet&sheetId=<id>
