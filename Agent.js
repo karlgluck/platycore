@@ -662,7 +662,7 @@ function Agent (sheet_, config_)
 //------------------------------------------------------------------------------------------------------------------------------------
 // 
 
-   this.FormulaDetectingAnyChanges_GetP() = function (ignoredNames)
+   this.FormulaDetectingAnyChanges_GetP = function (ignoredNames)
       {
       var toggles = Object.keys(memory_.toggleFromName).map(function (kName)
          {
@@ -776,7 +776,7 @@ function Agent (sheet_, config_)
 
    this.ExecuteRoutineFromUrl = function (urlAgentInstructions)
       {
-      agent.Info('Fetching ' + Util_clampStringLengthP(urlAgentInstructions, 50));
+      self_.Info('Fetching ' + Util_clampStringLengthP(urlAgentInstructions, 50));
       if (urlAgentInstructions.substring(0, 22) === 'data:text/json;base64,')
          {
          var jsonAgentInstructions = Util_stringFromBase64(urlAgentInstructions.substring(22));
@@ -785,7 +785,7 @@ function Agent (sheet_, config_)
          {
          var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
          }
-      agent.Info('jsonAgentInstructions', jsonAgentInstructions);
+      self_.Info('jsonAgentInstructions', jsonAgentInstructions);
       return self_.ExecuteRoutine(JSON.parse(jsonAgentInstructions));
       };
 
