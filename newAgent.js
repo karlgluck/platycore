@@ -65,7 +65,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
             {
             var dtMilliseconds = Math.max(15000, (utsWakeValue - Util_utsNowGet()) / 1000);
             console.log('Scheduling sentinel after ' + Util_stopwatchStringFromDurationInMillis(dtMilliseconds) + ' = ' + dtMilliseconds);
-            ScriptApp.newTrigger('triggerBlockPump').timeBased().after(dtMilliseconds).everyMinutes(5).create();
+            ScriptApp.newTrigger('triggerBlockPump').timeBased().after(dtMilliseconds).create();
             }
          spreadsheet.toast('platycoreAgent' + sheet.getSheetId() + ' installed successfully. There are now ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
          }

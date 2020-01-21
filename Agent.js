@@ -30,7 +30,6 @@ function Agent (sheet_, config_)
             }
       });
 
-
 //------------------------------------------------------------------------------------------------------------------------------------
 
    var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)

@@ -3,7 +3,8 @@
 
 function triggerBlockPump ()
    {
-   GAS_deleteTriggerByName('triggerBlockPump');
+
+   // when you sleep, the block pump does not sleep. sorry. it just goes.
 
    // TODO: MAKE SURE ACCESS TO THE PLATYCORE PROPERTIES IS MUTEXED
    // WE HAVE CONCURRENCY PROBLEMS HERE 
@@ -130,7 +131,6 @@ function triggerBlockPump ()
             }
          try{
             var agent = new Agent(sheet, {
-                  utsNow: Util_utsNowGet(),
                   memory: agentMemory,
                   origin:'triggerBlockPump',
                   utsSheetLastUpdated: utsLastUpdated
@@ -155,8 +155,8 @@ function triggerBlockPump ()
                      }
                   wakeValue = null;
                   var dtRuntime = Util_utsNowGet() - utsIterationStarted;
-                  //agent.Verbose(function () { return 'turned off after ' + Util_stopwatchStringFromDuration(dtRuntime)});
-                  console.log('turned  off after ' + Util_stopwatchStringFromDuration(dtRuntime));
+                  agent.Verbose(function () { return 'turned off after ' + Util_stopwatchStringFromDuration(dtRuntime)});
+                  console.log('turned  off after ' + Util_stopwatchStringFromDuration(dtRuntime) + ' sleeping for ' + Util_stopwatchStringFromDuration(utsNextWakeTime - Util_utsNowGet()));
                   if (dtRuntime > dtSingleBlockRuntimeWarningThreshold)
                      {
                      agent.Warn('agent is starting to run for a long time');
@@ -181,7 +181,7 @@ function triggerBlockPump ()
    // update the save
 
    var documentLock = LockService.getDocumentLock();
-   if (!documentLock.tryLock(30000))
+   if (!documentLock.tryLock(dtSingleBlockRuntimeLimit/4))
       {
       try{
          var savedPlatycore = JSON.parse(properties.getProperty('platycore') || '{}');
@@ -190,7 +190,7 @@ function triggerBlockPump ()
          {
          }
       }
-   if (documentLock.tryLock(30000))
+   if (documentLock.tryLock(dtSingleBlockRuntimeLimit/4))
       {
       try{
 
@@ -209,18 +209,6 @@ function triggerBlockPump ()
          properties.setProperty('platycore', JSON.stringify(savedPlatycore));
          platycore = savedPlatycore;
 
-         //
-         // Reschedule the trigger
-         //
-
-         GAS_deleteTriggerByName('triggerBlockPump');
-         var dtSnoozeDelayMilliseconds = Math.max(15000, Math.min(2/*days*/*1000*60*60*24, utsNextWakeTime - platycore.utsLastSave));
-         console.warn('at ' + new Date(platycore.utsLastSaved) + ', Platycore is going to sleep for ' + Util_stopwatchStringFromDurationInMillis(dtSnoozeDelayMilliseconds) + ' (' + dtSnoozeDelayMilliseconds + ')', new Date(platycore.utsLastSaved+dtSnoozeDelayMilliseconds*1000, (platycore.utsLastSaved + dtSnoozeDelayMilliseconds * 1000)));
-         ScriptApp.newTrigger('triggerBlockPump')
-               .timeBased()
-               .after(dtSnoozeDelayMilliseconds)
-               .everyMinutes(5)
-               .create();
          }
       finally
          {
