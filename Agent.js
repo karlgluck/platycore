@@ -1055,7 +1055,7 @@ function Agent (sheet_, config_)
                   {
                   // value = value;
                   }
-               else if (Util_isArray(value) && value.every(Util_isString(e)))
+               else if (Util_isArray(value) && value.every(Util_isString))
                   {
                   value = value.join('\n'); // this is an array of strings, so turn it into lines of text
                   }
