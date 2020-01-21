@@ -219,6 +219,11 @@ function Agent (sheet_, config_)
             updateToggleConditionalFormatRule_(toggle);
             toggle.fRuleIsSynced = null;
             }
+         
+         if (name === 'VERBOSE') // re-initialize the self-constantizing method to keep the VERBOSE toggle in sync
+            {
+            Util_makeLazyConstantMethod(self_, 'isVerbose_', function () { return !!config_.verbose || self_.ReadToggle('VERBOSE') });
+            }
 
          }
       catch (e)

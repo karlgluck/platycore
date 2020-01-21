@@ -174,6 +174,17 @@ function triggerBlockPump ()
             throw e; // this is a problem because it skips the rescheduler
             }
          } // is GO or wake
+
+      //
+      // don't iterate too fast; this is a polling loop waiting for change
+      // in the spreadsheet so that we don't have to make a lot of triggers
+      //
+
+      var dtTooShortOfLoop = 5000 - (Util_utsNowGet() - utsIterationStarted);
+      if (dtTooShortOfLoop > 0)
+         {
+         Utilities.sleep(dtTooShortOfLoop);
+         }
          
       } // ePlatycoreAgentKey for every agent in the spreadsheet until runtime is hit
    
@@ -202,8 +213,9 @@ function triggerBlockPump ()
          }
       finally
          {
-         documentLock.unlock();
+         documentLock.releaseLock();
          savedPlatycore = null;
          }
       }
+         documentLock.releaseLock();
    }

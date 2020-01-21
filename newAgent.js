@@ -59,13 +59,6 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
       try
          {
          agent.Save();
-         var utsWakeValue = agent.ReadField('WAKE');
-         if (Util_isNumber(utsWakeValue))
-            {
-            var dtMilliseconds = Math.max(15000, (utsWakeValue - Util_utsNowGet()) / 1000);
-            console.log('Scheduling sentinel after ' + Util_stopwatchStringFromDurationInMillis(dtMilliseconds) + ' = ' + dtMilliseconds);
-            ScriptApp.newTrigger('triggerBlockPump').timeBased().after(dtMilliseconds).create();
-            }
          spreadsheet.toast('platycoreAgent' + sheet.getSheetId() + ' installed successfully. There are now ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
          }
       catch (e)
