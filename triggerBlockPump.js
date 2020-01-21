@@ -214,7 +214,7 @@ function triggerBlockPump ()
          //
 
          GAS_deleteTriggerByName('triggerBlockPump');
-         var dtSnoozeDelayMilliseconds = Math.max(1000, Math.min(2/*days*/*1000*60*60*24, utsNextWakeTime - platycore.utsLastSave));
+         var dtSnoozeDelayMilliseconds = Math.max(15000, Math.min(2/*days*/*1000*60*60*24, utsNextWakeTime - platycore.utsLastSave));
          console.warn('at ' + new Date(platycore.utsLastSaved) + ', Platycore is going to sleep for ' + Util_stopwatchStringFromDurationInMillis(dtSnoozeDelayMilliseconds) + ' (' + dtSnoozeDelayMilliseconds + ')', new Date(platycore.utsLastSaved+dtSnoozeDelayMilliseconds*1000, (platycore.utsLastSaved + dtSnoozeDelayMilliseconds * 1000)));
          ScriptApp.newTrigger('triggerBlockPump')
                .timeBased()

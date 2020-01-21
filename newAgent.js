@@ -47,7 +47,6 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
       spreadsheet.toast(e + ' ' + e.stack);
       try
          {
-         agent.Error('step ' + iAgentInstruction + ' threw an exception', iAgentInstruction, eAgentInstruction);
          agent.Error('exception during agent initialization', e, e.stack);
          }
       catch (e2)

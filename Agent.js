@@ -757,9 +757,9 @@ function Agent (sheet_, config_)
 
    this.Snooze = function (dtMilliseconds)
       {
+      self_.Log('Snooze('+dtMilliseconds+') called @ Util_utsNowGet() = ' + Util_utsNowGet());
       var dt = Math.max(15000, dtMilliseconds);
       var utsMaybePreviousWakeTime = self_.ReadField('WAKE');
-      self_.Log('Util_utsNowGet()', Util_utsNowGet());
       self_.Log('utsMaybePreviousWakeTime', utsMaybePreviousWakeTime);
       self_.Log('utsNewWakeTime', utsNewWakeTime);
       var utsNewWakeTime = dt + Util_utsNowGet();
