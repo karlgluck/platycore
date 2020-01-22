@@ -1058,7 +1058,7 @@ function Agent (sheet_, config_)
             case 'NOTE': // NOTE "<name>"  {"r": "<riRow>", "c": "<ciCol>"} <any>
                var kName = instructions[++iInstruction];
                var note = JSON.parse(JSON.stringify(instructions[++iInstruction]));
-               var value = Util_stringCast(instructions[++iInstruction]);
+               var value = instructions[++iInstruction];
                memory_.noteFromName[kName] = note;
                if (Util_isString(value))
                   {
@@ -1072,7 +1072,7 @@ function Agent (sheet_, config_)
                   {
                   value = JSON.stringify(value);
                   }
-               self_.Log('+note: ' + kName, Util_clampStringLengthP(value, 50));
+               self_.Log('+note: ' + kName, value);
                if (!note.hasOwnProperty('fVirtual'))
                   {
                   sheet_.getRange(note.r, note.c).setNote(value);

@@ -7,16 +7,13 @@
             "NOTE",  "RESET.0",
                      {"fVirtual": null},
                      [
-                     "agent.Log('Sleepy woke up at ' + new Date().toISOString() + ' from a nap set for ' + agent.ReadField('WAKE'));",
-                     "var minutes = parseInt(agent.ReadField('MINUTES'), 10);",
-                     "agent.Snooze(minutes * 60 * 1000);",
-                     "agent.Log('Sleepy will wake up next at ' + new Date(new Date().getTime() + minutes * 60 * 1000).toISOString());"
+                     "agent.Log('Sleepy woke up at ' + new Date().toISOString() + ' from a nap set for ' + new Date(agent.ReadField('WAKE')).toISOString());",
+                     "agent.Snooze(5 * 60 * 1000);",
+                     "agent.Log('Sleepy will wake up next at ' + new Date(new Date().getTime() + 5 * 60 * 1000).toISOString());"
                      ],
           "SCRIPT",  "RESET", ["RESET.0"],
            "FIELD",  {"r": 1, "c":25, "w": 5, "k": "WAKE"},
            "RANGE",  {"r": 1, "c":32, "w": 3, "merge": "across", "t": "WAKE"},
-           "FIELD",  {"r": 1, "c":12, "w": 5, "k": "MINUTES", "value":"1"},
-           "RANGE",  {"r": 1, "c":17, "w": 3, "merge": "across", "t": "MINUTES"},
 
            "GO_EN",  {"r": 1, "c": 1},
             "EVAL",  ["agent.WriteToggle('EN', true)"],
