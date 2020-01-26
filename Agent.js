@@ -1023,7 +1023,7 @@ function Agent (sheet_, config_)
                break;
             
             case 'PANEL':
-               var color = Util_darkRainbowColorFromAnyP(iInstruction);
+               var color = Util_darkRainbowColorFromAnyP(instructions[++iInstruction]);
                var location = instructions[++iInstruction];
                sheet_.getRange(location.r, location.c, location.h || 1, location.w || 1)
                      .setBackground(color)

@@ -19,13 +19,13 @@ function triggerBlockPump ()
 
 var doBlockPump = function () {
 
-   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+   var spreadsheet_ = SpreadsheetApp.getActiveSpreadsheet();
    var file_ = DriveApp.getFileById(spreadsheet_.getId());
    var properties_ = PropertiesService.getDocumentProperties();
    var utsExecutionCutoffTime_ = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit;
    var dtSingleBlockRuntimeLimit_ = 60/*seconds*/ * 1000; // print an error if any agent executes longer than this time
    var dtSingleBlockRuntimeWarningThreshold_ = 0.70/*percent*/ * dtSingleBlockRuntimeLimit; // print a warning if the agent runs longer than this time
-   var sheets_ = spreadsheet.getSheets();
+   var sheets_ = spreadsheet_.getSheets();
    var nSheetCount_ = sheets_.length;
    var iSheet_ = 0;
 
@@ -65,7 +65,7 @@ var doBlockPump = function () {
 
       if (utsLastSaved < utsLastUpdated)
          {
-         sheets_ = spreadsheet.getSheets();
+         sheets_ = spreadsheet_.getSheets();
          iSheet_ = 0;
          }
 
@@ -149,7 +149,7 @@ var doBlockPump = function () {
          {
          if (!Util_isObject(agent))
             {
-            agent = new Agent(sheet, {sheet: sheet, sheetId: sheetId, memory: agentMemory, origin:'doBlockPump - step'});
+            agent = new Agent(sheet, {sheetId: sheetId, memory: agentMemory, origin:'doBlockPump - step'});
             }
          agentMemory = null; // no longer valid
          try
