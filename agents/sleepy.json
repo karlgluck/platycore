@@ -3,24 +3,35 @@
           "FREEZE",  4,
          "TOOLBAR",  1,
 
-             "REM", "[RESET]",
-            "NOTE",  "RESET.0",
-                     {"r": 1, "c":7},
+          "TOGGLE", "ON", {"r": 2, "c": 1, "value": true, "isReadonly": true},
+            "TEXT", "ON", {"r": 2, "c": 2},
+           "PANEL", {"r":2, "c":1, "w": 2},
+
+          "TOGGLE", "GO", {"r": 1, "c": 1, "value": false},
+            "TEXT", "GO", {"r": 1, "c": 2},
+           "PANEL", {"r":1, "c":1, "w": 2},
+
+          "TOGGLE", "EN", {"r": 1, "c": 3, "value": true},
+            "TEXT", "EN", {"r": 1, "c": 4},
+           "PANEL", {"r":1, "c":3, "w": 2},
+
+           "FIELD", "WAKE", {"r": 1, "c":5, "w": 5},
+           "EVAL",  ["agent.WriteField('WAKE', Util_utsNowGet() + 1000)"],
+            "TEXT", "WAKE", {"r": 1, "c":10, "w": 2},
+           "PANEL", {"r":1, "c":5, "w": 7},
+
+           "FIELD", "LOCK", {"r": 2, "c":3, "w": 5, "isReadonly": true},
+           "EVAL",  ["agent.WriteField('LOCK', Util_utsNowGet())"],
+            "TEXT", "LOCK", {"r": 2, "c":8, "w": 2},
+           "PANEL", {"r":2, "c":3, "w": 7},
+
+            "TEXT",  "MAIN", {"r": 1, "c":12, "w":3},
+            "NOTE",  "MAIN", {"r": 1, "c":12},
                      [
                      "agent.Snooze(5 * 60 * 1000);"
                      ],
-            "RANGE", {"r":1, "c":8, "w":3, "k": "RESET"},
-          "SCRIPT",  "RESET", ["RESET.0"],
-           "FIELD",  {"r": 1, "c":25, "w": 5, "k": "WAKE"},
-           "RANGE",  {"r": 1, "c":30, "w": 3, "merge": "across", "t": "WAKE"},
+           "PANEL", {"r":1, "c":12, "w": 3},
 
-           "TOGGLE", {"r": 1, "c": 1, "w":1, "k":"GO", "value": false},
-           "RANGE", {"r":1, "c":2,"t":"GO", "w":1},
-           "TOGGLE", {"r": 1, "c": 3, "w":1,"k":"EN", "value": true},
-           "RANGE", {"r":1, "c":4,"t":"EN"},
-            "EVAL",  ["agent.WriteToggle('EN', true)"],
-          "TOGGLE",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "value": true, "isReadonly": true},
-            "EVAL",  ["agent.Snooze(0)"],
              "OFF"
 ]
 

@@ -30,8 +30,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                   sheetNameHint: sheetName,
                   sheetId: sheet.getSheetId(),
                   toggleFromName: {},
-                  urlAgentInstructions: urlAgentInstructions,
-                  utsLastSaved: utsAgentCreated
+                  urlAgentInstructions: urlAgentInstructions
                   },
             previousInstallMemory: previousInstallMemory,
             origin: origin || 'newAgent',

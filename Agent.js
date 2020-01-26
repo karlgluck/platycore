@@ -1,28 +1,42 @@
 // creating an Agent is a minimal operation to identify whether the Agent needs to run
-// the agent needs to run if any of:
-// (1) the current time is later than the wake timer
-// (2) the GO toggle is checked
+// the agent needs to run if:
+// (1) the EN toggle is checked or does not exist
+// and either:
+// (2a) the GO toggle exists and is checked
+// (2b) the WAKE timer exists and the current time is later than the wake timer
+
 // the wake timer's value and the GO toggle are saved in memory
 //    so that Platycore doesn't have to read the sheet every time
 // however, these values are cleared whenever the sheet is updated more recently than the agent was last saved
 
 function Agent (sheet_, config_)
    {
+   config_ = JSON.parse(JSON.stringify(config_ || {}));
    var self_ = this;
+   var isThisOn_ = false;
 
-//------------------------------------------------------------------------------------------------------------------------------------
-
-this.readFromStorage = function ()
-   {
-   config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty(config_.agentName));
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-this.writeToStorage = function ()
-   {
-   PropertiesService.getDocumentProperties().setProperty(config_.agentName, JSON.stringify(memory_));
-   };
+   self_.BootSectorGet = function ()
+      {
+      var rv = {
+            agentName: config_.agentName,
+            sheetNameHint: memory_.sheetNameHint,
+            sheetId: memory_.sheetId
+            };
+      if (!Util_isUndefined(self_.ReadToggle('EN')))
+         {
+         rv.EN = memory_.toggleFromName['EN'];
+         }
+      if (!Util_isUndefined(self_.ReadField('WAKE')))
+         {
+         rv.WAKE = memory_.fieldFromName['WAKE'];
+         }
+      if (!Util_isUndefined(self_.ReadToggle('GO')))
+         {
+         rv.GO = memory_.toggleFromName['GO'];
+         }
+      
+      return rv;
+      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -31,12 +45,14 @@ this.writeToStorage = function ()
 
    if (!Util_isObject(config_.memory))
       {
-      self_.readFromStorage();
+      config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty(config_.agentName));
       }
    config_.agentName = config_.memory.agentName;
    var memory_ = config_.memory;
    memory_.toggleFromName = memory_.toggleFromName || {};
    memory_.fieldFromName = memory_.fieldFromName || {};
+   memory_.noteFromName = memory_.noteFromName || {};
+
    memory_.scriptFromName = memory_.scriptFromName || {};
    memory_.scriptNames = memory_.scriptNames || [];
 
@@ -45,17 +61,8 @@ this.writeToStorage = function ()
       {
       }
 
-//------------------------------------------------------------------------------------------------------------------------------------
-//
-// Clear all cached values from memory if the document was
-// modified more recently than the cache was updated.
-//
-
-   (function (isCacheExpired)
+   this.ClearCache = function ()
       {
-
-      console.log('isCacheExpired', isCacheExpired);
-
       ['toggleFromName', 'fieldFromName', 'noteFromName'].forEach(function (kDictionary)
          {
          var eDictionary = memory_[kDictionary];
@@ -63,21 +70,12 @@ this.writeToStorage = function ()
          Object.keys(eDictionary).forEach(function (kName)
             {
             var dictionary = eDictionary[kName];
-            if (dictionary.hasOwnProperty('fVirtual')) // virtual properties are set when fields, toggles,
-               {                                       // and notes are not set by the creation script
-               return;
-               }
-            delete dictionary.fRuleIsSynced; // won't apply to all of them but it doesn't hurt
-            if (isCacheExpired) delete dictionary.valueCached; // this is really what we want to do
+            delete dictionary.value; // make absolutely sure this doesn't exist
             });
-         
-         })
 
-      })('undefined' === typeof config_.utsSheetLastUpdated
-            || memory_.utsLastSaved < config_.utsSheetLastUpdated);
-
-
-
+         });
+      };
+   self_.ClearCache();
 
    console.log('agent created: ' + sheet_.getSheetId(), config_);
 
@@ -86,41 +84,41 @@ this.writeToStorage = function ()
 // 
 // 
 
-   config_ = JSON.parse(JSON.stringify(config_ || {}));
-   var isThisOn_ = false;
 
-   var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
-      {
-      return{
-            gasConditionalFormatRule: eRule,
-            ranges: eRule.getRanges().map(function (eRange)
-               {
-               return{
-                     r: eRange.getRow(),
-                     c: eRange.getColumn(),
-                     w: eRange.getWidth(),
-                     h: eRange.getHeight(),
-                     gasRange: eRange
-                     }
-               })
-            }
-      });
+// maybe add to a 'LoadConditionalFormatRules' that lets us do conditional format rule manipulation on this agent
+
+   // var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
+   //    {
+   //    return{
+   //          gasConditionalFormatRule: eRule,
+   //          ranges: eRule.getRanges().map(function (eRange)
+   //             {
+   //             return{
+   //                   r: eRange.getRow(),
+   //                   c: eRange.getColumn(),
+   //                   w: eRange.getWidth(),
+   //                   h: eRange.getHeight(),
+   //                   gasRange: eRange
+   //                   }
+   //             })
+   //          }
+   //    });
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
-      {
-      for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
-         {
-         var eConditionalFormatRule = conditionalFormatRules_[i];
-         var ranges = eConditionalFormatRule.ranges;
-         if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
-            {
-            return eConditionalFormatRule;
-            }
-         }
-      return null;
-      };
+   // var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
+   //    {
+   //    for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
+   //       {
+   //       var eConditionalFormatRule = conditionalFormatRules_[i];
+   //       var ranges = eConditionalFormatRule.ranges;
+   //       if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
+   //          {
+   //          return eConditionalFormatRule;
+   //          }
+   //       }
+   //    return null;
+   //    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -170,23 +168,8 @@ this.writeToStorage = function ()
 ***********   ********     ********      ******      ****         *         **********************************************************
 *************************************************************************************************************************************/
 
-   var updateToggleConditionalFormatRule_ = function (toggle)
-      {
-      var rule = getConditionalFormatRuleByArea(toggle.r, toggle.c, 1, toggle.w);
-      if (!Util_isObject(rule))
-         {
-         self_.Warn('conditional format rule for toggle could not be updated', toggle);
-         return;
-         }
-      var builder = rule.gasConditionalFormatRule.copy();
-      builder.whenFormulaSatisfied("=EQ(" + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) +(toggle.valueCached?',FALSE)':',TRUE)'));
-      rule.gasConditionalFormatRule = builder.build();
-      writeConditionalFormatRules();
-      };
 
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   this.ReadToggle = function (name)
+   this.ReadToggle = function (name, ignoreCache)
       {
       try
          {
@@ -195,16 +178,11 @@ this.writeToStorage = function ()
             {
             return undefined;
             }
-         if (!toggle.hasOwnProperty('valueCached'))
+         if (ignoreCache || !toggle.hasOwnProperty('value'))
             {
-            toggle.valueCached = Util_boolCast(sheet_.getRange(toggle.r, toggle.c).getValue());
+            toggle.value = Util_boolCast(sheet_.getRange(toggle.r, toggle.c).getValue());
             }
-         if (!toggle.hasOwnProperty('fRuleIsSynced'))
-            {
-            updateToggleConditionalFormatRule_(toggle);
-            toggle.fRuleIsSynced = null;
-            }
-         return toggle.valueCached;
+         return toggle.value;
          }
       catch (e)
          {
@@ -219,46 +197,30 @@ this.writeToStorage = function ()
       {
       try
          {
-
          value = Util_boolCast(value);
-
          if (memory_.toggleFromName.hasOwnProperty(name))
             {
             var toggle = memory_.toggleFromName[name];
             }
          else 
             {
-            var toggle = memory_.toggleFromName[name] = {
-                  fVirtual: null,
-                  fRuleIsSynced: null
-                  };
+            console.error('writing nonexistant toggle "' + name + '"');
+            return;
             }
-         if (toggle.hasOwnProperty('fVirtual'))
+         var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
+         if (toggle.isReadonly)
             {
-            toggle.valueCached = value;
+            checkboxRange.setFormula(value ? '=TRUE' : '=FALSE');
             }
          else
             {
-            delete toggle.fRuleIsSynced;
-            var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
-            if (toggle.isReadonly)
-               {
-               checkboxRange.setFormula(value ? '=TRUE' : '=FALSE');
-               }
-            else
-               {
-               checkboxRange.setValue(value);
-               }
-            toggle.valueCached = value;
-            updateToggleConditionalFormatRule_(toggle);
-            toggle.fRuleIsSynced = null;
+            checkboxRange.setValue(value);
             }
-         
+         toggle.value = value;
          if (name === 'VERBOSE') // re-initialize the self-constantizing method to keep the VERBOSE toggle in sync
             {
             Util_makeLazyConstantMethod(self_, 'isVerbose_', function () { return !!config_.verbose || self_.ReadToggle('VERBOSE') });
             }
-
          }
       catch (e)
          {
@@ -276,27 +238,9 @@ this.writeToStorage = function ()
 ******   *********   ****         ***         ***      *******************************************************************************
 *************************************************************************************************************************************/
 
-   var updateFieldConditionalFormatRule_ = function (field)
-      {
-      var rule = getConditionalFormatRuleByArea(field.r, field.c, field.h, field.w);
-      if (!Util_isObject(rule))
-         {
-         self_.Warn('conditional format rule for field could not be updated', field);
-         return;
-         }
-      var builder = rule.gasConditionalFormatRule.copy();
-      builder.whenTextEqualTo(field.valueCached);
-      rule.gasConditionalFormatRule = builder.build();
-      };
-   
-   var writeConditionalFormatRules = function ()
-      {
-      sheet_.setConditionalFormatRules(conditionalFormatRules_.map(function (e) { return e.gasConditionalFormatRule; }));
-      };
-
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ReadField = function (name)
+   this.ReadField = function (name, ignoreCache)
       {
       try
          {
@@ -305,16 +249,11 @@ this.writeToStorage = function ()
             {
             return undefined;
             }
-         if (!field.hasOwnProperty('valueCached'))
+         if (ignoreCache || !field.hasOwnProperty('value'))
             {
-            field.valueCached = Util_stringCast(sheet_.getRange(field.r, field.c).getValue());
+            field.value = sheet_.getRange(field.r, field.c).getValue();
             }
-         if (!field.hasOwnProperty('fRuleIsSynced'))
-            {
-            updateFieldConditionalFormatRule_(field);
-            field.fRuleIsSynced = null;
-            }
-         return field.valueCached;
+         return field.value;
          }
       catch (e)
          {
@@ -336,24 +275,11 @@ this.writeToStorage = function ()
             }
          else 
             {
-            var field = memory_.fieldFromName[name] = {
-                  fVirtual: null,
-                  fRuleIsSynced: null
-                  };
+            console.error('writing nonexistant field "' + name + '"');
+            return;
             }
-         if (field.hasOwnProperty('fVirtual'))
-            {
-            field.valueCached = value;
-            }
-         else
-            {
-            delete field.fRuleIsSynced;
-            sheet_.getRange(field.r, field.c, field.h, field.w)
-                  .setValue(value);
-            field.valueCached = value;
-            updateFieldConditionalFormatRule_(field);
-            field.fRuleIsSynced = null;
-            }
+         sheet_.getRange(field.r, field.c, field.h, field.w).setValue(value);
+         field.value = value;
          }
       catch (e)
          {
@@ -396,11 +322,11 @@ this.writeToStorage = function ()
       try
          {
          var note = memory_.noteFromName[name];
-         if (!note.hasOwnProperty('valueCached'))
+         if (!note.hasOwnProperty('value'))
             {
-            note.valueCached = Util_stringCast(sheet_.getRange(note.r, note.c).getNote());
+            note.value = Util_stringCast(sheet_.getRange(note.r, note.c).getNote());
             }
-         return note.valueCached;
+         return note.value;
          }
       catch (e)
          {
@@ -436,16 +362,11 @@ this.writeToStorage = function ()
             }
          else 
             {
-            var note = memory_.noteFromName[name] = {
-                  fVirtual: null
-                  };
+            console.error('writing nonexistant note "' + name + '"');
+            return;
             }
-         if (!note.hasOwnProperty('fVirtual'))
-            {
-            sheet_.getRange(note.r, note.c)
-                  .setNote(value);
-            }
-         note.valueCached = value;
+         sheet_.getRange(note.r, note.c).setNote(value);
+         note.value = value;
          }
       catch (e)
          {
@@ -594,8 +515,11 @@ this.writeToStorage = function ()
    this.Reboot = function ()
       {
       self_.Save();
-      config_.memory.utsLastSaved = 0;  // eliminate all caches
       var rvAgent = new Agent(sheet_, config_);
+      if (isThisOn_)
+         {
+         rvAgent.OverrideTurnOn();
+         }
       sheet_ = null;
       config_ = null;
       memory_ = null;
@@ -606,8 +530,8 @@ this.writeToStorage = function ()
 
    this.Save = function ()
       {
-      memory_.utsLastSaved = Util_utsNowGet();
-      self_.writeToStorage();
+      var documentProperties = PropertiesService.getDocumentProperties();
+      documentProperties.setProperty(config_.agentName, JSON.stringify(memory_));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -642,48 +566,77 @@ this.writeToStorage = function ()
 
    this.TurnOn = function ()
       {
+      var dtMaxScriptExecutionTime = (60 *  5/*m*/+30/*s*/) * 1000;
+
       if (isThisOn_)
          {
          return true;
          }
-      var sentinel = Utilities.base64Encode(Math.random().toString());
-      var sentinelRange = sheet_.getRange(1, 49);
-      sentinelRange.setValue(sentinel);
-      var lock = LockService.getDocumentLock();
-      if (!lock.tryLock(config_.dtLockWaitMillis))
+      var isAlreadyRunning = Util_boolCast(self_.ReadToggle('ON', true));
+      var lockValue = self_.ReadField('LOCK', true);
+      var hasLockField = !Util_isUndefined(lockValue);
+      if (hasLockField)
          {
-         console.warn('lock prevented turnOn');
-         return false;
+         lockValue = Util_intCast(lockValue);
+         var lockValueWithSentinel = (lockValue - (lockValue % 1000)) + (((lockValue % 1000) + 1) % 1000);
+         self_.WriteField('LOCK', lockValueWithSentinel);
+         var canOverrideLock = dtMaxScriptExecutionTime < (Util_utsNowGet() - lockValue);
          }
-      try
+      else
          {
-         var onValue = self_.ReadToggle('ON');
-         var lockValue = self_.ReadField('LOCK');
-         var tooLongSinceLastLocked = Util_isUndefined(lockValue) ? false : (60 *  5/*m*/+30/*s*/) * 1000 < (Util_utsNowGet() - Util_intCast(lockValue));
-         isThisOn_ = (false === onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
-         if (isThisOn_)
+         var canOverrideLock = false;
+         }
+
+      var canTurnOn = !isAlreadyRunning || (hasLockField && canOverrideLock);
+      if (canTurnOn)
+         {
+         var lock = LockService.getDocumentLock();
+         if (!lock.tryLock(config_.dtLockWaitMillis))
             {
-            if (true === onValue)
+            lock = null;
+            }
+         }
+      else
+         {
+         var lock = null;
+         }
+
+      if (null !== lock)
+         {
+         try
+            {
+               isAlreadyRunning = Util_boolCast(self_.ReadToggle('ON', true));
+               if (hasLockField)
+                  {
+                  canTurnOn = self_.ReadField('LOCK', true) === lockValueWithSentinel
+                        && (!isAlreadyRunning || canOverrideLock);
+                  }
+               else
+                  {
+                  canTurnOn = !isAlreadyRunning;
+                  }
+
+            if (canTurnOn)
                {
-               self.Warn('previous lock aged out and is being ignored');
+               self_.WriteField('LOCK', Util_utsNowGet());
+               self_.WriteToggle('ON', true);
+               isThisOn_ = true;
                }
-            self_.WriteField('LOCK', Util_utsNowGet());
-            self_.WriteToggle('ON', true);
+            else
+               {
+               sheet_.getParent().toast(config_.agentName + ': could not turn on');
+               }
             }
-         else
+         catch (e)
             {
-            sheet_.getParent().toast(config_.agentName + ': could not turn on');
+            self_.Error('TurnOn', e);
+            isThisOn_ = false;
             }
-         }
-      catch (e)
-         {
-         self_.Error('TurnOn', e);
-         isThisOn_ = false;
-         }
-      finally
-         {
-         lock.releaseLock();
-         lock = null;
+         finally
+            {
+            lock.releaseLock();
+            lock = null;
+            }
          }
       return isThisOn_;
       };
@@ -746,36 +699,29 @@ this.writeToStorage = function ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
-// Execute the code indicated by SI (Script Index) and BI (Block
-// Index) in the self_. SI and BI can be in the sheet, virtual,
-// or can simply not exist. An invalid SI causes the agent to
-// run its RESET routine, and an invalid BI selects the first block.
+// Execute the code in the note named by the field SCRIPT,
+// given all of these things exist and are valid.
 //
 
    this.Step = function ()
       {
       if (!isThisOn_)
          {
-         throw "must be on"
+         throw "must be turned on, otherwise the program might not have exclusive control of the agent"
          }
-      var iScriptIndex = self_.ReadArrayIndexFromField('SI', memory_.scriptNames.length);
-      if (memory_.scriptNames.hasOwnProperty(iScriptIndex))
+   
+      var script = self_.ReadField('SCRIPT');
+      if (Util_isUndefined(script))
          {
-         var script = scriptFromNameP_(memory_.scriptNames[iScriptIndex]);
-         } 
-      else
-         {
-         iScriptIndex = memory_.scriptNames.indexOf('RESET');
-         self_.WriteField('SI', iScriptIndex);
-         var script = scriptFromNameP_('RESET');
+         return;
          }
-      var iBlockIndex = self_.ReadArrayIndexFromField('BI', script.blockCodeNoteNames.length);
-      if (!script.blockCodeNoteNames.hasOwnProperty(iBlockIndex))
+
+      var code = self_.ReadNote(script);
+      if (Util_isUndefined(code))
          {
-         iBlockIndex = 0;
-         self_.WriteField('BI', iBlockIndex);
+         self_.Warn('Invalid SCRIPT: ' + script);
+         return;
          }
-      var code = self_.ReadNote(script.blockCodeNoteNames[iBlockIndex]);
       
       (function (agent)
          {                    // Script code references the "agent" variable,
@@ -860,11 +806,6 @@ this.writeToStorage = function ()
          {
          var eInstruction = instructions[iInstruction];
 
-         if ('REBOOT' === eInstruction || 'OFF' === eInstruction || iInstruction + 1 == nInstructionCount) // save the conditional formatting rules before switching off
-            {
-            writeConditionalFormatRules();
-            }
-
          switch (eInstruction)
             {
             default:
@@ -877,12 +818,12 @@ this.writeToStorage = function ()
                self_.Info('Building agent "' + name + '" (' + config_.agentName + ')');
                break;
             
-            case 'TOOLBAR':
-               var irToolbar = instructions[++iInstruction];
-               sheet_.getRange(irToolbar, 1, 1, 49)
-                     .setBackground('#434343')
-                     .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
-               break;
+            //case 'TOOLBAR':
+               // var irToolbar = instructions[++iInstruction];
+               // sheet_.getRange(irToolbar, 1, 1, 49)
+               //       .setBackground('#434343')
+               //       .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
+            //   break;
 
             case 'FREEZE':
                var qrFrozenRows = instructions[++iInstruction];
@@ -945,6 +886,27 @@ this.writeToStorage = function ()
                   eval(code);
                   })(self_);
                break;
+            
+            case 'TEXT':
+               var text = instructions[++iInstruction];
+               var rangeCommand = instructions[++iInstruction];
+               var range = sheet_.getRange(rangeCommand.r, rangeCommand.c, rangeCommand.h || 1, rangeCommand.w || 1);
+               range.setValue(text);
+               if (rangeCommand.hasOwnProperty('bg'))
+                  {
+                  range.setBackground(rangeCommand.bg);
+                  }
+               if (rangeCommand.hasOwnProperty('fg'))
+                  {
+                  range.setFontColor(rangeCommand.fg);
+                  }
+               switch ((rangeCommand.hasOwnProperty('w') ? 1 : 0) + (rangeCommand.hasOwnProperty('h') ? 2 : 0))
+                  {
+                  case 1: /* w   */ range.mergeAcross(); break;
+                  case 2: /* h   */ range.mergeVertically(); break;
+                  case 3: /* w+h */ range.merge(); break;
+                  }
+               break;
 
             case 'RANGE':
                var rangeCommand = instructions[++iInstruction];
@@ -982,7 +944,7 @@ this.writeToStorage = function ()
                return self_.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
 
             case 'FIELD':
-               (function (field)
+               (function (name, field)
                   {
                   if (!field.hasOwnProperty('w'))
                      {
@@ -992,113 +954,50 @@ this.writeToStorage = function ()
                      {
                      field.h = 1;
                      }
-                  if (memory_.fieldFromName.hasOwnProperty(field.k))
+                  if (memory_.fieldFromName.hasOwnProperty(name))
                      {
-                     if (!field.hasOwnProperty('value')) // borrow the value from the existing one, if necessary (this lets us make virtual into "visible" fields)
-                        {
-                        field.value = memory_.fieldFromName[field.k].valueCached;
-                        }
+                     console.log('TODO: shift an existing field safely (copy value; unmerge old cells)');
                      }
-                  memory_.fieldFromName[field.k] = field;
-                  if (field.hasOwnProperty('fVirtual'))
+                  memory_.fieldFromName[name] = field;
+                  self_.Log('+field: ' + name, field.r, field.c, field.h, field.w);
+                  
+                  var range = sheet_.getRange(field.r, field.c, field.h, field.w);
+                  range.merge()
+                        //.setBackground(field.hasOwnProperty('bg') ? field.bg : '#000000')
+                        //.setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
+                        .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
+                        .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
+                  delete field.bg;
+                  if (field.hasOwnProperty('value'))
                      {
-                     self_.Log('+field [VIRTUAL]: ' + field.k);
-                     field.valueCached = field.value;
+                     range.setValue(field.value);
+                     }
+                  else if (field.hasOwnProperty('f'))
+                     {
+                     range.setFormula(field.f);
                      }
                   else
                      {
-                     self_.Log('+field: ' + field.k, field.r, field.c, field.h, field.w);
-                     
-                     var range = sheet_.getRange(field.r, field.c, field.h, field.w);
-                     range.merge()
-                           .setBackground(field.hasOwnProperty('bg') ? field.bg : '#000000')
-                           .setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
-                           .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
-                           .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
-                     delete field.bg;
-                     if (field.hasOwnProperty('value'))
-                        {
-                        field.valueCached = field.value;
-                        delete field.value;
-                        range.setValue(field.valueCached);
-                        }
-                     else if (field.hasOwnProperty('f'))
-                        {
-                        range.setFormula(field.f);
-                        }
-                     else
-                        {
-                        field.valueCached = '';
-                        }
-                     var textStyleBuilder = range.getTextStyle().copy();
-                     if (field.isReadonly)
-                        {
-                        var fontColor = field.hasOwnProperty('fg') ? field.fg : '#666666';
-                        }
-                     else
-                        {
-                        var fontColor = field.hasOwnProperty('fg') ? field.fg : '#00ffff';
-                        textStyleBuilder.setUnderline(true);
-                        }
-                     delete field.fg;
-                     textStyleBuilder.setForegroundColor('#ff00ff');
-                     range.setTextStyle(textStyleBuilder.build());
-                     conditionalFormatRules_.push({
-                           ranges:[{
-                                 gasRange: range,
-                                 r:field.r,
-                                 c:field.c,
-                                 h:field.h,
-                                 w:field.w
-                           }],
-                           gasConditionalFormatRule: SpreadsheetApp.newConditionalFormatRule()
-                                 .setRanges([range])
-                                 .whenTextEqualTo(field.valueCached)
-                                 .setFontColor(fontColor)
-                                 .build()
-                           });
+                     field.value = '';
                      }
-                  })(instructions[++iInstruction]);
-               break;
-
-            case 'GO_EN':
-               (function (goen)
-                  {
-                  var toggles = Object.keys(memory_.toggleFromName).map(function (kName)
+                  var textStyleBuilder = range.getTextStyle().copy();
+                  if (field.isReadonly)
                      {
-                     var eToggle = memory_.toggleFromName[kName];
-                     return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (eToggle.valueCached ? ",TRUE)" : ",FALSE)");
-                     });
-                  var fields = Object.keys(memory_.fieldFromName).map(function (kName)
+                     var fontColor = '#666666';
+                     }
+                  else
                      {
-                     var eField = memory_.fieldFromName[kName];
-                     return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(eField.valueCached).replace('"', '""') + '")';
-                     });
-                  var en = memory_.toggleFromName['EN'] = { r: goen.r, c: goen.c + 2, w: 2, h: 1, t: 'EN', isReadonly: false, valueCached: false };
-                  var go = memory_.toggleFromName['GO'] = { r: goen.r, c: goen.c, w: 2, h: 1, t: 'GO', isReadonly: true, valueCached: false };
-                  sheet_.getRange(go.r, go.c).insertCheckboxes()
-                        .setFormula('=AND(' + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ',OR(FALSE,' + toggles.concat(fields).join(',') + '))');
-                  sheet_.getRange(en.r, en.c).insertCheckboxes()
-                        .setValue('false');
-                  sheet_.getRange(go.r, go.c+1)
-                        .setFormula('=platycoreScheduler('+GAS_A1AddressFromCoordinatesP(go.r, go.c)+')');
-                  sheet_.getRange(en.r, en.c+1).setValue('EN');
-                  var enRange = sheet_.getRange(en.r, en.c, 1, 2).setFontColor('#00ffff');
-                  conditionalFormatRules_.push({
-                        ranges:[{                                 // This is a copy-paste from the 'TOGGLE' branch,
-                              gasRange: enRange,                  // so we should really move it somewhere else
-                              r:en.r,                             // and refactor this into a single function.
-                              c:en.c,
-                              h:en.h,
-                              w:en.w
-                        }],
-                        gasConditionalFormatRule: SpreadsheetApp.newConditionalFormatRule()
-                              .setRanges([enRange])
-                              .whenFormulaSatisfied((en.valueCached ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ')')
-                              .setFontColor('#ff00ff')
-                              .build()
-                        });
-                  })(instructions[++iInstruction]);
+                     var fontColor = '#00ffff';
+                     textStyleBuilder.setUnderline(true);
+                     }
+                  if (field.hasOwnProperty('fg'))
+                     {
+                     fontColor = field.fg;
+                     delete field.fg;
+                     }
+                  textStyleBuilder.setForegroundColor(fontColor);
+                  range.setTextStyle(textStyleBuilder.build());
+                  })(instructions[++iInstruction], instructions[++iInstruction]);
                break;
             
             case 'NOTE': // NOTE "<name>"  {"r": "<riRow>", "c": "<ciCol>"} <any>
@@ -1119,23 +1018,16 @@ this.writeToStorage = function ()
                   value = JSON.stringify(value);
                   }
                self_.Log('+note: ' + kName, value);
-               if (!note.hasOwnProperty('fVirtual'))
-                  {
-                  sheet_.getRange(note.r, note.c).setNote(value);
-                  }
-               note.valueCached = value;
+               sheet_.getRange(note.r, note.c).setNote(value);
+               note.value = value;
                break;
             
-            case 'RAINBOW_BOX':
+            case 'PANEL':
+               var color = Util_darkRainbowColorFromAnyP(iInstruction);
                var location = instructions[++iInstruction];
-               var color = Util_rainbowColorFromAnyP(instructions[++iInstruction]);
-               var value = instructions[++iInstruction];
-               sheet_.getRange(location.r, location.c)
-                     .setVerticalAlignment('middle')
-                     .setHorizontalAlignment('center')
+               sheet_.getRange(location.r, location.c, location.h || 1, location.w || 1)
                      .setBackground(color)
-                     .setValue(value)
-                     .setBorder(true, true, true, true, true, true, '#434343', SpreadsheetApp.BorderStyle.SOLID_THICK);
+                     .setBorder(true, true, true, true, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
                break;
             
             case 'REM':
@@ -1155,22 +1047,26 @@ this.writeToStorage = function ()
                break;
 
             case 'TOGGLE':
-               (function (toggle)
+               (function (name, toggle)
                   {
-                  memory_.toggleFromName[toggle.k] = toggle;
-                  var toggleText = toggle.t || toggle.k;
+                  memory_.toggleFromName[name] = toggle;
+                  var toggleText = toggle.t || name;
                   toggle.isReadonly = !!toggle.isReadonly;
-                  toggle.valueCached = Util_boolCast(toggle.value);
-                  delete toggle.value;
-                  self_.Log('+toggle: ' + toggle.k + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
+                  if (!toggle.hasOwnProperty('w')) toggle.w = 1;
+                  if (memory_.toggleFromName.hasOwnProperty(name))
+                     {
+                     console.log('TODO: shift an existing toggle safely (copy value; unmerge old toggle cells)');
+                     }
+                  toggle.value = Util_boolCast(toggle.value);
+                  self_.Log('+toggle: ' + name + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
                   var checkboxRange = sheet_.getRange(toggle.r, toggle.c).insertCheckboxes();
                   if (toggle.isReadonly)
                      {
-                     checkboxRange.setFormula(toggle.valueCached ? '=TRUE' : '=FALSE');
+                     checkboxRange.setFormula(toggle.value ? '=TRUE' : '=FALSE');
                      }
                      else
                      {
-                     checkboxRange.setValue(toggle.valueCached);
+                     checkboxRange.setValue(toggle.value);
                      }
                   var qcColumns = toggle.w - 1;
                   if (qcColumns > 0)
@@ -1192,22 +1088,7 @@ this.writeToStorage = function ()
                      range.setBackground(toggle.bg);
                      delete toggle.bg;
                      }
-                  conditionalFormatRules_.push({
-                        ranges:[{
-                              gasRange: range,
-                              r:toggle.r,
-                              c:toggle.c,
-                              h:1,
-                              w:toggle.w
-                        }],
-                        gasConditionalFormatRule: SpreadsheetApp.newConditionalFormatRule()
-                              .setRanges([range])
-                              .whenFormulaSatisfied((toggle.valueCached ? '=EQ(FALSE,' : '=EQ(TRUE,') + GAS_A1AddressFromCoordinatesP(toggle.r, toggle.c) + ')')
-                              .setFontColor('#ff00ff')
-                              .build()
-                        });
-                  delete toggle.k;
-                  })(instructions[++iInstruction]);
+                  })(instructions[++iInstruction], instructions[++iInstruction]);
                break;
             } // switch agent instruction
          } // for each agent instruction

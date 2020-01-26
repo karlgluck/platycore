@@ -22,7 +22,6 @@ Agents save a bunch of stuff in their memory. There are a lot to remember, so he
 |`sheetNameHint`|Current unique name of the agent's Google Sheet (use as a hint only since the user can change this!)|
 |`sheetId`|Unique ID of the Google Sheet (never changes)|
 |`urlAgentInstructions`|The data-url or the http url of the source of the agent's instructions.|
-|`utsLastSaved`|Unix TimeStamp on which the agent was last written. Compare this with the document's last edited time to know if the agent's cache is up-to-date.|
 |`fieldFromName`|Dictionary turning a field name into a Field Description for properties that are stored as cell values|
 |`scriptFromName`|Dictionary turning a script name into a Script Description for runnable code|
 |`noteFromName`|Dictionary turning a note name into a Note Description for additional data on cells|
@@ -32,12 +31,10 @@ Agents save a bunch of stuff in their memory. There are a lot to remember, so he
 
 | Property | Description |
 | --------:| ----------- |
-|`fVirtual`|A flag (its presence or absence indicates true/false). If this property exists, the field is not written to the spreadsheet anywhere, and the members `r`,`c`,`w`, and `h` will not be present|
-|`fRuleIsSynced`|A flag (its presence or absence indicates true/false). If this property exists, the field's conditional formatting rule used to indicate unrecognized changes to the user has not been synced with its current value. This can be either because the field has not been read yet (so we don't know if the user has changed something) or the field was written, but an error caused the rule not to update. This flag should always be set if the field is virtual|
-|`r`|First row of the range to which this field is synced. Does not exist if this is a virtual field.|
-|`c`|First column of the range to which this field is synced. Does not exist if this is a virtual field.|
-|`w`|Column width of the range to which this field is synced. Does not exist if this is a virtual field.|
-|`h`|Row height of the range to which this field is synced. Does not exist if this is a virtual field.|
+|`r`|First row of the range to which this field is synced.|
+|`c`|First column of the range to which this field is synced.|
+|`w`|Column width of the range to which this field is synced.|
+|`h`|Row height of the range to which this field is synced.|
 
 ## `fieldFromName` Field Values
 

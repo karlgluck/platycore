@@ -21,6 +21,14 @@ function Util_rainbowColorFromAnyP(v)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+function Util_darkRainbowColorFromAnyP(v)
+   {
+   var colors = ['#5b0f00', '#783f04', '#7f6000', '#274e13', '#0c343d', '#1c4587', '#073763', '#20124d', '#4c1130'];
+   return colors[((v >>> 0) % colors.length)];
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 function Util_stringFromBase64(stringToDecode)
    {
    return String.fromCharCode.apply(String, Utilities.base64DecodeWebSafe(stringToDecode)); // this looks faster than the next line, but we should measure it
@@ -362,7 +370,7 @@ Util_DictionaryFromTableP = function (table, key)
 //------------------------------------------------------------------------------------------------------------------------------------
 Util_intCast = function (any)
    {
-   return parseInt(any);
+   return parseInt(any) || 0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -376,7 +384,7 @@ Util_boolCast = function (any)
 
 Util_floatCast = function (any)
    {
-   return parseFloat(any);
+   return parseFloat(any) || 0.0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -384,6 +392,20 @@ Util_floatCast = function (any)
 Util_stringCast = function (any)
    {
    return String(any);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+Util_arrayCast = function (any)
+   {
+   if (Util_isArray(any))
+      {
+      return any;
+      }
+   else
+      {
+      return [];
+      }
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
