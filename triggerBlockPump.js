@@ -22,9 +22,9 @@ var doBlockPump = function () {
    var spreadsheet_ = SpreadsheetApp.getActiveSpreadsheet();
    var file_ = DriveApp.getFileById(spreadsheet_.getId());
    var properties_ = PropertiesService.getDocumentProperties();
-   var utsExecutionCutoffTime_ = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit;
    var dtSingleBlockRuntimeLimit_ = 60/*seconds*/ * 1000; // print an error if any agent executes longer than this time
-   var dtSingleBlockRuntimeWarningThreshold_ = 0.70/*percent*/ * dtSingleBlockRuntimeLimit; // print a warning if the agent runs longer than this time
+   var utsExecutionCutoffTime_ = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit_;
+   var dtSingleBlockRuntimeWarningThreshold_ = 0.70/*percent*/ * dtSingleBlockRuntimeLimit_; // print a warning if the agent runs longer than this time
    var sheets_ = spreadsheet_.getSheets();
    var nSheetCount_ = sheets_.length;
    var iSheet_ = 0;
@@ -80,7 +80,7 @@ var doBlockPump = function () {
          //
          // Load the sheet and its boot sector
          //
-         var sheet = sheets[iSheet_];
+         var sheet = sheets_[iSheet_];
          iSheet_ = (iSheet_ + 1 ) % nSheetCount_;
          var sheetId = sheet.getSheetId();
          var bootSector = platycore.agentBootSectorFromSheetId[sheetId];
