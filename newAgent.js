@@ -21,7 +21,6 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
       {
       var utsAgentCreated = Util_utsNowGet();
       var agent = new Agent(sheet, {
-            forceThisOn: true,
             memory: {
                   agentName: agentName,
                   fieldFromName: {},
@@ -39,6 +38,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
             utsSheetLastUpdated: utsAgentCreated,
             verbose: true
             });
+      agent.OverrideTurnOn();
       agent.Save();
       agent = agent.ExecuteRoutineFromUrl(urlAgentInstructions);
       }

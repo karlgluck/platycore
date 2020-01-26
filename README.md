@@ -21,7 +21,7 @@ Agents save a bunch of stuff in their memory. There are a lot to remember, so he
 |`agentName`|Unique ID for the agent (never changes). Used as the `PropertiesService` key to look up a JSON blob containing the agent's memory.|
 |`sheetNameHint`|Current unique name of the agent's Google Sheet (use as a hint only since the user can change this!)|
 |`sheetId`|Unique ID of the Google Sheet (never changes)|
-|`urlAgentInstructions`||
+|`urlAgentInstructions`|The data-url or the http url of the source of the agent's instructions.|
 |`utsLastSaved`|Unix TimeStamp on which the agent was last written. Compare this with the document's last edited time to know if the agent's cache is up-to-date.|
 |`fieldFromName`|Dictionary turning a field name into a Field Description for properties that are stored as cell values|
 |`scriptFromName`|Dictionary turning a script name into a Script Description for runnable code|

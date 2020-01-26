@@ -11,7 +11,7 @@ function Agent (sheet_, config_)
 // 
 
    config_ = JSON.parse(JSON.stringify(config_ || {}));
-   var isThisOn_ = !!config_.forceThisOn;
+   var isThisOn_ = false;
 
    var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
       {
@@ -599,6 +599,13 @@ function Agent (sheet_, config_)
       sheet_.getParent().deleteSheet(sheet_);
       sheet_ = null;
       return memory_;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   this.OverrideTurnOn = function ()
+      {
+      isThisOn_ = true;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
