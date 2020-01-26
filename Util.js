@@ -397,3 +397,10 @@ Util_dateCast = function (any)
       }
    return new Date(0);
    };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function Util_wallTimeFromTimestamp (utsTimestamp)
+   {
+   return new Date(utsTimestamp-new Date().getTimezoneOffset()*60000).toUTCString().slice(-12, -4);
+   }

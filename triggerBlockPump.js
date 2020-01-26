@@ -4,14 +4,9 @@ function triggerBlockPump ()
    //doBlockPump();
    }
 
-function doBlockPump ()
+function doBlockPump (isSingleBlock)
    {
-
-   // when you sleep, the block pump does not sleep. sorry. it just goes.
-
-   // TODO: MAKE SURE ACCESS TO THE PLATYCORE PROPERTIES IS MUTEXED
-   // WE HAVE CONCURRENCY PROBLEMS HERE 
-   //    then keep testing the sleep function -- scheduling has gotta be solid!
+   isSingleBlock = Util_boolCast(isSingleBlock);
 
    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
    var file = DriveApp.getFileById(spreadsheet.getId());
@@ -20,18 +15,16 @@ function doBlockPump ()
    var keys = properties.getKeys()
          .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' });
 
-   var utsNextWakeTime = Number.POSITIVE_INFINITY;
    var dtSingleBlockRuntimeLimit = 60/*seconds*/ * 1000;
    var utsExecutionCutoffTime = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit; // print an error if any agent executes longer than this time
    var dtSingleBlockRuntimeWarningThreshold = 0.70/*percent*/ * dtSingleBlockRuntimeLimit; // print a warning if the agent runs longer than this time
 
    var nKeyCount = keys.length;
    var qIterations = 0;
-   var areAnyAgentsActive = true;
    var utsIterationStarted;
-   while (++qIterations < 100 && ((utsIterationStarted = Util_utsNowGet()) < utsExecutionCutoffTime) && areAnyAgentsActive)
+   var mIterations = 1000*60*5;
+   while (qIterations++ < mIterations && ((utsIterationStarted = Util_utsNowGet()) < utsExecutionCutoffTime))
       {
-      areAnyAgentsActive = false;
 
       var iKey = qIterations % nKeyCount;
       var ePlatycoreAgentKey = keys[iKey];
@@ -44,7 +37,7 @@ function doBlockPump ()
       if (null === agentMemoryString)
          {
          // ignore this agent; it disappeared
-         continue;
+         properties.deleteProperty(ePlatycoreAgentKey);
          }
       var agentMemory = JSON.parse(agentMemoryString);
       console.log('checking agent ' + ePlatycoreAgentKey);
@@ -62,7 +55,7 @@ function doBlockPump ()
                sheet = undefined;
                }
             }
-         if ('undefined' === typeof sheet) // if sheetName didn't find it, search by sheetId (and repair sheetName)
+         if (!Util_isObject(sheet)) // if sheetName didn't find it, search by sheetId (and repair sheetName)
             {
             sheet = (function (sheets, kTargetSheetId) 
                {
@@ -77,15 +70,15 @@ function doBlockPump ()
                   return null;
                })(spreadsheet.getSheets(), agentMemory.sheetId);
             console.log(ePlatycoreAgentKey + ': sheet found by agent ID = ' + (!!sheet ? '' + sheet.getSheetName(): 'null'));
-            if ('object' === typeof sheet && null !== sheet) // if we got a valid sheet back, update the agent memory to save its new name
+            if (Util_isObject(sheet)) // if we got a valid sheet back, update the agent memory to save its new name
                {
                agentMemory.sheetNameHint = sheet.getSheetName();
                properties.setProperty(ePlatycoreAgentKey, JSON.stringify(agentMemory));
                }
             }
-         if ('object' !== typeof sheet || null === sheet) // nuke an invalid platycore agent
+         if (!Util_isObject(sheet)) // nuke an invalid agent
             {
-            console.error('platycore: deleting invalid platycore agent "' + ePlatycoreAgentKey + '"',ePlatycoreAgentKey);
+            console.error('platycore: deleting invalid platycore agent "' + ePlatycoreAgentKey + '"', ePlatycoreAgentKey);
             properties.deleteProperty(ePlatycoreAgentKey);
             continue;
             }
@@ -122,21 +115,9 @@ function doBlockPump ()
          var shouldWake = false;
          }
       console.log('agent ' + ePlatycoreAgentKey + ': ' + (isIdle?(shouldWake?'WAKE':'IDLE'):'UPDATE'));
-      if (isIdle && !shouldWake)
-         {
-         if (Util_isObject(wake) && Util_isNumber(wake.valueCached))
-            {
-            utsNextWakeTime = Math.min(utsNextWakeTime, parseInt(wake.valueCached));
-            console.log('agent ' + ePlatycoreAgentKey + ' is snoozing ' + Util_stopwatchStringFromDuration(wake.valueCached - Util_utsNowGet()) + ' until ' + Util_stopwatchStringFromDuration(wake.valueCached - Util_utsNowGet()));
-            }
-         }
-      else
+      if (!isIdle || shouldWake)
          {
          areAnyAgentsActive = true;
-         if ('object' !== typeof sheet || null === sheet)
-            {
-            sheet = spreadsheet.getSheetByName(agentMemory.sheetNameHint);
-            }
          try{
             var agent = new Agent(sheet, {
                   memory: agentMemory,
@@ -148,6 +129,7 @@ function doBlockPump ()
             if (agent.TurnOn())
                {
                try{
+                  agent.Log('turned on at ' + Util_wallTimeFromTimestamp(Util_utsNowGet()));
                   agent.Step();
                   }
                catch (e)
@@ -157,8 +139,6 @@ function doBlockPump ()
                finally
                   {
                   var dtRuntime = Util_utsNowGet() - utsIterationStarted;
-                  agent.Verbose(function () { return 'turned off after ' + Util_stopwatchStringFromDuration(dtRuntime)});
-                  console.log('turned  off after ' + Util_stopwatchStringFromDuration(dtRuntime));
                   if (dtRuntime > dtSingleBlockRuntimeWarningThreshold)
                      {
                      agent.Warn('agent is starting to run for a long time');
@@ -167,6 +147,10 @@ function doBlockPump ()
                      {
                      agent.Error('agent is running for too long!');
                      }
+                  else
+                     {
+                     agent.Log('turned  off after ' + Util_stopwatchStringFromDuration(dtRuntime) + ' at ' + Util_wallTimeFromTimestamp(Util_utsNowGet()));
+                     }
                   agent.TurnOff();
                   }
                }
@@ -174,55 +158,46 @@ function doBlockPump ()
          catch (e)
             {
             console.error(e, e.stack);
-            throw e; // this is a problem because it skips the rescheduler
+            throw e;
             }
          } // is GO or wake
-
-      
-      //
-      // update the save
-      //
-
-      var documentLock = LockService.getDocumentLock();
-      if (documentLock.tryLock(dtSingleBlockRuntimeLimit/4))
-         {
-         try{
-
-            //
-            // Sync the platycore object in document memory
-            //
-
-            var savedPlatycore = JSON.parse(properties.getProperty('platycore') || '{}');
-            savedPlatycore.utsLastSaved = Util_utsNowGet();
-            (function (unsavedKeys) {
-               if (unsavedKeys.length > 0)
-                  {
-                  console.warn('Possibly unsaved key(s) in platycore config: ', unsavedKeys);
-                  }
-               })(Object.keys(platycore).filter(function (e) { return !savedPlatycore.hasOwnProperty(e) }));
-            properties.setProperty('platycore', JSON.stringify(savedPlatycore));
-            platycore = savedPlatycore;
-
-            }
-         finally
-            {
-            documentLock.releaseLock();
-            savedPlatycore = null;
-            }
-         }
-         documentLock.releaseLock();
-
-      //
-      // don't iterate too fast; this is a polling loop waiting for change
-      // in the spreadsheet so that we don't have to make a lot of triggers
-      //
-
-      var dtTooShortOfLoop = 30000 - (Util_utsNowGet() - utsIterationStarted);
-      if (dtTooShortOfLoop > 0)
-         {
-         Utilities.sleep(dtTooShortOfLoop);
-         }
-         
-      } // ePlatycoreAgentKey for every agent in the spreadsheet until runtime is hit
    
+      if (isSingleBlock)
+         {
+         break;
+         }
+
+      }
+      
+   //
+   // update the save
+   //
+
+   var documentLock = LockService.getDocumentLock();
+   if (documentLock.tryLock(dtSingleBlockRuntimeLimit/4))
+      {
+      try{
+
+         //
+         // Sync the platycore object in document memory
+         //
+
+         var savedPlatycore = JSON.parse(properties.getProperty('platycore') || '{}');
+         savedPlatycore.utsLastSaved = Util_utsNowGet();
+         (function (unsavedKeys) {
+            if (unsavedKeys.length > 0)
+               {
+               console.warn('Possibly unsaved key(s) in platycore config: ', unsavedKeys);
+               }
+            })(Object.keys(platycore).filter(function (e) { return !savedPlatycore.hasOwnProperty(e) }));
+         properties.setProperty('platycore', JSON.stringify(savedPlatycore));
+         platycore = savedPlatycore;
+
+         }
+      finally
+         {
+         documentLock.releaseLock();
+         savedPlatycore = null;
+         }
+      }
    }

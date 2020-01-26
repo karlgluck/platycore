@@ -2,7 +2,7 @@
 
 function Agent (sheet_, config_)
    {
-   console.log('agent starting up: ' + sheet_.getSheetId(), config_);
+   console.log('agent created: ' + sheet_.getSheetId(), config_);
    var self_ = this;
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -70,7 +70,7 @@ function Agent (sheet_, config_)
 
    if (!Util_isObject(config_.memory))
       {
-      config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty('platycoreAgent' + this.getSheetId()));
+      config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty(config_.agentName));
       }
    var memory_ = config_.memory;
    memory_.toggleFromName = memory_.toggleFromName || {};
@@ -161,6 +161,10 @@ function Agent (sheet_, config_)
       try
          {
          var toggle = memory_.toggleFromName[name];
+         if (Util_isUndefined(toggle))
+            {
+            return undefined;
+            }
          if (!toggle.hasOwnProperty('valueCached'))
             {
             toggle.valueCached = Util_boolCast(sheet_.getRange(toggle.r, toggle.c).getValue());
@@ -267,6 +271,10 @@ function Agent (sheet_, config_)
       try
          {
          var field = memory_.fieldFromName[name];
+         if (Util_isUndefined(field))
+            {
+            return undefined;
+            }
          if (!field.hasOwnProperty('valueCached'))
             {
             field.valueCached = Util_stringCast(sheet_.getRange(field.r, field.c).getValue());
@@ -443,10 +451,10 @@ function Agent (sheet_, config_)
 
    var writeOutputNormal_ = function (args)
       {
-      if (!isThisOn_)
-         {
-         return sheet_.getRange(1, 49);
-         }
+      // if (!isThisOn_)
+      //    {
+      //    return sheet_.getRange(1, 49);
+      //    }
       var nArgCount = Math.min(args.length, startsFromArgCount.length - 1);
       var starts = startsFromArgCount[nArgCount];
       var counts = countsFromArgCount[nArgCount];
@@ -556,9 +564,8 @@ function Agent (sheet_, config_)
    this.Reboot = function ()
       {
       self_.Save();
-      var newConfig = JSON.parse(JSON.stringify(config_));
-      newConfig.memory.utsLastSaved = 0;  // eliminate all caches
-      var rvAgent = new Agent(sheet_, newConfig)
+      config_.memory.utsLastSaved = 0;  // eliminate all caches
+      var rvAgent = new Agent(sheet_, config_);
       sheet_ = null;
       config_ = null;
       memory_ = null;
@@ -570,7 +577,7 @@ function Agent (sheet_, config_)
    this.Save = function ()
       {
       memory_.utsLastSaved = Util_utsNowGet();
-      PropertiesService.getDocumentProperties().setProperty('platycoreAgent' + self_.getSheetId(), JSON.stringify(memory_));
+      PropertiesService.getDocumentProperties().setProperty(config_.agentName, JSON.stringify(memory_));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -588,7 +595,7 @@ function Agent (sheet_, config_)
             {
             }
          }
-      PropertiesService.getDocumentProperties().deleteProperty('platycoreAgent' + self_.getSheetId());
+      PropertiesService.getDocumentProperties().deleteProperty(config_.agentName);
       sheet_.getParent().deleteSheet(sheet_);
       sheet_ = null;
       return memory_;
@@ -615,25 +622,26 @@ function Agent (sheet_, config_)
          {
          var onValue = self_.ReadToggle('ON');
          var lockValue = self_.ReadField('LOCK');
-         var tooLongSinceLastLocked = (60 *  5/*m*/+30/*s*/) * 1000 < (Util_utsNowGet() - lockValue);
+         var tooLongSinceLastLocked = Util_isUndefined(lockValue) ? false : (60 *  5/*m*/+30/*s*/) * 1000 < (Util_utsNowGet() - Util_intCast(lockValue));
          isThisOn_ = (false === onValue || tooLongSinceLastLocked) && sentinel === sentinelRange.getValue();
          if (isThisOn_)
             {
-            if (onValue)
+            if (true === onValue)
                {
-               console.warn('previous lock on platycoreAgent' + sheet_.getSheetId() + ' aged out and is being ignored');
+               self.Warn('previous lock aged out and is being ignored');
                }
             self_.WriteField('LOCK', Util_utsNowGet());
             self_.WriteToggle('ON', true);
             }
          else
             {
-            console.warn('another process is currently running this agent');
+            sheet_.getParent().toast(config_.agentName + ': could not turn on');
             }
          }
       catch (e)
          {
          self_.Error('TurnOn', e);
+         isThisOn_ = false;
          }
       finally
          {
@@ -760,15 +768,15 @@ function Agent (sheet_, config_)
 
    this.Snooze = function (dtMilliseconds)
       {
-      self_.Log('Snooze('+dtMilliseconds+') called @ Util_utsNowGet() = ' + Util_utsNowGet());
+      self_.Log('Snooze('+dtMilliseconds+') called @ Util_utsNowGet() = ' + Util_wallTimeFromTimestamp(Util_utsNowGet()));
       var dt = Math.max(15000, dtMilliseconds);
       var utsMaybePreviousWakeTime = self_.ReadField('WAKE');
-      self_.Log('utsMaybePreviousWakeTime', utsMaybePreviousWakeTime);
+      self_.Log('utsMaybePreviousWakeTime = ' + Util_wallTimeFromTimestamp(utsMaybePreviousWakeTime));
       var utsNewWakeTime = dt + Util_utsNowGet();
-      self_.Log('utsNewWakeTime', utsNewWakeTime);
+      self_.Log('utsNewWakeTime', Util_wallTimeFromTimestamp(utsNewWakeTime));
       self_.BadgeLastOutput(Util_moonPhaseFromDate(new Date(utsNewWakeTime)));
       self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
-      self_.Log('HII - Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now at ', new Date(utsNewWakeTime), utsNewWakeTime);
+      self_.Log('HII - Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now at ' + Util_wallTimeFromTimestamp(utsNewWakeTime), new Date(utsNewWakeTime));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -829,7 +837,7 @@ function Agent (sheet_, config_)
             case 'NAME':
                var name = instructions[++iInstruction];
                memory_.name = name;
-               self_.Info('Building agent "' + name + '" (platycoreAgent' + sheet_.getSheetId() + ')');
+               self_.Info('Building agent "' + name + '" (' + config_.agentName + ')');
                break;
             
             case 'TOOLBAR':
@@ -883,6 +891,7 @@ function Agent (sheet_, config_)
 
             case 'REINSTALL': // execute code if this is a reinstall operation; guarantee access to the variable previousInstallMemory
                var code = instructions[++iInstruction].join('\n');
+               var previousInstallMemory = config_.previousInstallMemory;
                if (Util_isObject(previousInstallMemory))
                   {
                   (function (agent, previousInstallMemory)

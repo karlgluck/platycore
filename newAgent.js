@@ -11,7 +11,8 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
       spreadsheet.deleteSheet(sheet);
       }
    sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
-   PropertiesService.getDocumentProperties().setProperty('platycoreAgent' + sheet.getSheetId(), JSON.stringify({urlAgentInstructions:urlAgentInstructions})); // Save a minimal agent first so that reinstall always works
+   var agentName = 'platycoreAgent' + sheet.getSheetId();
+   PropertiesService.getDocumentProperties().setProperty(agentName, JSON.stringify({urlAgentInstructions:urlAgentInstructions})); // save a minimal agent first so that reinstall always works
    sheet.activate();
    sheet.insertColumns(1, 23); // add to the default 26 columns (A-Z)
    sheet.setColumnWidths(1, 49, sheet.getRowHeight(1)); // square the cells
@@ -22,23 +23,24 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
       var agent = new Agent(sheet, {
             forceThisOn: true,
             memory: {
+                  agentName: agentName,
                   fieldFromName: {},
                   noteFromName: {},
                   scriptFromName: {},
                   scriptNames: [],
-                  sheetName: sheetName,
+                  sheetNameHint: sheetName,
                   sheetId: sheet.getSheetId(),
                   toggleFromName: {},
                   urlAgentInstructions: urlAgentInstructions,
                   utsLastSaved: utsAgentCreated
                   },
+            previousInstallMemory: previousInstallMemory,
             origin: origin || 'newAgent',
             utsSheetLastUpdated: utsAgentCreated,
             verbose: true
             });
       agent.Save();
       agent = agent.ExecuteRoutineFromUrl(urlAgentInstructions);
-
       }
    catch (e)
       {

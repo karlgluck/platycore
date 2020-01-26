@@ -1,6 +1,10 @@
 
 /*
 
+- remove conditional format rules: they are extraneous
+- use Agent to control output and read toggles/fields during triggerBlockPump so that it is consistent
+  - just allow it to operate in "offline" mode
+
 
 need to make sure we check in on how conditionalFormatRules_ is being used in Agent.js since we imported code that deals with it and I'm not exactly sure it all works properly.
 

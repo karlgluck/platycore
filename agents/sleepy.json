@@ -5,17 +5,19 @@
 
              "REM", "[RESET]",
             "NOTE",  "RESET.0",
-                     {"fVirtual": null},
+                     {"r": 1, "c":7},
                      [
-                     "agent.Log('Sleepy woke up at ' + new Date().toISOString() + ' from a nap set for ' + new Date(agent.ReadField('WAKE')).toISOString());",
-                     "agent.Snooze(5 * 60 * 1000);",
-                     "agent.Log('Sleepy will wake up next at ' + new Date(new Date().getTime() + 5 * 60 * 1000).toISOString());"
+                     "agent.Snooze(5 * 60 * 1000);"
                      ],
+            "RANGE", {"r":1, "c":8, "w":3, "k": "RESET"},
           "SCRIPT",  "RESET", ["RESET.0"],
            "FIELD",  {"r": 1, "c":25, "w": 5, "k": "WAKE"},
-           "RANGE",  {"r": 1, "c":32, "w": 3, "merge": "across", "t": "WAKE"},
+           "RANGE",  {"r": 1, "c":30, "w": 3, "merge": "across", "t": "WAKE"},
 
-           "GO_EN",  {"r": 1, "c": 1},
+           "TOGGLE", {"r": 1, "c": 1, "w":1, "k":"GO", "value": false},
+           "RANGE", {"r":1, "c":2,"t":"GO", "w":1},
+           "TOGGLE", {"r": 1, "c": 3, "w":1,"k":"EN", "value": true},
+           "RANGE", {"r":1, "c":4,"t":"EN"},
             "EVAL",  ["agent.WriteToggle('EN', true)"],
           "TOGGLE",  {"r": 1, "c": 5, "k":"ON", "w": 2,  "value": true, "isReadonly": true},
             "EVAL",  ["agent.Snooze(0)"],
