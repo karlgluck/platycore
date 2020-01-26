@@ -1,9 +1,85 @@
-
+// creating an Agent is a minimal operation to identify whether the Agent needs to run
+// the agent needs to run if any of:
+// (1) the current time is later than the wake timer
+// (2) the GO toggle is checked
+// the wake timer's value and the GO toggle are saved in memory
+//    so that Platycore doesn't have to read the sheet every time
+// however, these values are cleared whenever the sheet is updated more recently than the agent was last saved
 
 function Agent (sheet_, config_)
    {
-   console.log('agent created: ' + sheet_.getSheetId(), config_);
    var self_ = this;
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+this.readFromStorage = function ()
+   {
+   config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty(config_.agentName));
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+this.writeToStorage = function ()
+   {
+   PropertiesService.getDocumentProperties().setProperty(config_.agentName, JSON.stringify(memory_));
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Load memory_ for this execution 
+//
+
+   if (!Util_isObject(config_.memory))
+      {
+      self_.readFromStorage();
+      }
+   config_.agentName = config_.memory.agentName;
+   var memory_ = config_.memory;
+   memory_.toggleFromName = memory_.toggleFromName || {};
+   memory_.fieldFromName = memory_.fieldFromName || {};
+   memory_.scriptFromName = memory_.scriptFromName || {};
+   memory_.scriptNames = memory_.scriptNames || [];
+
+
+   if (!Util_isObject(sheet_))
+      {
+      }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Clear all cached values from memory if the document was
+// modified more recently than the cache was updated.
+//
+
+   (function (isCacheExpired)
+      {
+
+      console.log('isCacheExpired', isCacheExpired);
+
+      ['toggleFromName', 'fieldFromName', 'noteFromName'].forEach(function (kDictionary)
+         {
+         var eDictionary = memory_[kDictionary];
+         
+         Object.keys(eDictionary).forEach(function (kName)
+            {
+            var dictionary = eDictionary[kName];
+            if (dictionary.hasOwnProperty('fVirtual')) // virtual properties are set when fields, toggles,
+               {                                       // and notes are not set by the creation script
+               return;
+               }
+            delete dictionary.fRuleIsSynced; // won't apply to all of them but it doesn't hurt
+            if (isCacheExpired) delete dictionary.valueCached; // this is really what we want to do
+            });
+         
+         })
+
+      })('undefined' === typeof config_.utsSheetLastUpdated
+            || memory_.utsLastSaved < config_.utsSheetLastUpdated);
+
+
+
+
+   console.log('agent created: ' + sheet_.getSheetId(), config_);
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // 
@@ -62,52 +138,6 @@ function Agent (sheet_, config_)
    Util_makeLazyConstantMethod(this, 'getSheetId', function () { return sheet_.getSheetId() });
    Util_makeLazyConstantMethod(this, 'kSheetId_Get', function () { return sheet_.getSheetId() });
    Util_makeLazyConstantMethod(this, 'isVerbose_', function () { return !!config_.verbose || self_.ReadToggle('VERBOSE') });
-
-//------------------------------------------------------------------------------------------------------------------------------------
-//
-// Load memory_ for this execution (clear cache, reserved flags, etc.)
-//
-
-   if (!Util_isObject(config_.memory))
-      {
-      config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty(config_.agentName));
-      }
-   var memory_ = config_.memory;
-   memory_.toggleFromName = memory_.toggleFromName || {};
-   memory_.fieldFromName = memory_.fieldFromName || {};
-   memory_.scriptFromName = memory_.scriptFromName || {};
-   memory_.scriptNames = memory_.scriptNames || [];
-
-//------------------------------------------------------------------------------------------------------------------------------------
-//
-// Clear all cached values from memory if the document was
-// modified more recently than the cache was updated.
-//
-
-   (function (isCacheExpired)
-      {
-
-      console.log('isCacheExpired', isCacheExpired);
-
-      ['toggleFromName', 'fieldFromName', 'noteFromName'].forEach(function (kDictionary)
-         {
-         var eDictionary = memory_[kDictionary];
-         
-         Object.keys(eDictionary).forEach(function (kName)
-            {
-            var dictionary = eDictionary[kName];
-            if (dictionary.hasOwnProperty('fVirtual')) // virtual properties are set when fields, toggles,
-               {                                       // and notes are not set by the creation script
-               return;
-               }
-            delete dictionary.fRuleIsSynced; // won't apply to all of them but it doesn't hurt
-            if (isCacheExpired) delete dictionary.valueCached; // this is really what we want to do
-            });
-         
-         })
-
-      })('undefined' === typeof config_.utsSheetLastUpdated
-            || memory_.utsLastSaved < config_.utsSheetLastUpdated);
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -577,7 +607,7 @@ function Agent (sheet_, config_)
    this.Save = function ()
       {
       memory_.utsLastSaved = Util_utsNowGet();
-      PropertiesService.getDocumentProperties().setProperty(config_.agentName, JSON.stringify(memory_));
+      self_.writeToStorage();
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
