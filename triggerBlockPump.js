@@ -168,7 +168,7 @@ var doBlockPump = function () {
                   finally
                      {
                      var dtRuntime = Util_utsNowGet() - utsIterationStarted;
-                     agent.Log('turned  off after ' + Util_stopwatchStringFromDuration(dtRuntime) + ' at ' + Util_wallTimeFromTimestamp(Util_utsNowGet()));
+                     agent.Log('turned off after ' + Util_stopwatchStringFromDuration(dtRuntime) + ' at ' + Util_wallTimeFromTimestamp(Util_utsNowGet()));
                      if (dtRuntime > dtSingleBlockRuntimeLimit_)
                         {
                         agent.Error('agent is running for too long!');

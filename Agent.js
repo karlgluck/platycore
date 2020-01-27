@@ -766,7 +766,7 @@ function Agent (sheet_, config_)
       self_.Log('utsNewWakeTime', Util_wallTimeFromTimestamp(utsNewWakeTime));
       self_.BadgeLastOutput(Util_moonPhaseFromDate(new Date(utsNewWakeTime)));
       self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
-      self_.Log('HII - Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now at ' + Util_wallTimeFromTimestamp(utsNewWakeTime), new Date(utsNewWakeTime));
+      self_.Log('Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now at ' + Util_wallTimeFromTimestamp(utsNewWakeTime));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -944,6 +944,15 @@ function Agent (sheet_, config_)
             case 'TEXT':
                var text = eArguments[0];
                selectedRange.setValue(text);
+               break;
+
+            case 'FORMAT':
+               switch (eArguments[0])
+                  {
+                  case 'DATETIME': selectedRange.setNumberFormat('M/d/yyyy H:mm:ss'); break;
+                  case 'CHECKBOX': selectedRange.setNumberFormat('"☑";"☐"'); break;
+                  default: selectedRange.setNumberFormat(eArguments[0]); break;
+                  }
                break;
 
             case 'UNINSTALL':
