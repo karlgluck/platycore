@@ -399,11 +399,11 @@ function Agent (sheet_, config_)
    var writeOutputFirstTime_ = function (args)
       {
       writeOutputNormal_(['']); // feed an extra line so that the bordering of the last line of the previous output doesn't get removed
-      var range = writeOutputNormal_(args);
+      var rvRange = writeOutputNormal_(args);
       sheet_.getRange(irNewMessage_ + 1, 1, 1, 49)
             .setBorder(true, false, false, false, false, false, '#dadfe8', SpreadsheetApp.BorderStyle.SOLID_THICK);
       writeOutput_ = writeOutputNormal_;
-      return range;
+      return rvRange;
       };
 
    var startsFromArgCount = [[],[ 2],[ 2,21],[ 2,21,36],[ 2,21,29,40]];
@@ -794,7 +794,7 @@ function Agent (sheet_, config_)
          var agentInstructionsText = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
          }
 
-      var whitespaceSet = Util_SetFromObjectsP([' ', '\t']);
+      var whitespaceSet = Util_SetFromObjectsP([' ', '\ t']);
       var associativeSplitRegex = new RegExp(/^\s+(\S+)\s*(.*)/);
       var agentInstructions = agentInstructionsText
             .split(/\n/)
@@ -824,8 +824,8 @@ function Agent (sheet_, config_)
                })
             ;
 
-      self_.Info('agentInstructionsText', agentInstructionsText);
       agentInstructionsText = '[' + agentInstructions.join(',') + ']';
+      self_.Info('agentInstructionsText', agentInstructionsText);
       return self_.ExecuteRoutine(JSON.parse(agentInstructionsText));
       };
 
@@ -843,13 +843,23 @@ function Agent (sheet_, config_)
       if (!Util_isArray(instructions)) throw "instructions";
 
       var selectedRange = null;
+      var mergingInstructionsSet = Util_SetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT']);
       
-      for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; ++iInstruction)
+      for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
          {
          var eInstruction = instructions[iInstruction - 1];
          var eArguments   = instructions[iInstruction - 0];
          var eArgumentSet = Util_SetFromObjectsP(eArguments);
 
+         if (Util_IsValueContainedInSet(eInstruction, mergingInstructionsSet))
+            {
+            switch (((selectedRange.getWidth() > 1) ? 1 : 0) + ((selectedRange.getHeight() > 1) ? 2 : 0))
+               {
+               case 1: /* w   */ selectedRange.mergeAcross(); break;
+               case 2: /* h   */ selectedRange.mergeVertically(); break;
+               case 3: /* w+h */ selectedRange.merge(); break;
+               }
+            }
 
          switch (eInstruction)
             {
@@ -926,15 +936,14 @@ function Agent (sheet_, config_)
                   })(self_);
                break;
             
+            case 'FORMULA':
+               var formula = eArguments[0];
+               selectedRange.setFormula(formula);
+               break;
+            
             case 'TEXT':
                var text = eArguments[0];
-               range.setValue(text);
-               switch (((range.getWidth() > 1) ? 1 : 0) + ((range.getHeight() > 1) ? 2 : 0))
-                  {
-                  case 1: /* w   */ range.mergeAcross(); break;
-                  case 2: /* h   */ range.mergeVertically(); break;
-                  case 3: /* w+h */ range.merge(); break;
-                  }
+               selectedRange.setValue(text);
                break;
 
             case 'UNINSTALL':
@@ -956,12 +965,14 @@ function Agent (sheet_, config_)
                   self_.Warn('TODO: shift an existing toggle safely (copy value; unmerge old toggle cells)');
                   }
                memory_.toggleFromName[kName] = toggle;
-               range.insertCheckboxes();
+               selectedRange.insertCheckboxes();
                if (!toggle.isReadonly)
                   {
-                  range.setFontColor('#00ffff'); // editable
+                  selectedRange.setFontColor('#00ffff'); // editable
                   }
-               self_.WriteToggle(kName, Util_IsValueContainedInSet('TRUE', eArgumentSet));
+               var value = Util_IsValueContainedInSet('TRUE', eArgumentSet);
+               self_.Log('+toggle: ' + kName, value);
+               self_.WriteToggle(kName, value);
                break;
 
             case 'FIELD':
@@ -978,9 +989,11 @@ function Agent (sheet_, config_)
                   self_.Warn('TODO: shift an existing field safely (copy value; unmerge old field cells)');
                   }
                memory_.fieldFromName[kName] = field;
-               self_.WriteField(kName, '');
+               var value = '';
+               self_.Log('+field: ' + kName, value);
+               self_.WriteField(kName, value);
                
-               var textStyleBuilder = range.getTextStyle().copy();
+               var textStyleBuilder = selectedRange.getTextStyle().copy();
                if (field.isReadonly)
                   {
                   textStyleBuilder.setForegroundColor('#666666');
@@ -991,23 +1004,24 @@ function Agent (sheet_, config_)
                         .setForegroundColor('#00ffff')
                         .setUnderline(true);
                   }
-               range.setTextStyle(textStyleBuilder.build());
+               selectedRange.setTextStyle(textStyleBuilder.build());
                break;
             
             case 'NOTE':
                var kName = eArguments[0];
                var note = {
-                  "r": range.getRow(),
-                  "c": range.getColumn()
+                  "r": selectedRange.getRow(),
+                  "c": selectedRange.getColumn()
                };
                memory_.noteFromName[kName] = note;
+               var value = eArguments.slice(1).join('\n');
                self_.Log('+note: ' + kName, value);
-               self.WriteNote(eArguments.slice(1).join('\n'));
+               self_.WriteNote(kName, value);
                break;
             
             case 'PANEL':
                var color = Util_darkRainbowColorFromAnyP(eArguments[0]);
-               range.setBackground(color)
+               selectedRange.setBackground(color)
                     .setBorder(true, true, true, true, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
                break;
             
@@ -1020,15 +1034,15 @@ function Agent (sheet_, config_)
                break;
 
             case 'BG':
-               range.setBackground(eArguments[0]);
+               selectedRange.setBackground(eArguments[0]);
                break;
 
             case 'FG':
-               range.setFontColor(eArguments[0]);
+               selectedRange.setFontColor(eArguments[0]);
                break;
 
             case 'FONT':
-               range.setFontFamily(eArguments[0]);
+               selectedRange.setFontFamily(eArguments[0]);
                break;
 
             } // switch agent instruction

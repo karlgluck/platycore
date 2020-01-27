@@ -44,6 +44,16 @@ write whatever we like up here describing how this works!
    SELECT  "E1:K1"
     PANEL  "3"
 
+--- LOCK ---
+
+   SELECT  "C2:G2"
+    FIELD  "LOCK"
+     EVAL  "agent.WriteField('WAKE', Util_utsNowGet())"
+   SELECT  "H2:I2"
+     TEXT  "WAKE"
+   SELECT  "C1:I1"
+    PANEL  "4"
+
 --- MAIN ---
 This is tricky. I use the same block of cells for the
 field named SCRIPT, which holds the value MAIN, which
@@ -56,9 +66,13 @@ reference to one of several other NOTEs.
     FIELD  "SCRIPT"
      TEXT  "MAIN"
         +  "HORIZONTAL_MIDDLE"
-    PANEL  "4"
+    PANEL  "5"
      NOTE  "MAIN"
         +  "agent.Log(\"Hello!\");"
         +  "agent.Snooze(5 * 60 * 1000);"
+
+
+   SELECT  "P2:W2"
+  FORMULA  "=E1/1000/60/60/24+25568.6681"
 
       OFF
