@@ -1,3 +1,12 @@
+
+            //case 'TOOLBAR':
+               // var irToolbar = instructions[++iInstruction];
+               // sheet_.getRange(irToolbar, 1, 1, 49)
+               //       .setBackground('#434343')
+               //       .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
+            //   break;
+
+
 // creating an Agent is a minimal operation to identify whether the Agent needs to run
 // the agent needs to run if:
 // (1) the EN toggle is checked or does not exist
@@ -402,10 +411,6 @@ function Agent (sheet_, config_)
 
    var writeOutputNormal_ = function (args)
       {
-      // if (!isThisOn_)
-      //    {
-      //    return sheet_.getRange(1, 49);
-      //    }
       var nArgCount = Math.min(args.length, startsFromArgCount.length - 1);
       var starts = startsFromArgCount[nArgCount];
       var counts = countsFromArgCount[nArgCount];
@@ -530,6 +535,7 @@ function Agent (sheet_, config_)
 
    this.Save = function ()
       {
+      console.log('saving agent ' + config_.agentName);
       var documentProperties = PropertiesService.getDocumentProperties();
       documentProperties.setProperty(config_.agentName, JSON.stringify(memory_));
       };
@@ -649,6 +655,7 @@ function Agent (sheet_, config_)
          {
          throw "cannot turn off; was not on";
          }
+      self_.Save();
       isThisOn_ = false;
       var lock = LockService.getDocumentLock();
       if (lock.tryLock(config_.dtLockWaitMillis))
@@ -663,7 +670,6 @@ function Agent (sheet_, config_)
             lock = null;
             }
          }
-      self_.Save();
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -713,13 +719,14 @@ function Agent (sheet_, config_)
       var script = self_.ReadField('SCRIPT');
       if (Util_isUndefined(script))
          {
+         self_.Warn('This agent does not do anything when activated because there is no SCRIPT field');
          return;
          }
 
       var code = self_.ReadNote(script);
       if (Util_isUndefined(code))
          {
-         self_.Warn('Invalid SCRIPT: ' + script);
+         self_.Error("The SCRIPT field's value must be the name of a NOTE. Got: " + script);
          return;
          }
       
@@ -777,16 +784,49 @@ function Agent (sheet_, config_)
    this.ExecuteRoutineFromUrl = function (urlAgentInstructions)
       {
       self_.Info('Fetching ' + Util_clampStringLengthP(urlAgentInstructions, 50));
-      if (urlAgentInstructions.substring(0, 22) === 'data:text/json;base64,')
+      var dataUrlPrefix = 'data:text/plain;base64,';
+      if (urlAgentInstructions.substring(0, dataUrlPrefix.length) === dataUrlPrefix)
          {
-         var jsonAgentInstructions = Util_stringFromBase64(urlAgentInstructions.substring(22));
+         var agentInstructionsText = Util_stringFromBase64(urlAgentInstructions.substring(dataUrlPrefix.length));
          }
       else
          {
-         var jsonAgentInstructions = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
+         var agentInstructionsText = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
          }
-      self_.Info('jsonAgentInstructions', jsonAgentInstructions);
-      return self_.ExecuteRoutine(JSON.parse(jsonAgentInstructions));
+
+      var whitespaceSet = Util_SetFromObjectsP([' ', '\t']);
+      var associativeSplitRegex = new RegExp(/^\s+(\S+)\s*(.*)/);
+      var agentInstructions = agentInstructionsText
+            .split(/\n/)
+            .filter(function (eLine)   // strip every line that doesn't start with whitespace
+               {
+               return eLine.length > 0 && Util_IsValueContainedInSet(eLine.charAt(0), whitespaceSet)
+               })
+            .map(function (eLine)      // take the first token and the rest of the line as 2 elements
+               {
+               return associativeSplitRegex.exec(eLine).slice(1);
+               })
+            .reduce(function (accumulator, eCommandInstructionPair, currentIndex) // merge "+" lines
+               {
+               if (currentIndex > 0 && '+' === eCommandInstructionPair[0])
+                  {
+                  accumulator[accumulator.length - 1][1] += "," + eCommandInstructionPair[1];
+                  }
+               else
+                  {
+                  accumulator.push(eCommandInstructionPair)
+                  }
+               return accumulator;
+               }, [])
+            .map(function (eCommandInstructionPair) // build some JSON lines
+               {
+               return JSON.stringify(eCommandInstructionPair[0]) + ',[' + eCommandInstructionPair[1] + ']'
+               })
+            ;
+
+      self_.Info('agentInstructionsText', agentInstructionsText);
+      agentInstructionsText = '[' + agentInstructions.join(',') + ']';
+      return self_.ExecuteRoutine(JSON.parse(agentInstructionsText));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -801,10 +841,15 @@ function Agent (sheet_, config_)
    this.ExecuteRoutine = function (instructions)
       {
       if (!Util_isArray(instructions)) throw "instructions";
+
+      var selectedRange = null;
       
-      for (var iInstruction = 0, nInstructionCount = instructions.length; iInstruction < nInstructionCount; ++iInstruction)
+      for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; ++iInstruction)
          {
-         var eInstruction = instructions[iInstruction];
+         var eInstruction = instructions[iInstruction - 1];
+         var eArguments   = instructions[iInstruction - 0];
+         var eArgumentSet = Util_SetFromObjectsP(eArguments);
+
 
          switch (eInstruction)
             {
@@ -812,25 +857,23 @@ function Agent (sheet_, config_)
                self_.Error('invalid instruction', eInstruction);
                break;
 
+            case 'SELECT':
+               selectedRange = sheet_.getRange(eArguments[0]);
+               break;
+
             case 'NAME':
-               var name = instructions[++iInstruction];
+               var name = Util_stringCast(eArguments[0]);
                memory_.name = name;
                self_.Info('Building agent "' + name + '" (' + config_.agentName + ')');
                break;
-            
-            //case 'TOOLBAR':
-               // var irToolbar = instructions[++iInstruction];
-               // sheet_.getRange(irToolbar, 1, 1, 49)
-               //       .setBackground('#434343')
-               //       .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
-            //   break;
 
             case 'FREEZE':
-               var qrFrozenRows = instructions[++iInstruction];
+               var qrFrozenRows = Util_intCast(eArguments[0]);
                self_.Verbose(function () { return 'freezing ' + qrFrozenRows + ' rows'; });
                var irHeaders = qrFrozenRows;
                sheet_.insertRowsBefore(1, qrFrozenRows);
                sheet_.setFrozenRows(qrFrozenRows);
+               irNewMessage_ = qrFrozenRows + 1;
                var mrMaxRows = sheet_.getMaxRows();
                var riFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
                sheet_.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
@@ -841,34 +884,30 @@ function Agent (sheet_, config_)
                      .setFontFamily('Courier New')
                      .setVerticalAlignment('top')
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-               return self_.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
+               break;
 
             case 'REBOOT':
-               self_.Verbose(function () { return 'reboot'; });
+               self_.Log('Rebooting...');
                return self_.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
-            
-            case 'VERBOSE':
-               self_.Verbose(function () { return instructions[++iInstruction] });
-               break;
             
             case 'OFF':
                self_.TurnOff();
                break;
 
             case 'INFO':
-               self_.Info(instructions[++iInstruction]);
+               self_.Info(eArguments.join('\n'));
                break;
 
             case 'WARN':
-               self_.Warn(instructions[++iInstruction]);
+               self_.Warn(eArguments.join('\n'));
                break;
 
             case 'ERROR':
-               self_.Error(instructions[++iInstruction]);
+               self_.Error(eArguments.join('\n'));
                break;
 
             case 'REINSTALL': // execute code if this is a reinstall operation; guarantee access to the variable previousInstallMemory
-               var code = instructions[++iInstruction].join('\n');
+               var code = eArguments.join('\n');
                var previousInstallMemory = config_.previousInstallMemory;
                if (Util_isObject(previousInstallMemory))
                   {
@@ -880,7 +919,7 @@ function Agent (sheet_, config_)
                break;
 
             case 'EVAL':
-               var code = instructions[++iInstruction].join('\n');
+               var code = eArguments.join('\n');
                (function (agent)
                   {
                   eval(code);
@@ -888,19 +927,9 @@ function Agent (sheet_, config_)
                break;
             
             case 'TEXT':
-               var text = instructions[++iInstruction];
-               var rangeCommand = instructions[++iInstruction];
-               var range = sheet_.getRange(rangeCommand.r, rangeCommand.c, rangeCommand.h || 1, rangeCommand.w || 1);
+               var text = eArguments[0];
                range.setValue(text);
-               if (rangeCommand.hasOwnProperty('bg'))
-                  {
-                  range.setBackground(rangeCommand.bg);
-                  }
-               if (rangeCommand.hasOwnProperty('fg'))
-                  {
-                  range.setFontColor(rangeCommand.fg);
-                  }
-               switch ((rangeCommand.hasOwnProperty('w') ? 1 : 0) + (rangeCommand.hasOwnProperty('h') ? 2 : 0))
+               switch (((range.getWidth() > 1) ? 1 : 0) + ((range.getHeight() > 1) ? 2 : 0))
                   {
                   case 1: /* w   */ range.mergeAcross(); break;
                   case 2: /* h   */ range.mergeVertically(); break;
@@ -908,188 +937,100 @@ function Agent (sheet_, config_)
                   }
                break;
 
-            case 'RANGE':
-               var rangeCommand = instructions[++iInstruction];
-               var range = sheet_.getRange(rangeCommand.r, rangeCommand.c, rangeCommand.h || 1, rangeCommand.w || 1);
-               if (rangeCommand.hasOwnProperty('t'))
-                  {
-                  range.setValue(rangeCommand.t);
-                  }
-               if (rangeCommand.hasOwnProperty('f'))
-                  {
-                  range.setFormula(rangeCommand.f);
-                  }
-               if (rangeCommand.hasOwnProperty('bg'))
-                  {
-                  range.setBackground(rangeCommand.bg);
-                  }
-               if (rangeCommand.hasOwnProperty('fg'))
-                  {
-                  range.setFontColor(rangeCommand.fg);
-                  }
-               if (rangeCommand.hasOwnProperty('merge'))
-                  {
-                  switch (rangeCommand.merge)
-                     {
-                     case 'across': range.mergeAcross(); break;
-                     case 'vertically': range.mergeVertically(); break;
-                     default: range.merge(); break;
-                     }
-                  }
-               break;
-
             case 'UNINSTALL':
-               var uninstallScript = instructions[++iInstruction].join('\n');
+               var uninstallScript = eArguments.join('\n');
                memory_.uninstall = uninstallScript;
                return self_.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
 
-            case 'FIELD':
-               (function (name, field)
+            case 'TOGGLE':
+               var kName = eArguments[0];
+               var toggle = {
+                     "r": selectedRange.getRow(),
+                     "c": selectedRange.getColumn(),
+                     "w": selectedRange.getWidth(),
+                     "h": selectedRange.getHeight(),
+                     "isReadonly": Util_IsValueContainedInSet('READONLY', eArgumentSet)
+                     };
+               if (memory_.toggleFromName.hasOwnProperty(kName))
                   {
-                  if (!field.hasOwnProperty('w'))
-                     {
-                     field.w = 1;
-                     }
-                  if (!field.hasOwnProperty('h'))
-                     {
-                     field.h = 1;
-                     }
-                  if (memory_.fieldFromName.hasOwnProperty(name))
-                     {
-                     console.log('TODO: shift an existing field safely (copy value; unmerge old cells)');
-                     }
-                  memory_.fieldFromName[name] = field;
-                  self_.Log('+field: ' + name, field.r, field.c, field.h, field.w);
-                  
-                  var range = sheet_.getRange(field.r, field.c, field.h, field.w);
-                  range.merge()
-                        //.setBackground(field.hasOwnProperty('bg') ? field.bg : '#000000')
-                        //.setBorder(true, true, true, true, false, false, field.borderColor || '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
-                        .setHorizontalAlignment(field.h === 1 ? 'center' : 'left')
-                        .setVerticalAlignment(field.h === 1 ? 'middle' : 'top');
-                  delete field.bg;
-                  if (field.hasOwnProperty('value'))
-                     {
-                     range.setValue(field.value);
-                     }
-                  else if (field.hasOwnProperty('f'))
-                     {
-                     range.setFormula(field.f);
-                     }
-                  else
-                     {
-                     field.value = '';
-                     }
-                  var textStyleBuilder = range.getTextStyle().copy();
-                  if (field.isReadonly)
-                     {
-                     var fontColor = '#666666';
-                     }
-                  else
-                     {
-                     var fontColor = '#00ffff';
-                     textStyleBuilder.setUnderline(true);
-                     }
-                  if (field.hasOwnProperty('fg'))
-                     {
-                     fontColor = field.fg;
-                     delete field.fg;
-                     }
-                  textStyleBuilder.setForegroundColor(fontColor);
-                  range.setTextStyle(textStyleBuilder.build());
-                  })(instructions[++iInstruction], instructions[++iInstruction]);
-               break;
-            
-            case 'NOTE': // NOTE "<name>"  {"r": "<riRow>", "c": "<ciCol>"} <any>
-               var kName = instructions[++iInstruction];
-               var note = JSON.parse(JSON.stringify(instructions[++iInstruction]));
-               var value = instructions[++iInstruction];
-               memory_.noteFromName[kName] = note;
-               if (Util_isString(value))
-                  {
-                  // value = value;
+                  self_.Warn('TODO: shift an existing toggle safely (copy value; unmerge old toggle cells)');
                   }
-               else if (Util_isArray(value) && value.every(Util_isString))
+               memory_.toggleFromName[kName] = toggle;
+               range.insertCheckboxes();
+               if (!toggle.isReadonly)
                   {
-                  value = value.join('\n'); // this is an array of strings, so turn it into lines of text
+                  range.setFontColor('#00ffff'); // editable
+                  }
+               self_.WriteToggle(kName, Util_IsValueContainedInSet('TRUE', eArgumentSet));
+               break;
+
+            case 'FIELD':
+               var kName = eArguments[0];
+               var field = {
+                     "r": selectedRange.getRow(),
+                     "c": selectedRange.getColumn(),
+                     "w": selectedRange.getWidth(),
+                     "h": selectedRange.getHeight(),
+                     "isReadonly": Util_IsValueContainedInSet('READONLY', eArgumentSet)
+                     };
+               if (memory_.fieldFromName.hasOwnProperty(kName))
+                  {
+                  self_.Warn('TODO: shift an existing field safely (copy value; unmerge old field cells)');
+                  }
+               memory_.fieldFromName[kName] = field;
+               self_.WriteField(kName, '');
+               
+               var textStyleBuilder = range.getTextStyle().copy();
+               if (field.isReadonly)
+                  {
+                  textStyleBuilder.setForegroundColor('#666666');
                   }
                else
                   {
-                  value = JSON.stringify(value);
+                  textStyleBuilder
+                        .setForegroundColor('#00ffff')
+                        .setUnderline(true);
                   }
+               range.setTextStyle(textStyleBuilder.build());
+               break;
+            
+            case 'NOTE':
+               var kName = eArguments[0];
+               var note = {
+                  "r": range.getRow(),
+                  "c": range.getColumn()
+               };
+               memory_.noteFromName[kName] = note;
                self_.Log('+note: ' + kName, value);
-               sheet_.getRange(note.r, note.c).setNote(value);
-               note.value = value;
+               self.WriteNote(eArguments.slice(1).join('\n'));
                break;
             
             case 'PANEL':
-               var color = Util_darkRainbowColorFromAnyP(instructions[++iInstruction]);
-               var location = instructions[++iInstruction];
-               sheet_.getRange(location.r, location.c, location.h || 1, location.w || 1)
-                     .setBackground(color)
-                     .setBorder(true, true, true, true, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+               var color = Util_darkRainbowColorFromAnyP(eArguments[0]);
+               range.setBackground(color)
+                    .setBorder(true, true, true, true, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
                break;
             
             case 'REM':
-               console.log('REM ' + instructions[++iInstruction]);
-               break;
-
-            case 'SCRIPT': // SCRIPT "<name>" <qBlockCount>
-               var kName = instructions[++iInstruction];
-               var script = {blockCodeNoteNames:instructions[++iInstruction]};
-               self_.Log('+script: ' + kName, script.blockCodeNoteNames);
-               memory_.scriptFromName[kName] = script;
-               memory_.scriptNames.push(kName);
+               console.log('REM ' + eArguments.join('\n'));
                break;
 
             case 'TOAST':
-               spreadsheet.toast(instructions[++iInstruction]);
+               spreadsheet.toast(eArguments.join('\n'));
                break;
 
-            case 'TOGGLE':
-               (function (name, toggle)
-                  {
-                  memory_.toggleFromName[name] = toggle;
-                  var toggleText = toggle.t || name;
-                  toggle.isReadonly = !!toggle.isReadonly;
-                  if (!toggle.hasOwnProperty('w')) toggle.w = 1;
-                  if (memory_.toggleFromName.hasOwnProperty(name))
-                     {
-                     console.log('TODO: shift an existing toggle safely (copy value; unmerge old toggle cells)');
-                     }
-                  toggle.value = Util_boolCast(toggle.value);
-                  self_.Log('+toggle: ' + name + ' (' + toggleText + ')' + (toggle.isReadonly ? ' [READONLY]' : ''), toggle.r, toggle.c, toggle.w);
-                  var checkboxRange = sheet_.getRange(toggle.r, toggle.c).insertCheckboxes();
-                  if (toggle.isReadonly)
-                     {
-                     checkboxRange.setFormula(toggle.value ? '=TRUE' : '=FALSE');
-                     }
-                     else
-                     {
-                     checkboxRange.setValue(toggle.value);
-                     }
-                  var qcColumns = toggle.w - 1;
-                  if (qcColumns > 0)
-                     {
-                     sheet_.getRange(toggle.r, toggle.c+1, 1, qcColumns).mergeAcross().setValue(toggleText);
-                     }
-                  var range = sheet_.getRange(toggle.r, toggle.c, 1, toggle.w);
-                  if (toggle.hasOwnProperty('fg'))
-                     {
-                     range.setFontColor(toggle.fg); // explicit foreground color
-                     delete toggle.fg;
-                     }
-                  else if (!toggle.isReadonly)
-                     {
-                     range.setFontColor('#00ffff'); // editable
-                     }
-                  if (toggle.hasOwnProperty('bg'))
-                     {
-                     range.setBackground(toggle.bg);
-                     delete toggle.bg;
-                     }
-                  })(instructions[++iInstruction], instructions[++iInstruction]);
+            case 'BG':
+               range.setBackground(eArguments[0]);
                break;
+
+            case 'FG':
+               range.setFontColor(eArguments[0]);
+               break;
+
+            case 'FONT':
+               range.setFontFamily(eArguments[0]);
+               break;
+
             } // switch agent instruction
          } // for each agent instruction
 

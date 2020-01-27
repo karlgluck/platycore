@@ -301,6 +301,11 @@ Util_KeyValuePairsFromDictionaryP = function (dictionary)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+//
+// objects: [{q: 1, t:'apple'}, {q: 4, t:'pear'}, {q: 1, t:'banana'}]
+//     key: 'q'
+//
+//  ==> rv: {1: [{q: 1, t:'apple'}, {q: 1, t:'banana'}], 4: [{q: 2, t:'pear'}]}
 
 Util_ObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key) {
    if (objects.length === 0) return {};
@@ -345,26 +350,64 @@ Util_DictionaryFromTableP = function (table, key)
    if (table.length === 0) return {};
   
    var headers = table[0];
-   var icKey = headers.indexOf(key);
-   if (icKey === -1)
+   var iKey = headers.indexOf(key);
+   if (iKey === -1)
       {
       return {};
       }
    
    var retval = {};
    var nHeaderCount = headers.length;
-   for (var rowIndex = 0, rowCount = table.length; rowIndex < rowCount; ++rowIndex)
+   for (var iRow = 0, nRowCount = table.length; iRow < nRowCount; ++iRow)
       {
-      var row = table[rowIndex];
+      var row = table[iRow];
       var obj = {};
       for (var iHeader = 0; iHeader < nHeaderCount; ++iHeader)
          {
          obj[headers[iHeader]] = row[iHeader];
          }
-      retval[row[icKey]] = obj;
+      retval[row[iKey]] = obj;
       }
 
    return retval;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+Util_SetFromObjectsP = function (objects)
+   {
+   var rvSet = {};
+   for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
+      {
+      rvSet[objects[iObject]] = null;
+      }
+   return rvSet;
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+Util_SetFromPropertyOfObjectsP = function (objects, key)
+   {
+   var rvSet = {};
+   for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
+      {
+      rvSet[objects[iObject][key]] = null;
+      }
+   return rvSet;
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+Util_IsValueContainedInSet = function (value, set)
+   {
+   return set.hasOwnProperty(value);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+Util_IsValueMissingFromSet = function (value, set)
+   {
+   return !set.hasOwnProperty(value);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------

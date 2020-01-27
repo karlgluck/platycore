@@ -19,10 +19,15 @@
             "TEXT", "WAKE", {"r": 1, "c":10, "w": 2},
            "PANEL", 3, {"r":1, "c":5, "w": 7},
 
+           "LOCATE", 1, 5,
+            "WIDTH", 7,
+
            "FIELD", "LOCK", {"r": 2, "c":3, "w": 5, "isReadonly": true},
-           "EVAL",  ["agent.WriteField('LOCK', Util_utsNowGet())"],
+            "EVAL",  ["agent.WriteField('LOCK', Util_utsNowGet())"],
             "TEXT", "LOCK", {"r": 2, "c":8, "w": 2},
            "PANEL", 4, {"r":2, "c":3, "w": 7},
+
+           "FIELD", "SCRIPT", {"r":2, "c":10, "w": 3, "isReadonly": true, "value": "MAIN"},
 
             "TEXT",  "MAIN", {"r": 1, "c":12, "w":3},
             "NOTE",  "MAIN", {"r": 1, "c":12},
@@ -33,4 +38,3 @@
 
              "OFF"
 ]
-

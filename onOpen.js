@@ -4,6 +4,7 @@ function onOpen()
 
    var ui = SpreadsheetApp.getUi();
    ui.createMenu("Platycore")
+         .addItem('Show Agent Sidebar...', "menuShowAgentSidebar")
          .addSubMenu(
                ui.createMenu("New...")
                      .addItem("Agent from Text...","menuNewAgentFromText")
@@ -26,6 +27,9 @@ function onOpen()
          .addSubMenu(
                ui.createMenu("Debug")
                   .addItem("Clear Output", "menuClearAgentOutput")
+                  .addItem("Collect Garbage", "menuCollectGarbage")
+                  .addSeparator()
+                  .addItem("Write Document Properties", "menuWriteDocumentProperties")
                   .addSeparator()
                   .addItem("Write Agent Memory", "menuWriteAgentMemory")
                   .addItem("Read Agent Memory", "menuReadAgentMemory")

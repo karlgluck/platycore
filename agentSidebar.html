@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <script>
+      function onSuccess()
+         {
+         var div = document.getElementById('output');
+         }
+
+      function buttonNewAgentFromText()
+         {
+         google.script.run
+            .withSuccessHandler(onSuccess)
+            .newAgentFromText(document.getElementById('agent').value);
+         }
+
+    </script>
+  </head>
+  <body>
+  <textarea id="agent"></textarea>
+  <button onclick="buttonNewAgentFromText()">New Agent</button>
+  <div id="output"></div>
+  </body>
+</html>
+
