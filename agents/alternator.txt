@@ -1,0 +1,54 @@
+Any line that doesn't start with a space is ignored, so we can write whatever we like up here describing how this works!
+
+   NAME  "alternator"
+   FREEZE  2
+
+--- ON ---
+
+   SELECT  "A1"
+   TOGGLE  "ON"
+        +  "TRUE"
+        +  "READONLY"
+   SELECT  "B1"
+     TEXT  "ON"
+   SELECT  "A1:B1"
+    PANEL  "0"
+
+--- LOCK ---
+
+   SELECT  "L1:P1"
+    FIELD  "LOCK"
+     EVAL  "agent.WriteField('LOCK', Util_utsNowGet())"
+   SELECT  "Q1:S1"
+     TEXT  "LOCK"
+   SELECT  "L2:S2"
+  FORMULA  "=(L1-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+   SELECT  "L1:S2"
+    PANEL  "4"
+
+--- SCRIPT ---
+Set up a SCRIPT field that either targets the note ONE or TWO. Each one swaps control to the next for the next iteration.
+
+   SELECT "C1:D1"
+    FIELD "SCRIPT"
+     TEXT "ONE"
+   SELECT "E1:H1"
+     TEXT "SCRIPT"
+   SELECT "C1:H1"
+    PANEL "5"
+
+   SELECT "C2:E2"
+     TEXT "ONE"
+    PANEL "5"
+     NOTE "ONE"
+        + "agent.WriteField('SCRIPT', 'TWO');"
+
+   SELECT "F2:H2"
+     TEXT "TWO"
+    PANEL "5"
+     NOTE "TWO"
+        + "agent.WriteField('SCRIPT', 'ONE');"
+   
+
+      OFF

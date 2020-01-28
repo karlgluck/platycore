@@ -54,6 +54,10 @@ function Agent (sheet_, config_)
 
    if (!Util_isObject(config_.memory))
       {
+      if (!Util_isString(config_.agentName))
+         {
+         config_.agentName = 'platycoreAgent' + sheet_.getSheetId();
+         }
       config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty(config_.agentName));
       }
    config_.agentName = config_.memory.agentName;
@@ -800,7 +804,7 @@ function Agent (sheet_, config_)
             .split(/\n/)
             .filter(function (eLine)   // strip every line that doesn't start with whitespace
                {
-               return eLine.length > 0 && Util_IsValueContainedInSet(eLine.charAt(0), whitespaceSet)
+               return eLine.trim().length > 0 && Util_IsValueContainedInSet(eLine.charAt(0), whitespaceSet)
                })
             .map(function (eLine)      // take the first token and the rest of the line as 2 elements
                {
@@ -944,6 +948,10 @@ function Agent (sheet_, config_)
             case 'TEXT':
                var text = eArguments[0];
                selectedRange.setValue(text);
+               if (Util_IsValueContainedInSet('HORIZONTAL_MIDDLE', eArgumentSet))
+                  {
+                  selectedRange.setHorizontalAlignment("center");
+                  }
                break;
 
             case 'FORMAT':
