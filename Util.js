@@ -374,6 +374,12 @@ Util_DictionaryFromTableP = function (table, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+function Util_TransposeTableP(table) {
+  return table[0].map(function (x,i) { return table.map(function (x) { return x[i]; }); });
+}
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 Util_SetFromObjectsP = function (objects)
    {
    var rvSet = {};

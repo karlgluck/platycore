@@ -1,6 +1,6 @@
 Any line that doesn't start with a space is ignored, so we can write whatever we like up here describing how this works!
 
-   NAME  "sleepy"
+   NAME  "ResourcesToRemember"
    FREEZE  2
 
 --- ON ---
@@ -59,6 +59,37 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
    SELECT  "L1:S2"
     PANEL  "4"
 
+--- Gmail Label ---
+
+   SELECT "U1:AJ1"
+    PANEL "6"
+   SELECT "U1:Y1"
+     TEXT "Gmail Label:"
+   SELECT "Z1:AJ1"
+    FIELD "LABEL"
+    PANEL "5"
+
+   SELECT "U2:AJ2"
+    PANEL "6"
+   SELECT "U2:Y2"
+     TEXT "Output Sheet:"
+   SELECT "Z2:AJ2"
+    FIELD "SHEET"
+    PANEL "5"
+    
+
+
+--- Gmail Label ---
+   SELECT "AV1:AW2"
+    FIELD "PROCESSED"
+        + "READONLY"
+        + "HCENTER"
+        + "VCENTER"
+       FG "#FF0000"
+       BG "#440000"
+     TEXT 0
+    PANEL "7"
+
 --- MAIN ---
 This is tricky. I use the same block of cells for the field named SCRIPT, which holds the value MAIN, which refers to the note so-named (MAIN), which happens to also be placed on this same block of cells. Normally, the SCRIPT field would be separate and would hold a reference to one of several other NOTEs.
 
@@ -68,7 +99,8 @@ This is tricky. I use the same block of cells for the field named SCRIPT, which 
         +  "HCENTER"
     PANEL  "5"
      NOTE  "MAIN"
-        +  "agent.Log(\"Hello!\");"
-        +  "agent.Snooze(15 * 1000);"
-
+        +  "var threads = GmailApp.getUserLabelByName(agent.ReadField('LABEL')).getThreads();"
+        +  "threads.forEach(function (thread) { agent.Log(thread.getFirstMessageSubject()) });"
+        +  "agent.WriteField('PROCESSED',Util_intCast(agent.ReadField('PROCESSED')) + threads.length);"
+        +  "agent.Snooze(15 * 60 * 1000);"
       OFF

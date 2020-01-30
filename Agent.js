@@ -948,9 +948,13 @@ function Agent (sheet_, config_)
             case 'TEXT':
                var text = eArguments[0];
                selectedRange.setValue(text);
-               if (Util_IsValueContainedInSet('HORIZONTAL_MIDDLE', eArgumentSet))
+               if (Util_IsValueContainedInSet('HCENTER', eArgumentSet))
                   {
-                  selectedRange.setHorizontalAlignment("center");
+                  selectedRange.setHorizontalAlignment('center');
+                  }
+               if (Util_IsValueContainedInSet('VCENTER', eArgumentSet))
+                  {
+                  selectedRange.setVerticalAlignment('center');
                   }
                break;
 
