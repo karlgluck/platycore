@@ -402,6 +402,11 @@ Util_SetFromPropertyOfObjectsP = function (objects, key)
    return rvSet;
    }
 
+function Util_padInteger (value, length)
+   {
+   return '0000000000'.substr(0, length-Math.floor(Math.log(Math.max(1,parseInt(value))) / Math.log(10)) - 1) + String(value);
+   }
+
 //------------------------------------------------------------------------------------------------------------------------------------
 
 Util_IsValueContainedInSet = function (value, set)

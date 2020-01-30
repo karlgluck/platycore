@@ -734,10 +734,35 @@ function Agent (sheet_, config_)
          return;
          }
       
+      // Script code references the "agent" variable,
+      // whereas code here in the script itself uses 
+      // 'self_' (to distinguish it from 'this'!). Clear on all the differences? Good!
       (function (agent)
-         {                    // Script code references the "agent" variable,
-         eval(code);          // whereas code here in the script itself uses 
-         })(self_);           // 'self_' (to distinguish it from 'this'!). Clear on all the differences? Good!
+         {
+         var lineNumber = 0;
+         var codeLines = code.split('\n');
+         try
+            {
+            eval(codeLines
+                  .map(function (e, i) { return e.replace(/;/,';lineNumber='+(i+1)+';'); })
+                  .join('\n'));
+            }
+         catch (e)
+            {
+            self_.Error(script
+                  + '(~' + lineNumber + '): ' + (e.message || e.toString()) + '\n\n'
+                  + codeLines
+                        .map(function (e, i) { return Util_padInteger(i, 4) + ': ' + e; })
+                        .slice(
+                        Math.max(lineNumber-2,0),
+                        Math.min(codeLines.length-1,lineNumber+3)
+                        )
+                        .join('\n')
+                  + '\n\n'
+                  + (Util_isUndefined(e.stack) ? '     no stack trace' : e.stack)
+                  );
+            }
+         })(self_);
       
       };
 
@@ -798,9 +823,14 @@ function Agent (sheet_, config_)
          var agentInstructionsText = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
          }
 
+      var multilineConcatenationRegex = new RegExp(/"---+"\s-+\s([\s\S]+?)\s-+/gm);
       var whitespaceSet = Util_SetFromObjectsP([' ', '\ t']);
       var associativeSplitRegex = new RegExp(/^\s+(\S+)\s*(.*)/);
       var agentInstructions = agentInstructionsText
+            .replace(multilineConcatenationRegex, function (matched, group, index) // allow easy multi-line concatenation
+               {
+               return JSON.stringify(group);
+               })
             .split(/\n/)
             .filter(function (eLine)   // strip every line that doesn't start with whitespace
                {

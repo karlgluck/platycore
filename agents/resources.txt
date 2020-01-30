@@ -98,9 +98,14 @@ This is tricky. I use the same block of cells for the field named SCRIPT, which 
      TEXT  "MAIN"
         +  "HCENTER"
     PANEL  "5"
+Below is the only exception to the rule that "everything that doesn't start with a space is ignored".
+When a line is entirely dashes and there is a matching line that is entirely dashes, and the line preceding the earlier line ends with a quoted set of dashes, then the quoted dashes are replaced with the JSON-encoded text content of the lines between the dashed lines, and all other text is removed.
      NOTE  "MAIN"
-        +  "var threads = GmailApp.getUserLabelByName(agent.ReadField('LABEL')).getThreads();"
-        +  "threads.forEach(function (thread) { agent.Log(thread.getFirstMessageSubject()) });"
-        +  "agent.WriteField('PROCESSED',Util_intCast(agent.ReadField('PROCESSED')) + threads.length);"
-        +  "agent.Snooze(15 * 60 * 1000);"
+        +  "---"
+------------------------
+var threads = GmailApp.getUserLabelByName(agent.ReadField('LABEL')).getThreads();
+threads.forEach(function (thread) { agent.Log(thread.getFirstMessageSubject()) });
+agent.WriteField('PROCESSED', Util_intCast(agent.ReadField('PROCESSED')) + threads.length);
+agent.Snooze(15 * 60 * 1000);
+------------------------
       OFF
