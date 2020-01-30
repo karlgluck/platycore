@@ -1,7 +1,7 @@
 Any line that doesn't start with a space is ignored, so we can write whatever we like up here describing how this works!
 
-   NAME  "ResourcesToRemember"
-   FREEZE  2
+   NAME  "ListBuilder"
+   FREEZE  12
 
 --- ON ---
 
@@ -61,19 +61,19 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
 --- Gmail Label ---
 
-   SELECT "U1:AJ1"
+   SELECT "B4:S4"
     PANEL "6"
-   SELECT "U1:Y1"
-     TEXT "Gmail Label:"
-   SELECT "Z1:AJ1"
+   SELECT "B4:H4"
+     TEXT "Find all emails in"
+   SELECT "I4:S4"
     FIELD "LABEL"
     PANEL "5"
 
-   SELECT "U2:AJ2"
+   SELECT "B5:S5"
     PANEL "6"
-   SELECT "U2:Y2"
+   SELECT "B5:H5"
      TEXT "Output Sheet:"
-   SELECT "Z2:AJ2"
+   SELECT "I5:S5"
     FIELD "SHEET"
     PANEL "5"
     

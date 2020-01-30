@@ -678,6 +678,7 @@ function Agent (sheet_, config_)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // 
+// Trying out a new naming convention here, still need to figure out how I want to name getters... TODO
 
    this.FormulaDetectingAnyChanges_GetP = function (ignoredNames)
       {
@@ -727,17 +728,48 @@ function Agent (sheet_, config_)
          return;
          }
 
-      var code = self_.ReadNote(script);
+      var rv = this.EvalNoteByName(script);
+      };
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Execute the code in the note named
+//
+
+   this.EvalNoteByName = function (noteName)
+      {
+      if (!isThisOn_)
+         {
+         throw "must be turned on, otherwise the program might not have exclusive control of the agent"
+         }
+
+      var code = self_.ReadNote(noteName);
       if (Util_isUndefined(code))
          {
-         self_.Error("The SCRIPT field's value must be the name of a NOTE. Got: " + script);
-         return;
+         self_.Error('There is no note with the given name: ' + noteName);
+         return null;
          }
+
+      var rv = this.EvalCode (code, noteName);
+      return rv;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Execute the code passed as the first parameter. The
+// second parameter is used as a label in debug output.
+//
+   
+   this.EvalCode = function (code, sourceLabel)
+      {
       
       // Script code references the "agent" variable,
       // whereas code here in the script itself uses 
-      // 'self_' (to distinguish it from 'this'!). Clear on all the differences? Good!
-      (function (agent)
+      // 'self_' (to distinguish it from 'this'!).
+      // Clear on all the differences? Good!
+
+      return (function (agent)
          {
          var lineNumber = 0;
          var codeLines = code.split('\n');
@@ -749,7 +781,7 @@ function Agent (sheet_, config_)
             }
          catch (e)
             {
-            self_.Error(script
+            self_.Error((sourceLabel || '[eval]')
                   + '(~' + lineNumber + '): ' + (e.message || e.toString()) + '\n\n'
                   + codeLines
                         .map(function (e, i) { return Util_padInteger(i, 4) + ': ' + e; })
@@ -763,9 +795,8 @@ function Agent (sheet_, config_)
                   );
             }
          })(self_);
-      
-      };
 
+      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
