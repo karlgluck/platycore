@@ -67,7 +67,8 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
      TEXT "Find all emails in the Gmail label"
    SELECT "O4:Z4"
     FIELD "LABEL"
-     TEXT "<input label>"
+TEXT "<Gmail Label Name>"
+     TEXT "x-recommendation"
     PANEL "5"
 
     SELECT "B5:N5"
@@ -79,10 +80,11 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
      TEXT  "---"
 ---------------------
 // https://developers.google.com/apps-script/reference/gmail/gmail-message
-function (emailMessage) {
+function (gmailMessage) {
   return {
-    'todo': emailMessage.getSubject(),
-    'details': emailMessage.getPlainBody()
+    'item': gmailMessage.getSubject().trim(),
+    'details': gmailMessage.getPlainBody().trim(),
+    'email': GAS_GetUrlFromGmailMessage(gmailMessage)
   };
 }
 ---------------------
@@ -93,10 +95,9 @@ function (emailMessage) {
      TEXT "Write each object as a row in"
    SELECT "O6:Z6"
     FIELD "SHEET"
-     TEXT "<Google Spreadsheet URL>"
+TEXT "<Google Spreadsheet URL>"
+     TEXT "https://docs.google.com/spreadsheets/d/1G6HQHz8ECA0PvM5hWTNNATSC-dp8ltkF1g2RLz9Je40/edit#gid=1727767513"
     PANEL "5"
-    
-
 
 --- Gmail Label ---
    SELECT "AV1:AW2"
@@ -128,7 +129,11 @@ var objects = threads.map(function (thread)
    {
    return mapCallback(thread.getMessages()[0]);
    });
-var outputSheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'))
+var outputSheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'));
+var headers = GAS_MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
+var table = Util_TableFromObjectsP(objects, headers);
+GAS_AddRowsToJournalingSheet(Util_GetRowsFromTableP(table).reverse(), outputSheet);
+GAS_TrimSheetRows(outputSheet);
 agent.WriteField('PROCESSED', Util_intCast(agent.ReadField('PROCESSED')) + threads.length);
 agent.Snooze(15 * 60 * 1000);
 ------------------------

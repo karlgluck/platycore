@@ -269,7 +269,7 @@ function Util_loopingIndexFromPercentP(nCount, pPercent)
    {
    var rvIndex = Math.max(0, Math.floor(nCount * pPercent + 1 / nCount) % nCount);
    return Number(rvIndex) < nCount ? rvIndex : undefined;
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -278,7 +278,7 @@ Util_ObjectsFromTableP = function (table)
    if (table.length === 0)
       {
       return [];
-   }
+      }
    var headers = table[0];
    var rvObjects = [];
    for (var iRow = 1, iRowCount = table.length; iRow < iRowCount; ++iRow)
@@ -291,6 +291,27 @@ Util_ObjectsFromTableP = function (table)
       rvObjects.push(obj);
       }
    return rvObjects;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+Util_TableFromObjectsP = function (objects, headers)
+   {
+   var rvTable =
+      [Util_isArray(headers) ? headers : Object.keys(objects.length < 1 ? [] : objects[0])]
+      .concat(objects.map(function (eObject)
+         {
+         return headers.map(function (eHeader) { return eObject[eHeader] });
+         }))
+      ;
+   return rvTable;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+Util_GetRowsFromTableP = function (table)
+   {
+   return table.slice(1);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -374,8 +395,8 @@ Util_DictionaryFromTableP = function (table, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_TransposeTableP(table) {
-  return table[0].map(function (x,i) { return table.map(function (x) { return x[i]; }); });
+function Util_TransposeRowsP(rows) {
+  return rows[0].map(function (x,i) { return rows.map(function (x) { return x[i]; }); });
 }
 
 //------------------------------------------------------------------------------------------------------------------------------------
