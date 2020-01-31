@@ -61,11 +61,11 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
 --- Gmail Label ---
 
-   SELECT "B4:Z4"
+   SELECT "B4:AI4"
     PANEL "6"
    SELECT "B4:N4"
      TEXT "Find all emails in the Gmail label"
-   SELECT "O4:Z4"
+   SELECT "O4:AI4"
     FIELD "LABEL"
 TEXT "<Gmail Label Name>"
      TEXT "x-recommendation"
@@ -74,7 +74,7 @@ TEXT "<Gmail Label Name>"
     SELECT "B5:N5"
     PANEL "6"
     TEXT "Map emails -> objects by calling"
-    SELECT "O5:Z5"
+    SELECT "O5:AI5"
     PANEL "5"
     FIELD  "MAP"
      TEXT  "---"
@@ -89,11 +89,11 @@ function (gmailMessage) {
 }
 ---------------------
 
-   SELECT "B6:Z6"
+   SELECT "B6:AI6"
     PANEL "6"
    SELECT "B6:N6"
      TEXT "Write each object as a row in"
-   SELECT "O6:Z6"
+   SELECT "O6:AI6"
     FIELD "SHEET"
 TEXT "<Google Spreadsheet URL>"
      TEXT "https://docs.google.com/spreadsheets/d/1G6HQHz8ECA0PvM5hWTNNATSC-dp8ltkF1g2RLz9Je40/edit#gid=1727767513"

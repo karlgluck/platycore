@@ -146,7 +146,7 @@ GAS_MergeSheetHeaders = function (sheet, requiredHeaders)
    var qcExtraColumns = mcMaxColumns - icLastColumnAfterAppending;
    if (qcExtraColumns < 0)
       {
-      sheet.insertColumnsAfter(icLastColumn, -qcExtraColumns);
+      sheet.insertColumnsAfter(Math.max(1, icLastColumn), -qcExtraColumns);
       }
    else if (qcExtraColumns > 0)
       {
