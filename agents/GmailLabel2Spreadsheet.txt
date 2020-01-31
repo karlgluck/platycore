@@ -1,6 +1,6 @@
 Any line that doesn't start with a space is ignored, so we can write whatever we like up here describing how this works!
 
-   NAME  "ListBuilder"
+   NAME  "GmailLabel -> Spreadsheet"
    FREEZE  12
 
 --- ON ---
@@ -61,20 +61,39 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
 --- Gmail Label ---
 
-   SELECT "B4:S4"
+   SELECT "B4:Z4"
     PANEL "6"
-   SELECT "B4:H4"
-     TEXT "Find all emails in"
-   SELECT "I4:S4"
+   SELECT "B4:N4"
+     TEXT "Find all emails in the Gmail label"
+   SELECT "O4:Z4"
     FIELD "LABEL"
+     TEXT "<input label>"
     PANEL "5"
 
-   SELECT "B5:S5"
+    SELECT "B5:N5"
     PANEL "6"
-   SELECT "B5:H5"
-     TEXT "Output Sheet:"
-   SELECT "I5:S5"
+    TEXT "Map emails -> objects by calling"
+    SELECT "O5:Z5"
+    PANEL "5"
+    FIELD  "MAP"
+     TEXT  "---"
+---------------------
+// https://developers.google.com/apps-script/reference/gmail/gmail-message
+function (emailMessage) {
+  return {
+    'todo': emailMessage.getSubject(),
+    'details': emailMessage.getPlainBody()
+  };
+}
+---------------------
+
+   SELECT "B6:Z6"
+    PANEL "6"
+   SELECT "B6:N6"
+     TEXT "Write each object as a row in"
+   SELECT "O6:Z6"
     FIELD "SHEET"
+     TEXT "<Google Spreadsheet URL>"
     PANEL "5"
     
 
@@ -104,7 +123,12 @@ When a line is entirely dashes and there is a matching line that is entirely das
         +  "---"
 ------------------------
 var threads = GmailApp.getUserLabelByName(agent.ReadField('LABEL')).getThreads();
-threads.forEach(function (thread) { agent.Log(thread.getFirstMessageSubject()) });
+var mapCallback = eval(agent.ReadField('MAP'));
+var objects = threads.map(function (thread)
+   {
+   return mapCallback(thread.getMessages()[0]);
+   });
+var outputSheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'))
 agent.WriteField('PROCESSED', Util_intCast(agent.ReadField('PROCESSED')) + threads.length);
 agent.Snooze(15 * 60 * 1000);
 ------------------------

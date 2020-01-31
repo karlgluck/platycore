@@ -70,6 +70,28 @@ var GAS_updateConditionalFormatRule = function (sheet, irRow, icColumn, wcWidth,
    sheet.setConditionalFormatRules(rules);
    }
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
+GAS_GetSheetFromUrl = function (url)
+   {
+   var spreadsheet = SpreadsheetApp.openByUrl(url);
+   if (!spreadsheet)
+      {
+      return null;
+      }
+   var match = url.match(/#gid=(\d+)/);
+   var sheets = spreadsheet.getSheets();
+   var rvSheet = null;
+   if (Util_isArray(match))
+      {
+      var sheetId = Util_intCast(match[1]);
+      rvSheet = sheets.find(function (eSheet, iSheet)
+         {
+         return sheetId == eSheet.getSheetId();
+         })
+      }
+   return rvSheet || sheets[0];
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -90,7 +112,7 @@ GAS_DictionaryFromSheetP = function (sheet, key)
 GAS_TableFromSheetP = function (sheet)
    {
    var irHeaders = Math.max(1, sheet.getFrozenRows());
-   var qRows = sheet.getLastRow() - irHeaders;
+   var qRows = sheet.getLastRow() - irHeaders + 1;
    var icLast = sheet.getLastColumn();
    return qRows <= 0 ? [] : sheet.getRange(irHeaders, 1, qRows, icLast).getValues();
    };
