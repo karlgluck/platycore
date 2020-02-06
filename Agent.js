@@ -854,7 +854,7 @@ function Agent (sheet_, config_)
          }
 
       var multilineConcatenationRegex = new RegExp(/"---+"\s-+\s([\s\S]+?)\s-+/gm);
-      var whitespaceRegex = new RegExp(/\s/);
+      var whitespaceRegex = new RegExp(/^\s/);
       var associativeSplitRegex = new RegExp(/^\s+(\S+)\s*(.*)/);
       var agentInstructions = agentInstructionsText
             .replace(multilineConcatenationRegex, function (matched, group, index) // allow easy multi-line concatenation
@@ -876,7 +876,7 @@ function Agent (sheet_, config_)
                else
                   {
                   self_.Warn('invalid line: ' + eLine);
-                  return ['','']
+                  return ['REM', JSON.stringify(eLine)];
                   }
                })
             .reduce(function (accumulator, eCommandInstructionPair, currentIndex) // merge "+" lines
@@ -1016,14 +1016,6 @@ function Agent (sheet_, config_)
             case 'TEXT':
                var text = eArguments[0];
                selectedRange.setValue(text);
-               if (Util_IsValueContainedInSet('HCENTER', eArgumentSet))
-                  {
-                  selectedRange.setHorizontalAlignment('center');
-                  }
-               if (Util_IsValueContainedInSet('VCENTER', eArgumentSet))
-                  {
-                  selectedRange.setVerticalAlignment('center');
-                  }
                break;
 
             case 'FORMAT':
@@ -1146,6 +1138,14 @@ function Agent (sheet_, config_)
 
             case 'FONT':
                selectedRange.setFontFamily(eArguments[0]);
+               break;
+
+            case 'HALIGN':
+               selectedRange.setHorizontalAlignment(eArguments[0]);
+               break;
+
+            case 'VALIGN':
+               selectedRange.setVerticalAlignment(eArguments[0]);
                break;
 
             } // switch agent instruction

@@ -31,8 +31,8 @@ function Util_GetDarkRainbowColorFromAnyP(v)
 
 function Util_GetStringFromBase64(stringToDecode)
    {
-   return String.fromCharCode.apply(String, Utilities.base64DecodeWebSafe(stringToDecode)); // this looks faster than the next line, but we should measure it
-   //return Utilities.newBlob(Utilities.base64DecodeWebSafe(stringToDecode), 'text/plain').getDataAsString();
+   //return String.fromCharCode.apply(String, Utilities.base64DecodeWebSafe(stringToDecode)); // this looks faster than the next line, but we should measure it
+   return Utilities.newBlob(Utilities.base64DecodeWebSafe(stringToDecode), 'text/plain').getDataAsString();
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------

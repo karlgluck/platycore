@@ -41,7 +41,8 @@
       function onUserDidClickFromTextButton()
          {
          document.getElementById('fromTextButton').style.visibility = 'none';
-         google.script.run.newAgentFromText(document.getElementById('fromTextInstructions').innerText);
+         var text = document.getElementById('fromTextInstructions').innerText.replace(/\s/, ' ');
+         google.script.run.newAgentFromText(text);
          return false;
          }
 

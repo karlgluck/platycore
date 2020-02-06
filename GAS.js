@@ -79,6 +79,13 @@ var GAS_GetUrlFromGmailMessage = function (gmailMessage)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+var GAS_GetUrlFromSheet = function (sheet)
+   {
+   return sheet.getParent().getUrl() + '#gid='+sheet.getSheetId();
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 var GAS_GetSheetFromUrl = function (url)
    {
    var spreadsheet = SpreadsheetApp.openByUrl(url);
