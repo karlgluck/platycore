@@ -854,7 +854,7 @@ function Agent (sheet_, config_)
          }
 
       var multilineConcatenationRegex = new RegExp(/"---+"\s-+\s([\s\S]+?)\s-+/gm);
-      var whitespaceSet = Util_GetSetFromObjectsP([' ', '\ t']);
+      var whitespaceRegex = new RegExp(/\s/);
       var associativeSplitRegex = new RegExp(/^\s+(\S+)\s*(.*)/);
       var agentInstructions = agentInstructionsText
             .replace(multilineConcatenationRegex, function (matched, group, index) // allow easy multi-line concatenation
@@ -864,11 +864,20 @@ function Agent (sheet_, config_)
             .split(/\n/)
             .filter(function (eLine)   // strip every line that doesn't start with whitespace
                {
-               return eLine.trim().length > 0 && Util_IsValueContainedInSet(eLine.charAt(0), whitespaceSet)
+               return eLine.trim().length > 0 && Util_boolCast(whitespaceRegex.exec(eLine))
                })
             .map(function (eLine)      // take the first token and the rest of the line as 2 elements
                {
-               return associativeSplitRegex.exec(eLine).slice(1);
+               var match = associativeSplitRegex.exec(eLine);
+               if (Util_IsArray(match))
+                  {
+                  return match.slice(1);
+                  }
+               else
+                  {
+                  self_.Warn('invalid line: ' + eLine);
+                  return ['','']
+                  }
                })
             .reduce(function (accumulator, eCommandInstructionPair, currentIndex) // merge "+" lines
                {

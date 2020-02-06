@@ -41,7 +41,7 @@
       function onUserDidClickFromTextButton()
          {
          document.getElementById('fromTextButton').style.visibility = 'none';
-         google.script.run.newAgentFromText(document.getElementById('text').innerText);
+         google.script.run.newAgentFromText(document.getElementById('fromTextInstructions').innerText);
          return false;
          }
 
