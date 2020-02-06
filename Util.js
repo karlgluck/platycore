@@ -190,7 +190,7 @@ function Util_GetTimestampNow()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-var Util_makeLazyConstantMethod = function (self, name, valueCallback)
+var Util_MakeLazyConstantMethod = function (self, name, valueCallback)
    {
    self[name] = function ()
       {
@@ -202,7 +202,7 @@ var Util_makeLazyConstantMethod = function (self, name, valueCallback)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-var Util_stackTraceGet = function (qLevelsUp)
+var Util_GetStackTrace = function (qLevelsUp)
    {
    try{
       undefined.hasOwnProperty(null)
@@ -230,12 +230,12 @@ function Util_GetMoonPhaseFromDate (date)
          1
          );
 
-   return moonPhases[Util_loopingIndexFromPercentP(moonPhases.length, phaseFraction)];
+   return moonPhases[Util_GetLoopingIndexFromPercentP(moonPhases.length, phaseFraction)];
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_StringFromTimestamp(utsTime)
+function Util_GetStringFromTimestamp(utsTime)
    {
    var date = new Date(utsTime);
    if (date instanceof Date && !isNaN(date.getTime()))
@@ -250,7 +250,7 @@ function Util_StringFromTimestamp(utsTime)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_StringFromDate(date)
+function Util_GetStringFromDate(date)
    {
    return Util_IsDate(date) ? date.toUTCString() + ' (=' + String(utsTime) + ')' : '<invalid date>';
    }
@@ -265,7 +265,7 @@ function Util_fmodP(a, b)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_loopingIndexFromPercentP(nCount, pPercent)
+function Util_GetLoopingIndexFromPercentP(nCount, pPercent)
    {
    var rvIndex = Math.max(0, Math.floor(nCount * pPercent + 1 / nCount) % nCount);
    return Number(rvIndex) < nCount ? rvIndex : undefined;
@@ -273,7 +273,7 @@ function Util_loopingIndexFromPercentP(nCount, pPercent)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_ObjectsFromTableP = function (table)
+Util_GetObjectsFromTableP = function (table)
    {
    if (table.length === 0)
       {
@@ -295,7 +295,7 @@ Util_ObjectsFromTableP = function (table)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_TableFromObjectsP = function (objects, headers)
+Util_GetTableFromObjectsP = function (objects, headers)
    {
    var rvTable =
       [Util_IsArray(headers) ? headers : Object.keys(objects.length < 1 ? [] : objects[0])]
@@ -316,7 +316,7 @@ Util_GetRowsFromTableP = function (table)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_KeyValuePairsFromDictionaryP = function (dictionary)
+Util_GetKeyValuePairsFromDictionaryP = function (dictionary)
    {
    return Object.keys(dictionary).map(function (eKey) { return {key:eKey, value:dictionary[eKey]} });
    };
@@ -328,7 +328,7 @@ Util_KeyValuePairsFromDictionaryP = function (dictionary)
 //
 //  ==> rv: {1: [{q: 1, t:'apple'}, {q: 1, t:'banana'}], 4: [{q: 2, t:'pear'}]}
 
-Util_ObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key) {
+Util_GetObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key) {
    if (objects.length === 0) return {};
 
    var retval = {};
@@ -350,7 +350,7 @@ Util_ObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key) {
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_DictionaryFromObjectsP = function (objects, key)
+Util_GetDictionaryFromObjectsP = function (objects, key)
    {
    if (objects.length === 0) return {};
 
@@ -366,7 +366,7 @@ Util_DictionaryFromObjectsP = function (objects, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_DictionaryFromTableP = function (table, key)
+Util_GetDictionaryFromTableP = function (table, key)
    {
    if (table.length === 0) return {};
   

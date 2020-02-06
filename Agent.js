@@ -439,7 +439,7 @@ function Agent (sheet_, config_)
          sheet_.getRange(irNewMessage_, starts[iArg], 1, counts[iArg]).mergeAcross().setValue(args[iArg]).setHorizontalAlignment('left');
          }
       sheet_.getRange(irNewMessage_, 1)
-            .setNote(JSON.stringify([new Date().toISOString(),Util_stackTraceGet(2)].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
+            .setNote(JSON.stringify([new Date().toISOString(),Util_GetStackTrace(2)].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
       return sheet_.getRange(irNewMessage_, 1, 1, 49);
       };
    

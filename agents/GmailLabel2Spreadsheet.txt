@@ -155,7 +155,7 @@ var objects = threads.map(function (thread)
    });
 var outputSheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'));
 var headers = GAS_MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
-var table = Util_TableFromObjectsP(objects, headers);
+var table = Util_GetTableFromObjectsP(objects, headers);
 GAS_AddRowsToJournalingSheet(Util_GetRowsFromTableP(table).reverse(), outputSheet);
 GAS_TrimSheetRows(outputSheet);
 agent.WriteField('PROCESSED', Util_intCast(agent.ReadField('PROCESSED')) + threads.length);

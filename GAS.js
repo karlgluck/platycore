@@ -5,7 +5,7 @@
 // 
 //
 
-GAS_deleteTriggerByName = function (functionName)
+GAS_DeleteTriggerByName = function (functionName)
    {
    var triggers = ScriptApp.getProjectTriggers();
    for (var iTrigger = triggers.length - 1; iTrigger >= 0; --iTrigger)
@@ -23,7 +23,7 @@ GAS_deleteTriggerByName = function (functionName)
 // 
 //
 
-GAS_isFunctionTriggeredP = function (functionName)
+GAS_IsFunctionTriggeredP = function (functionName)
    {
    return ScriptApp.getProjectTriggers().some(function (eTrigger) { return eTrigger.getHandlerFunction() == functionName });
    };
@@ -33,7 +33,7 @@ GAS_isFunctionTriggeredP = function (functionName)
 // 
 //
 
-function GAS_A1AddressFromCoordinatesP (irRow, icColumn)
+function GAS_GetA1AddressFromCoordinatesP (irRow, icColumn)
    {
    var iLetter, rvColumnLetters = '$';
    while (icColumn > 0)
@@ -50,7 +50,7 @@ function GAS_A1AddressFromCoordinatesP (irRow, icColumn)
 // 
 //
 
-var GAS_updateConditionalFormatRule = function (sheet, irRow, icColumn, wcWidth, hrHeight, callback)
+var GAS_UpdateConditionalFormatRule = function (sheet, irRow, icColumn, wcWidth, hrHeight, callback)
    {
    wcWidth = wcWidth || 1;
    hrHeight = hrHeight || 1;
@@ -109,21 +109,21 @@ var GAS_GetSheetFromUrl = function (url)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-GAS_ObjectsFromSheetP = function (sheet)
+GAS_GetObjectsFromSheetP = function (sheet)
    {
-   return Util_ObjectsFromTableP(GAS_TableFromSheetP(sheet));
+   return Util_GetObjectsFromTableP(GAS_GetTableFromSheetP(sheet));
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 GAS_DictionaryFromSheetP = function (sheet, key)
    {
-   return Util_DictionaryFromTableP(GAS_TableFromSheetP(sheet), key);
+   return Util_GetDictionaryFromTableP(GAS_GetTableFromSheetP(sheet), key);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-GAS_TableFromSheetP = function (sheet)
+GAS_GetTableFromSheetP = function (sheet)
    {
    var irHeaders = Math.max(1, sheet.getFrozenRows());
    var qRows = sheet.getLastRow() - irHeaders + 1;
