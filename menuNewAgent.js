@@ -1,5 +1,9 @@
-
-function menuNewSandboxAgent()
+function menuNewAgent()
    {
-   newAgent('https://raw.githubusercontent.com/karlgluck/platycore/master/agents/sandbox.json', null, 'menuNewSandboxAgent');
+   platycoreVerifyPermissions();
+
+   var html = HtmlService.createHtmlOutputFromFile('newAgentSidebar.html')
+      .setTitle('New Agent')
+      .setWidth(300);
+   SpreadsheetApp.getUi().showSidebar(html);
    }

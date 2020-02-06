@@ -1,7 +1,7 @@
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_clampStringLengthP(text, length)
+function Util_ClampStringLengthP(text, length)
    {
    text = String(text);
    if (text.length > length)
@@ -13,7 +13,7 @@ function Util_clampStringLengthP(text, length)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_rainbowColorFromAnyP(v)
+function Util_GetRainbowColorFromAnyP(v)
    {
    var colors = ['#ff0000','#ff9900','#ffff00','#00ff00','#00ffff','#4a86e8','#9900ff'];
    return colors[((v >>> 0) % colors.length)];
@@ -21,7 +21,7 @@ function Util_rainbowColorFromAnyP(v)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_darkRainbowColorFromAnyP(v)
+function Util_GetDarkRainbowColorFromAnyP(v)
    {
    var colors = ['#5b0f00', '#783f04', '#7f6000', '#274e13', '#0c343d', '#1c4587', '#073763', '#20124d', '#4c1130'];
    return colors[((v >>> 0) % colors.length)];
@@ -29,7 +29,7 @@ function Util_darkRainbowColorFromAnyP(v)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_stringFromBase64(stringToDecode)
+function Util_GetStringFromBase64(stringToDecode)
    {
    return String.fromCharCode.apply(String, Utilities.base64DecodeWebSafe(stringToDecode)); // this looks faster than the next line, but we should measure it
    //return Utilities.newBlob(Utilities.base64DecodeWebSafe(stringToDecode), 'text/plain').getDataAsString();
@@ -37,28 +37,28 @@ function Util_stringFromBase64(stringToDecode)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_base64FromString(stringToEncode)
+function Util_GetBase64FromString(stringToEncode)
    {
    return Utilities.base64EncodeWebSafe(Utilities.newBlob(stringToEncode).getBytes());
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_objectFromBase64(stringToDecode)
+function Util_GetObjectFromBase64(stringToDecode)
    {
-   return JSON.parse(Util_stringFromBase64(stringToDecode));
+   return JSON.parse(Util_GetStringFromBase64(stringToDecode));
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_base64FromObject(objectToEncode)
+function Util_GetBase64FromObject(objectToEncode)
    {
-   return Util_base64FromString(JSON.stringify(objectToEncode));
+   return Util_GetBase64FromString(JSON.stringify(objectToEncode));
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_isDate(v)
+function Util_IsDate(v)
    {
    return v instanceof Date && !isNaN(v.getTime());
    }
@@ -66,7 +66,7 @@ function Util_isDate(v)
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/1303646/check-whether-variable-is-number-or-string-in-javascript/20373925
 
-function Util_isNumber(v)
+function Util_IsNumber(v)
    {
    return !isNaN(parseFloat(v)) && !isNaN(v - 0)
    }
@@ -125,28 +125,28 @@ function Util_stopwatchStringFromDurationInSeconds(dtSeconds)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_average(numbers)
+function Util_Average(numbers)
    {
    return Array.isArray(numbers) ? numbers.reduce(function (prev, current) { return prev + current}, 0) / numbers.length : undefined;
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_isUndefined(v)
+function Util_IsUndefined(v)
    {
    return 'undefined' === typeof v;
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_isObject(v)
+function Util_IsObject(v)
    {
    return 'object' === typeof v && null !== v;
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_isArray(v)
+function Util_IsArray(v)
    {
    return Array.isArray(v);
    }
@@ -154,7 +154,7 @@ function Util_isArray(v)
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
 
-function Util_isFunction(v)
+function Util_IsFunction(v)
    {
    return v && {}.toString.call(v) === '[object Function]';
    }
@@ -162,14 +162,14 @@ function Util_isFunction(v)
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
 
-function Util_isString(v)
+function Util_IsString(v)
    {
    return 'string' === typeof v || v instanceof String;
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_isObjectPropertyTruthy(v, flagName)
+function Util_IsObjectPropertyTruthy(v, flagName)
    {
    return 'object' === typeof v  && null !== v && !!v[flagName];
    }
@@ -183,7 +183,7 @@ function Util_IsArrayInObjectPropertyP(v, flagName)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_utsNowGet()
+function Util_GetTimestampNow()
    {
    return new Date().getTime();
    }
@@ -216,7 +216,7 @@ var Util_stackTraceGet = function (qLevelsUp)
 //------------------------------------------------------------------------------------------------------------------------------------
 // http://community.facer.io/t/moon-phase-formula-updated/35691/5
 
-function Util_moonPhaseFromDate (date)
+function Util_GetMoonPhaseFromDate (date)
    {
    var moonPhases = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
    var utc = date.getTime();
@@ -252,7 +252,7 @@ function Util_StringFromTimestamp(utsTime)
 
 function Util_StringFromDate(date)
    {
-   return Util_isDate(date) ? date.toUTCString() + ' (=' + String(utsTime) + ')' : '<invalid date>';
+   return Util_IsDate(date) ? date.toUTCString() + ' (=' + String(utsTime) + ')' : '<invalid date>';
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -298,7 +298,7 @@ Util_ObjectsFromTableP = function (table)
 Util_TableFromObjectsP = function (objects, headers)
    {
    var rvTable =
-      [Util_isArray(headers) ? headers : Object.keys(objects.length < 1 ? [] : objects[0])]
+      [Util_IsArray(headers) ? headers : Object.keys(objects.length < 1 ? [] : objects[0])]
       .concat(objects.map(function (eObject)
          {
          return headers.map(function (eHeader) { return eObject[eHeader] });
@@ -401,7 +401,7 @@ function Util_TransposeRowsP(rows) {
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_SetFromObjectsP = function (objects)
+Util_GetSetFromObjectsP = function (objects)
    {
    var rvSet = {};
    for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
@@ -413,7 +413,7 @@ Util_SetFromObjectsP = function (objects)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_SetFromPropertyOfObjectsP = function (objects, key)
+Util_GetSetFromPropertyOfObjectsP = function (objects, key)
    {
    var rvSet = {};
    for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
@@ -423,7 +423,9 @@ Util_SetFromPropertyOfObjectsP = function (objects, key)
    return rvSet;
    }
 
-function Util_padInteger (value, length)
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function Util_GetFixedLengthStringFromInteger (value, length)
    {
    return '0000000000'.substr(0, length-Math.floor(Math.log(Math.max(1,parseInt(value))) / Math.log(10)) - 1) + String(value);
    }
@@ -473,7 +475,7 @@ Util_stringCast = function (any)
 
 Util_arrayCast = function (any)
    {
-   if (Util_isArray(any))
+   if (Util_IsArray(any))
       {
       return any;
       }
@@ -497,7 +499,21 @@ Util_dateCast = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_wallTimeFromTimestamp (utsTimestamp)
+function Util_GetWallTimeFromTimestamp (utsTimestamp)
    {
    return new Date(utsTimestamp-new Date().getTimezoneOffset()*60000).toUTCString().slice(-12, -4);
    }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function Util_GetUrlsFromString (text)
+   {
+      var urls = [];
+      var re = /(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g;
+      while (null != (match = re.exec(text)))
+         {
+         urls.push(match[0]);
+         text = text.split(match[0]).join('');
+         }
+      return urls;
+   };

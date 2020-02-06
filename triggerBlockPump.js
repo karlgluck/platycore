@@ -11,7 +11,7 @@ var doBlockPump = function () {
    var file_ = DriveApp.getFileById(spreadsheet_.getId());
    var properties_ = PropertiesService.getDocumentProperties();
    var dtSingleBlockRuntimeLimit_ = 60/*seconds*/ * 1000; // print an error if any agent executes longer than this time
-   var utsExecutionCutoffTime_ = Util_utsNowGet() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit_;
+   var utsExecutionCutoffTime_ = Util_GetTimestampNow() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit_;
    var dtSingleBlockRuntimeWarningThreshold_ = 0.70/*percent*/ * dtSingleBlockRuntimeLimit_; // print a warning if the agent runs longer than this time
    var sheets_ = spreadsheet_.getSheets();
    var nSheetCount_ = sheets_.length;
@@ -49,7 +49,7 @@ var doBlockPump = function () {
 
       var utsLastSaved = platycore.utsLastSaved;
       var utsLastUpdated = file_.getLastUpdated().getTime();
-      var utsIterationStarted = Util_utsNowGet();
+      var utsIterationStarted = Util_GetTimestampNow();
 
       if (utsLastSaved < utsLastUpdated)
          {
@@ -94,7 +94,7 @@ var doBlockPump = function () {
          if (null !== agentMemory)
             {
             agentMemory = JSON.parse(agentMemory);
-            if (!Util_isObject(bootSector))
+            if (!Util_IsObject(bootSector))
                {
                var agent = new Agent(sheet, {memory: agentMemory, origin:'doBlockPump - bootSector recovery'});
                bootSector = agent.BootSectorGet();
@@ -109,28 +109,28 @@ var doBlockPump = function () {
             // Update the boot sector's values if we are out of date
             //
             var isCacheExpired = utsLastSaved < utsLastUpdated;
-            if (Util_isObject(bootSector.EN))
+            if (Util_IsObject(bootSector.EN))
                {
                bootSector.EN.value = Util_boolCast (
                      isCacheExpired ? sheet.getRange(bootSector.EN.r, bootSector.EN.c).getValue() : bootSector.EN.value
                      );
                }
-            if (Util_isObject(bootSector.WAKE))
+            if (Util_IsObject(bootSector.WAKE))
                {
                bootSector.WAKE.value = Util_intCast (
                      isCacheExpired ? sheet.getRange(bootSector.WAKE.r, bootSector.WAKE.c).getValue() : bootSector.WAKE.value
                      );
                }
-            if (Util_isObject(bootSector.GO))
+            if (Util_IsObject(bootSector.GO))
                {
                bootSector.GO.value = Util_boolCast (
                      isCacheExpired ? sheet.getRange(bootSector.GO.r, bootSector.GO.c).getValue() : bootSector.GO.value
                      );
                }
             
-            var isEnabled = !Util_isObject(bootSector.EN) || bootSector.EN.value;
-            var isGo = Util_isObject(bootSector.GO) && bootSector.GO.value;
-            var isWake = Util_isObject(bootSector.WAKE) && utsIterationStarted > bootSector.WAKE.value;
+            var isEnabled = !Util_IsObject(bootSector.EN) || bootSector.EN.value;
+            var isGo = Util_IsObject(bootSector.GO) && bootSector.GO.value;
+            var isWake = Util_IsObject(bootSector.WAKE) && utsIterationStarted > bootSector.WAKE.value;
 
             }
          else
@@ -148,7 +148,7 @@ var doBlockPump = function () {
          if (isEnabled && (isGo || isWake))
             {
             qSheetsLeftToSearch = 0;
-            if (!Util_isObject(agent))
+            if (!Util_IsObject(agent))
                {
                agent = new Agent(sheet, {sheetId: sheetId, memory: agentMemory, origin:'doBlockPump - step'});
                }
@@ -158,7 +158,7 @@ var doBlockPump = function () {
                if (agent.TurnOn())
                   {
                   try{
-                     agent.Log('turned on at ' + Util_wallTimeFromTimestamp(Util_utsNowGet()));
+                     agent.Log('turned on at ' + Util_GetWallTimeFromTimestamp(Util_GetTimestampNow()));
                      agent.Step();
                      }
                   catch (e)
@@ -167,8 +167,8 @@ var doBlockPump = function () {
                      }
                   finally
                      {
-                     var dtRuntime = Util_utsNowGet() - utsIterationStarted;
-                     agent.Log('turned off after ' + Util_stopwatchStringFromDuration(dtRuntime) + ' at ' + Util_wallTimeFromTimestamp(Util_utsNowGet()));
+                     var dtRuntime = Util_GetTimestampNow() - utsIterationStarted;
+                     agent.Log('turned off after ' + Util_stopwatchStringFromDuration(dtRuntime) + ' at ' + Util_GetWallTimeFromTimestamp(Util_GetTimestampNow()));
                      if (dtRuntime > dtSingleBlockRuntimeLimit_)
                         {
                         agent.Error('agent is running for too long!');
@@ -199,7 +199,7 @@ var doBlockPump = function () {
          try{
             if (properties_.getProperty('platycoreLastPumpKey') === platycore.pumpKey)
                {
-               platycore.utsLastSaved = Util_utsNowGet();
+               platycore.utsLastSaved = Util_GetTimestampNow();
                properties_.setProperty('platycore', JSON.stringify(platycore));
                }
             }
@@ -209,7 +209,7 @@ var doBlockPump = function () {
             }
          }
 
-      return Util_utsNowGet() < utsExecutionCutoffTime_;
+      return Util_GetTimestampNow() < utsExecutionCutoffTime_;
 
       };
 

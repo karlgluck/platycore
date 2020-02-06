@@ -1,6 +1,7 @@
 
 function menuUninstallAgent()
    {
+   platycoreVerifyPermissions();
    try
       {
       var agent = new Agent(SpreadsheetApp.getActiveSheet());

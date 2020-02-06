@@ -1,7 +1,9 @@
 function menuShowAgentSidebar()
    {
-  var html = HtmlService.createHtmlOutputFromFile('agentSidebar.html')
+   platycoreVerifyPermissions();
+
+   var html = HtmlService.createHtmlOutputFromFile('agentSidebar.html')
       .setTitle('Agent Sidebar')
       .setWidth(300);
-  SpreadsheetApp.getUi().showSidebar(html);
+   SpreadsheetApp.getUi().showSidebar(html);
    }

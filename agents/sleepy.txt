@@ -37,7 +37,7 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
    SELECT  "E1:I1"
     FIELD  "WAKE"
-     EVAL  "agent.WriteField('WAKE', Util_utsNowGet() + 15000)"
+     EVAL  "agent.WriteField('WAKE', Util_GetTimestampNow() + 15000)"
    SELECT  "J1:K1"
      TEXT  "WAKE"
    SELECT  "E2:K2"
@@ -50,7 +50,7 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
    SELECT  "L1:P1"
     FIELD  "LOCK"
-     EVAL  "agent.WriteField('LOCK', Util_utsNowGet())"
+     EVAL  "agent.WriteField('LOCK', Util_GetTimestampNow())"
    SELECT  "Q1:S1"
      TEXT  "LOCK"
    SELECT  "L2:S2"

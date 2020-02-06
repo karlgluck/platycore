@@ -51,8 +51,7 @@ Agents save a bunch of stuff in their memory. There are a lot to remember, so he
 | -----------:| ----------- |
 |`EN`|Enables or disables the agent. If `false`, the agent will never execute unless manually stepped using the menu.|
 |`ON`|*(Readonly*) Whether or not the agent is currently online and executing|
-|`GO`|Requests that the main loop step this agent when next available due to changes in the editable properties of the agent. Whenever this flag is changed to `true` by an action on the agent's sheet, an execution will be scheduled for the near future to make sure it gets picked up.|
-|`VERBOSE`|*(Optional)* If specified, the agent will use this flag to switch on or off verbose logging output.|
+|`GO`|Requests that the pump run this agent when next available.|
 
 ## `scriptFromName` Field Values
 
@@ -67,17 +66,13 @@ Here's some other stuff that's also true!
  * Platycore agent sheets are designed to be usable on a 1080x1920 monitor (portrait-oriented 1080p)
  * Green means output
  * Cyan means editable
- * Magenta means changed
  * Dark gray (text) means readonly value
- * Colored box with dark gray border means code
- * For every `GO` or `WAKE`-able agent, in sequence, the RunLane will `TurnOn`, `Step` and `TurnOff` the agent
- * The RunLane will execute platycore agent blocks until either:
+ * Colored box means code
+ * For every `GO` or `WAKE`-able agent, in sequence, The Pump will `TurnOn`, `Step` and `TurnOff` the Agent
+ * The Pump will execute platycore agent blocks until either:
       A. The total execution time is such that stepping another
          agent is too likely to get cut off by Google.
       B. No agent is `WAKE`-able or can `GO`
- * If the first situation occurs, the RunLane will terminate and automatically resume after the next 5-minute interval.
- * If the second situation occurs, the RunLane will reschedule
-   itself at the earliest time among all snooze alarms for all agents
 
 
 # Notes

@@ -1,3 +1,9 @@
+
+function newAgentFromText(text)
+   {
+   newAgent('data:text/plain;base64,' + Util_GetBase64FromString(text), null, 'newAgentFromText');
+   }
+
 function newAgent (urlAgentInstructions, previousInstallMemory, origin)
    {
 
@@ -19,7 +25,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
 
    try
       {
-      var utsAgentCreated = Util_utsNowGet();
+      var utsAgentCreated = Util_GetTimestampNow();
       var agent = new Agent(sheet, {
             memory: {
                   agentName: agentName,
@@ -34,8 +40,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                   },
             previousInstallMemory: previousInstallMemory,
             origin: origin || 'newAgent',
-            utsSheetLastUpdated: utsAgentCreated,
-            verbose: true
+            utsSheetLastUpdated: utsAgentCreated
             });
       agent.OverrideTurnOn();
       agent.Save();

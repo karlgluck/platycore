@@ -1,6 +1,10 @@
 <!DOCTYPE html>
 <html>
   <head>
+    <style type="text/css">
+      body { margin: 0 }
+      button { display: block; width: 95%; margin: 5px auto; padding: 5px; }
+    </style>
     <base target="_top">
     <script>
       function onSuccess()
@@ -18,8 +22,8 @@
     </script>
   </head>
   <body>
-  <textarea id="agent"></textarea>
-  <button onclick="buttonNewAgentFromText()">New Agent</button>
+  <textarea id="agent" style="display:block;width:95%;margin:5 auto;height:300px;"></textarea>
+  <button onclick="buttonNewAgentFromText()" style="background:yellowgreen">Create Agent</button>
   <div id="output"></div>
   </body>
 </html>

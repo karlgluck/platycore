@@ -89,7 +89,7 @@ var GAS_GetSheetFromUrl = function (url)
    var match = url.match(/#gid=(\d+)/);
    var sheets = spreadsheet.getSheets();
    var rvSheet = null;
-   if (Util_isArray(match))
+   if (Util_IsArray(match))
       {
       var sheetId = Util_intCast(match[1]);
       rvSheet = sheets.find(function (eSheet, iSheet)

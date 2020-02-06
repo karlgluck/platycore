@@ -3,53 +3,52 @@ function onOpen()
    {
 
    var ui = SpreadsheetApp.getUi();
-   ui.createMenu("Platycore")
-         .addItem('Show Agent Sidebar...', "menuShowAgentSidebar")
-         .addSubMenu(
-               ui.createMenu("New...")
-                     .addItem("Agent from Text...","menuNewAgentFromText")
-                     .addSeparator()
-                     .addItem("Sandbox Agent", "menuNewSandboxAgent")
-                     //.addItem("Power On Self Test Mechanism no. 8 (POST-M8)", "menuNewSelfTestingAgent")
-               )
+   ui.createMenu('Agent')
+         .addItem('New...', 'menuNewAgent')
          .addSeparator()
-         .addItem("Step Agent", "menuStepAgent")
-         .addItem("Step Block Pump", "menuStepBlockPump")
+         .addItem('Run once...', 'menuStepAgent')
+         .addItem('Run selected note...', 'menuRunSelectedNote')
          .addSeparator()
-         .addItem("Reinstall Agent", "menuReinstallAgent")
-         .addItem("Uninstall Agent", "menuUninstallAgent")
+         .addItem('Clear Output', 'menuClearAgentOutput')
          .addSeparator()
-         .addSubMenu(
-               ui.createMenu("Sentinel")
-                     .addItem("Run", "menuRunSentinel")
-                     .addItem("Stop", "menuStopSentinel")
-               )
-         .addSubMenu(
-               ui.createMenu("Debug")
-                  .addItem("Clear Output", "menuClearAgentOutput")
-                  .addItem("Collect Garbage", "menuCollectGarbage")
-                  .addSeparator()
-                  .addItem("Write Document Properties", "menuWriteDocumentProperties")
-                  .addSeparator()
-                  .addItem("Write Agent Memory", "menuWriteAgentMemory")
-                  .addItem("Read Agent Memory", "menuReadAgentMemory")
-                  .addSeparator()
-                  .addItem("Verify Permissions", "menuDebugVerifyPermissions")
-                  .addSeparator()
-                  .addItem("Sandbox", "menuDebugSandbox")
-               )
+         .addItem('Reinstall', 'menuReinstallAgent')
+         .addItem('Uninstall', 'menuUninstallAgent')
+         .addToUi();
+
+   ui.createMenu('Pump')
+         .addItem('Run Once...', 'menuStepBlockPump')
+         .addSeparator()
+         .addItem('Start', 'menuRunSentinel')
+         .addItem('Stop', 'menuStopSentinel')
+         .addToUi();
+
+   ui.createMenu('Platycore')
+         .addItem('Collect Garbage', 'menuCollectGarbage')
+         .addSeparator()
+         .addItem('Write Agent Memory', 'menuWriteAgentMemory')
+         .addItem('Read Agent Memory', 'menuReadAgentMemory')
+         .addSeparator()
+         .addItem('Write Platycore Properties', 'menuWriteDocumentProperties')
          .addToUi();
    
    }
 
 
-function menuDebugVerifyPermissions()
+var hasPlatycoreVerifiedPermissions = false;
+function platycoreVerifyPermissions()
    {
-   SpreadsheetApp.getActiveSheet().getRange(1, 49).setFormula('=VALUE(NOW())');
-   console.log('GmailApp.getInboxUnreadCount() = ' + GmailApp.getInboxUnreadCount());
+   if (hasPlatycoreVerifiedPermissions)
+      {
+      return;
+      }
+   try
+      {
+      console.log('A1=' + SpreadsheetApp.getActiveSheet().getRange(1,1).getValue());
+      console.log('GmailApp.getInboxUnreadCount() = ' + GmailApp.getInboxUnreadCount());
+      hasPlatycoreVerifiedPermissions = true;
+      }
+   catch (e)
+      {
+      }
    }
 
-
-function menuDebugSandbox()
-   {
-   }

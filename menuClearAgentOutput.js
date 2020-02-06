@@ -1,5 +1,6 @@
 function menuClearAgentOutput ()
    {
+   platycoreVerifyPermissions();
    var sheet = SpreadsheetApp.getActiveSheet();
    var qrFrozenRows = sheet.getFrozenRows();
    var mrMaxRows = sheet.getMaxRows();

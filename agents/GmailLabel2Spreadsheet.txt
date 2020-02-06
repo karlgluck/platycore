@@ -1,7 +1,7 @@
 Any line that doesn't start with a space is ignored, so we can write whatever we like up here describing how this works!
 
    NAME  "GmailLabel -> Spreadsheet"
-   FREEZE  12
+   FREEZE  8
 
 --- ON ---
 
@@ -37,7 +37,7 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
    SELECT  "E1:I1"
     FIELD  "WAKE"
-     EVAL  "agent.WriteField('WAKE', Util_utsNowGet() + 15000)"
+     EVAL  "agent.WriteField('WAKE', Util_GetTimestampNow() + 15000)"
    SELECT  "J1:K1"
      TEXT  "WAKE"
    SELECT  "E2:K2"
@@ -50,7 +50,7 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
    SELECT  "L1:P1"
     FIELD  "LOCK"
-     EVAL  "agent.WriteField('LOCK', Util_utsNowGet())"
+     EVAL  "agent.WriteField('LOCK', Util_GetTimestampNow())"
    SELECT  "Q1:S1"
      TEXT  "LOCK"
    SELECT  "L2:S2"
@@ -59,17 +59,21 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
    SELECT  "L1:S2"
     PANEL  "4"
 
---- Gmail Label ---
+--- Input Gmail Label ---
 
    SELECT "B4:AI4"
     PANEL "6"
    SELECT "B4:N4"
      TEXT "Find all emails in the Gmail label"
    SELECT "O4:AI4"
-    FIELD "LABEL"
-TEXT "<Gmail Label Name>"
+    FIELD "INPUT_LABEL"
+ VALIDATE "Enter the name of a label from your Gmail account"
+        + "IS_GMAIL_LABEL"
+TEXT "<Input Gmail Label Name>"
      TEXT "x-recommendation"
     PANEL "5"
+
+--- Processing Function ---
 
     SELECT "B5:N5"
     PANEL "6"
@@ -81,9 +85,14 @@ TEXT "<Gmail Label Name>"
 ---------------------
 // https://developers.google.com/apps-script/reference/gmail/gmail-message
 function (gmailMessage) {
+  var subject = gmailMessage.getSubject().trim();
+  var subjectUrls = Util_GetUrlsFromString(subject);
+  var body = gmailMessage.getPlainBody().trim();
+  var bodyUrls = Util_GetUrlsFromString(body);
   return {
-    'item': gmailMessage.getSubject().trim(),
-    'details': gmailMessage.getPlainBody().trim(),
+    'item': subject.trim(),
+    'url': subjectUrls.concat(bodyUrls).concat([''])[0],
+    'details': body,
     'email': GAS_GetUrlFromGmailMessage(gmailMessage)
   };
 }
@@ -99,7 +108,22 @@ TEXT "<Google Spreadsheet URL>"
      TEXT "https://docs.google.com/spreadsheets/d/1G6HQHz8ECA0PvM5hWTNNATSC-dp8ltkF1g2RLz9Je40/edit#gid=1727767513"
     PANEL "5"
 
---- Gmail Label ---
+--- Output Label ---
+
+   SELECT "B7:AI7"
+    PANEL "6"
+   SELECT "B7:N7"
+     TEXT "Change the email's label to"
+   SELECT "O7:AI7"
+    FIELD "OUTPUT_LABEL"
+TEXT "<Output Gmail Label Name>"
+     TEXT "X-Processed"
+ VALIDATE "Enter the name of a label from your Gmail account"
+        + "IS_GMAIL_LABEL"
+    PANEL "5"
+
+
+--- Processed ---
    SELECT "AV1:AW2"
     FIELD "PROCESSED"
         + "READONLY"
@@ -123,7 +147,8 @@ When a line is entirely dashes and there is a matching line that is entirely das
      NOTE  "MAIN"
         +  "---"
 ------------------------
-var threads = GmailApp.getUserLabelByName(agent.ReadField('LABEL')).getThreads();
+var inputLabel = GmailApp.getUserLabelByName(agent.ReadField('INPUT_LABEL'));
+var threads = inputLabel.getThreads();
 var mapCallback = eval(agent.ReadField('MAP'));
 var objects = threads.map(function (thread)
    {
@@ -135,6 +160,11 @@ var table = Util_TableFromObjectsP(objects, headers);
 GAS_AddRowsToJournalingSheet(Util_GetRowsFromTableP(table).reverse(), outputSheet);
 GAS_TrimSheetRows(outputSheet);
 agent.WriteField('PROCESSED', Util_intCast(agent.ReadField('PROCESSED')) + threads.length);
+var outputLabel = GmailApp.getUserLabelByName(agent.ReadField('OUTPUT_LABEL'));
+threads.forEach(function (e)
+   {
+   e.removeLabel(inputLabel).addLabel(outputLabel);
+   });
 agent.Snooze(15 * 60 * 1000);
 ------------------------
       OFF

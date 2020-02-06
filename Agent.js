@@ -31,15 +31,15 @@ function Agent (sheet_, config_)
             sheetNameHint: memory_.sheetNameHint,
             sheetId: memory_.sheetId
             };
-      if (!Util_isUndefined(self_.ReadToggle('EN')))
+      if (!Util_IsUndefined(self_.ReadToggle('EN')))
          {
          rv.EN = memory_.toggleFromName['EN'];
          }
-      if (!Util_isUndefined(self_.ReadField('WAKE')))
+      if (!Util_IsUndefined(self_.ReadField('WAKE')))
          {
          rv.WAKE = memory_.fieldFromName['WAKE'];
          }
-      if (!Util_isUndefined(self_.ReadToggle('GO')))
+      if (!Util_IsUndefined(self_.ReadToggle('GO')))
          {
          rv.GO = memory_.toggleFromName['GO'];
          }
@@ -52,9 +52,9 @@ function Agent (sheet_, config_)
 // Load memory_ for this execution 
 //
 
-   if (!Util_isObject(config_.memory))
+   if (!Util_IsObject(config_.memory))
       {
-      if (!Util_isString(config_.agentName))
+      if (!Util_IsString(config_.agentName))
          {
          config_.agentName = 'platycoreAgent' + sheet_.getSheetId();
          }
@@ -70,7 +70,7 @@ function Agent (sheet_, config_)
    memory_.scriptNames = memory_.scriptNames || [];
 
 
-   if (!Util_isObject(sheet_))
+   if (!Util_IsObject(sheet_))
       {
       }
 
@@ -146,10 +146,6 @@ function Agent (sheet_, config_)
 // Accessors
 //
 
-   Util_makeLazyConstantMethod(this, 'getSheetId', function () { return sheet_.getSheetId() });
-   Util_makeLazyConstantMethod(this, 'kSheetId_Get', function () { return sheet_.getSheetId() });
-   Util_makeLazyConstantMethod(this, 'isVerbose_', function () { return !!config_.verbose || self_.ReadToggle('VERBOSE') });
-
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -187,7 +183,7 @@ function Agent (sheet_, config_)
       try
          {
          var toggle = memory_.toggleFromName[name];
-         if (Util_isUndefined(toggle))
+         if (Util_IsUndefined(toggle))
             {
             return undefined;
             }
@@ -230,10 +226,6 @@ function Agent (sheet_, config_)
             checkboxRange.setValue(value);
             }
          toggle.value = value;
-         if (name === 'VERBOSE') // re-initialize the self-constantizing method to keep the VERBOSE toggle in sync
-            {
-            Util_makeLazyConstantMethod(self_, 'isVerbose_', function () { return !!config_.verbose || self_.ReadToggle('VERBOSE') });
-            }
          }
       catch (e)
          {
@@ -258,7 +250,7 @@ function Agent (sheet_, config_)
       try
          {
          var field = memory_.fieldFromName[name];
-         if (Util_isUndefined(field))
+         if (Util_IsUndefined(field))
             {
             return undefined;
             }
@@ -305,7 +297,7 @@ function Agent (sheet_, config_)
    this.ReadArrayIndexFromField = function (name, mArrayLength)
       {
       var value = self_.ReadField(name);
-      if (Util_isNumber(value))
+      if (Util_IsNumber(value))
          {
          value = value >>> 0;
          if (value > mArrayLength - 1)
@@ -387,6 +379,29 @@ function Agent (sheet_, config_)
          }
       };
 
+//------------------------------------------------------------------------------------------------------------------------------------
+// 
+// "Find" is used rather than "Get" to convey the higher
+// cost of invoking this function.
+//
+
+   this.FindNoteNameFromRangeP = function (range)
+      {
+      var irRow = range.getRow();
+      var icColumn = range.getColumn();
+      var noteFromName = memory_.noteFromName;
+      var noteNames = Object.keys(noteFromName);
+      for (var iNoteName = 0, nNoteNameCount = noteNames.length; iNoteName < nNoteNameCount; ++iNoteName)
+         {
+         var ekNoteName = noteNames[iNoteName];
+         var eNote = noteFromName[ekNoteName];
+         if (irRow == eNote.r && icColumn == eNote.c)
+            {
+            return ekNoteName;
+            }
+         }
+      return null;
+      };
 
 /*************************************************************************************************************************************
 ******      *****         *   *   ****   *****   ****     ****************************************************************************
@@ -429,22 +444,6 @@ function Agent (sheet_, config_)
       };
    
    var writeOutput_ = writeOutputFirstTime_;
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   this.Verbose = function (callback)
-      {
-      if (self_.isVerbose_())
-         {
-         var output = callback();
-         if (!Array.isArray(output))
-            {
-            output = [output];
-            }
-         console.log.apply(console, output);
-         writeOutput_(output).setFontColor('#b6d7a8').setBackground('black');
-         }
-      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -550,7 +549,6 @@ function Agent (sheet_, config_)
       {
       if (memory_.hasOwnProperty('uninstall'))
          {
-         self_.Verbose(function () { return [memory_.uninstall] });
          try
             {
             eval(memory_.uninstall);
@@ -584,13 +582,13 @@ function Agent (sheet_, config_)
          }
       var isAlreadyRunning = Util_boolCast(self_.ReadToggle('ON', true));
       var lockValue = self_.ReadField('LOCK', true);
-      var hasLockField = !Util_isUndefined(lockValue);
+      var hasLockField = !Util_IsUndefined(lockValue);
       if (hasLockField)
          {
          lockValue = Util_intCast(lockValue);
          var lockValueWithSentinel = (lockValue - (lockValue % 1000)) + (((lockValue % 1000) + 1) % 1000);
          self_.WriteField('LOCK', lockValueWithSentinel);
-         var canOverrideLock = dtMaxScriptExecutionTime < (Util_utsNowGet() - lockValue);
+         var canOverrideLock = dtMaxScriptExecutionTime < (Util_GetTimestampNow() - lockValue);
          }
       else
          {
@@ -628,7 +626,7 @@ function Agent (sheet_, config_)
 
             if (canTurnOn)
                {
-               self_.WriteField('LOCK', Util_utsNowGet());
+               self_.WriteField('LOCK', Util_GetTimestampNow());
                self_.WriteToggle('ON', true);
                isThisOn_ = true;
                }
@@ -677,38 +675,6 @@ function Agent (sheet_, config_)
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-// 
-// Trying out a new naming convention here, still need to figure out how I want to name getters... TODO
-
-   this.FormulaDetectingAnyChanges_GetP = function (ignoredNames)
-      {
-      var toggles = Object.keys(memory_.toggleFromName).map(function (kName)
-         {
-         if (Util_ContainsElementInArray())
-         var value = self_.ReadToggle(kName);
-         if (Util_isUndefined(value))
-            {
-            return "FALSE";
-            }
-         var eToggle = memory_.toggleFromName[kName];
-         return "NE(" + GAS_A1AddressFromCoordinatesP(eToggle.r, eToggle.c) + (value ? ",TRUE)" : ",FALSE)");
-         });
-      var fields = Object.keys(memory_.fieldFromName).map(function (kName)
-         {
-         var value = self_.ReadField(kName);
-         if (Util_isUndefined(value))
-            {
-            return "FALSE"
-            }
-         var eField = memory_.fieldFromName[kName];
-         return "NE(" + GAS_A1AddressFromCoordinatesP(eField.r, eField.c) + ',"' + String(value).replace('"', '""') + '")';
-         });
-
-      var en = memory_.toggleFromName.EN;
-      return '=AND(' + GAS_A1AddressFromCoordinatesP(en.r, en.c) + ',OR(FALSE,' + toggles.concat(fields).join(',') + '))';
-      };
-
-//------------------------------------------------------------------------------------------------------------------------------------
 //
 // Execute the code in the note named by the field SCRIPT,
 // given all of these things exist and are valid.
@@ -722,7 +688,7 @@ function Agent (sheet_, config_)
          }
    
       var script = self_.ReadField('SCRIPT');
-      if (Util_isUndefined(script))
+      if (Util_IsUndefined(script))
          {
          self_.Warn('This agent does not do anything when activated because there is no SCRIPT field');
          return;
@@ -745,7 +711,7 @@ function Agent (sheet_, config_)
          }
 
       var code = self_.ReadNote(noteName);
-      if (Util_isUndefined(code))
+      if (Util_IsUndefined(code))
          {
          self_.Error('There is no note with the given name: ' + noteName);
          return null;
@@ -754,6 +720,31 @@ function Agent (sheet_, config_)
       var rv = this.EvalCode (code, noteName);
       return rv;
       };
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Execute the code in the currently selected note
+//
+
+   this.EvalSelectedNote = function ()
+      {
+      if (!isThisOn_)
+         {
+         throw "must be turned on, otherwise the program might not have exclusive control of the agent"
+         }
+
+      var cellRange = SpreadsheetApp.getCurrentCell();
+      var code = cellRange.getNote();
+      var rv = null;
+      if (Util_IsString(code))
+         {
+         rv = this.EvalCode(code);
+         }
+
+      return rv;
+      };
+
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -784,14 +775,14 @@ function Agent (sheet_, config_)
             self_.Error((sourceLabel || '[eval]')
                   + '(~' + lineNumber + '): ' + (e.message || e.toString()) + '\n\n'
                   + codeLines
-                        .map(function (e, i) { return Util_padInteger(i, 4) + ': ' + e; })
+                        .map(function (e, i) { return Util_GetZeroPaddedStringFromInteger(i, 4) + ': ' + e; })
                         .slice(
                         Math.max(lineNumber-2,0),
                         Math.min(codeLines.length-1,lineNumber+3)
                         )
                         .join('\n')
                   + '\n\n'
-                  + (Util_isUndefined(e.stack) ? '     no stack trace' : e.stack)
+                  + (Util_IsUndefined(e.stack) ? '     no stack trace' : e.stack)
                   );
             }
          })(self_);
@@ -816,24 +807,32 @@ function Agent (sheet_, config_)
 // do NOT rely on Snooze.
 //
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.Snooze = function (dtMilliseconds)
       {
-      self_.Log('Snooze('+dtMilliseconds+') called @ Util_utsNowGet() = ' + Util_wallTimeFromTimestamp(Util_utsNowGet()));
+      var utsNow = Util_GetTimestampNow();
       var dt = Math.max(15000, dtMilliseconds);
-      var utsMaybePreviousWakeTime = self_.ReadField('WAKE');
-      self_.Log('utsMaybePreviousWakeTime = ' + Util_wallTimeFromTimestamp(utsMaybePreviousWakeTime));
-      var utsNewWakeTime = dt + Util_utsNowGet();
-      self_.Log('utsNewWakeTime', Util_wallTimeFromTimestamp(utsNewWakeTime));
-      self_.BadgeLastOutput(Util_moonPhaseFromDate(new Date(utsNewWakeTime)));
+      var maybePreviousWakeTime = self_.ReadField('WAKE');
+      var utsNewWakeTime = utsNow + dt;
+      if (Util_IsNumber(maybePreviousWakeTime))
+         {
+         maybePreviousWakeTime = Util_intCast(maybePreviousWakeTime);
+         if (maybePreviousWakeTime < utsNow && maybePreviousWakeTime > (utsNow - 5 * 60 * 1000))
+            {
+            utsNewWakeTime = maybePreviousWakeTime + dt;
+            }
+         }
       self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
-      self_.Log('Snoozing asked for ' + Util_stopwatchStringFromDuration(dt) + ', alarm set for ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_utsNowGet()) + ' from now at ' + Util_wallTimeFromTimestamp(utsNewWakeTime));
+      self_.Log('snoozing for ' + Util_stopwatchStringFromDuration(dt) + ' until ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_GetTimestampNow()) + ' from now at ' + Util_GetWallTimeFromTimestamp(utsNewWakeTime));
+      self_.BadgeLastOutput(Util_GetMoonPhaseFromDate(new Date(utsNewWakeTime)));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.SnoozeForever = function ()
       {
-      self_.Log(Util_moonPhaseFromDate(Util_utsNowGet()) + 'Snoozing, no alarm... ');
+      self_.Log(Util_GetMoonPhaseFromDate(Util_GetTimestampNow()) + 'Snoozing, no alarm... ');
       self_.WriteField('WAKE', 'SNOOZE');
       };
 
@@ -843,11 +842,11 @@ function Agent (sheet_, config_)
 
    this.ExecuteRoutineFromUrl = function (urlAgentInstructions)
       {
-      self_.Info('Fetching ' + Util_clampStringLengthP(urlAgentInstructions, 50));
+      self_.Info('Fetching ' + Util_ClampStringLengthP(urlAgentInstructions, 50));
       var dataUrlPrefix = 'data:text/plain;base64,';
       if (urlAgentInstructions.substring(0, dataUrlPrefix.length) === dataUrlPrefix)
          {
-         var agentInstructionsText = Util_stringFromBase64(urlAgentInstructions.substring(dataUrlPrefix.length));
+         var agentInstructionsText = Util_GetStringFromBase64(urlAgentInstructions.substring(dataUrlPrefix.length));
          }
       else
          {
@@ -855,7 +854,7 @@ function Agent (sheet_, config_)
          }
 
       var multilineConcatenationRegex = new RegExp(/"---+"\s-+\s([\s\S]+?)\s-+/gm);
-      var whitespaceSet = Util_SetFromObjectsP([' ', '\ t']);
+      var whitespaceSet = Util_GetSetFromObjectsP([' ', '\ t']);
       var associativeSplitRegex = new RegExp(/^\s+(\S+)\s*(.*)/);
       var agentInstructions = agentInstructionsText
             .replace(multilineConcatenationRegex, function (matched, group, index) // allow easy multi-line concatenation
@@ -905,16 +904,16 @@ function Agent (sheet_, config_)
 
    this.ExecuteRoutine = function (instructions)
       {
-      if (!Util_isArray(instructions)) throw "instructions";
+      if (!Util_IsArray(instructions)) throw "instructions";
 
       var selectedRange = null;
-      var mergingInstructionsSet = Util_SetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT']);
+      var mergingInstructionsSet = Util_GetSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT']);
       
       for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
          {
          var eInstruction = instructions[iInstruction - 1];
          var eArguments   = instructions[iInstruction - 0];
-         var eArgumentSet = Util_SetFromObjectsP(eArguments);
+         var eArgumentSet = Util_GetSetFromObjectsP(eArguments);
 
          if (Util_IsValueContainedInSet(eInstruction, mergingInstructionsSet))
             {
@@ -944,7 +943,6 @@ function Agent (sheet_, config_)
 
             case 'FREEZE':
                var qrFrozenRows = Util_intCast(eArguments[0]);
-               self_.Verbose(function () { return 'freezing ' + qrFrozenRows + ' rows'; });
                var irHeaders = qrFrozenRows;
                sheet_.insertRowsBefore(1, qrFrozenRows);
                sheet_.setFrozenRows(qrFrozenRows);
@@ -984,7 +982,7 @@ function Agent (sheet_, config_)
             case 'REINSTALL': // execute code if this is a reinstall operation; guarantee access to the variable previousInstallMemory
                var code = eArguments.join('\n');
                var previousInstallMemory = config_.previousInstallMemory;
-               if (Util_isObject(previousInstallMemory))
+               if (Util_IsObject(previousInstallMemory))
                   {
                   (function (agent, previousInstallMemory)
                      {
@@ -1102,9 +1100,23 @@ function Agent (sheet_, config_)
                break;
             
             case 'PANEL':
-               var color = Util_darkRainbowColorFromAnyP(eArguments[0]);
+               var color = Util_GetDarkRainbowColorFromAnyP(eArguments[0]);
                selectedRange.setBackground(color)
                     .setBorder(true, true, true, true, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+               break;
+
+            case 'VALIDATE':
+               if (Util_IsValueContainedInSet('IS_GMAIL_LABEL', eArgumentSet))
+                  {
+                  selectedRange.setDataValidation(
+                        SpreadsheetApp.newDataValidation()
+                              .requireValueInList(
+                                    GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() })
+                                    )
+                              .setHelpText(eArguments[0])
+                              .build()
+                        );
+                  }
                break;
             
             case 'REM':

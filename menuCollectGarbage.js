@@ -3,7 +3,7 @@ function menuCollectGarbage()
    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
    var properties = PropertiesService.getDocumentProperties();
 
-   var sheetIdSet = Util_SetFromObjectsP(spreadsheet.getSheets().map(function (eSheet) { return String(eSheet.getSheetId()) }));
+   var sheetIdSet = Util_GetSetFromObjectsP(spreadsheet.getSheets().map(function (eSheet) { return String(eSheet.getSheetId()) }));
 
    //
    // Remove agent keys for agents that don't exist anymore
