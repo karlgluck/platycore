@@ -775,7 +775,7 @@ function Agent (sheet_, config_)
             self_.Error((sourceLabel || '[eval]')
                   + '(~' + lineNumber + '): ' + (e.message || e.toString()) + '\n\n'
                   + codeLines
-                        .map(function (e, i) { return Util_GetZeroPaddedStringFromInteger(i, 4) + ': ' + e; })
+                        .map(function (e, i) { return Util_GetZeroPaddedStringFromPositiveIntegerP(i, 4) + ': ' + e; })
                         .slice(
                         Math.max(lineNumber-2,0),
                         Math.min(codeLines.length-1,lineNumber+3)

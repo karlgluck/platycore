@@ -517,3 +517,11 @@ function Util_GetUrlsFromString (text)
          }
       return urls;
    };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function Util_GetZeroPaddedStringFromPositiveIntegerP (value, qDigitCount)
+   {
+   value = parseInt(value) || 0;
+   return '0000000000000000'.slice(value < 1 ? 1 : Math.ceil(Math.log(value) / Math.log(10)), qDigitCount) + String(value);
+   };
