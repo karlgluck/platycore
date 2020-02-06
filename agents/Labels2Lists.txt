@@ -92,7 +92,9 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 ------------------------
 var sheet = SpreadsheetApp.create("Labels2Lists", 25, 3).getSheets()[0];
 var headers = GAS_MergeSheetHeaders(sheet, ['input_label', 'object_from_gmail_message_function', 'sheet_url', 'output_label']);
-GAS_AddRowsToJournalingSheet(['<input label>', "// https://developers.google.com/apps-script/reference/gmail/gmail-messagefunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Util_GetUrlsFromString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Util_GetUrlsFromString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS_GetUrlFromGmailMessage(gmailMessage)\n  };\n}", '<sheet url>', '<output label>']);
+GAS_AddRowsToJournalingSheet(
+      [['<input label>', "// https://developers.google.com/apps-script/reference/gmail/gmail-messagefunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Util_GetUrlsFromString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Util_GetUrlsFromString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS_GetUrlFromGmailMessage(gmailMessage)\n  };\n}", '<sheet url>', '<output label>']],
+      sheet);
 agent.WriteField('SHEET', GAS_GetUrlFromSheet(sheet));
 ------------------------
 
