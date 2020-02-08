@@ -1,6 +1,9 @@
 Any line that doesn't start with a space is ignored, so we can write whatever we like up here describing how this works!
 
-   NAME  "Labels -> Lists"
+==================================================================
+Common Initialization
+
+     NAME  "Labels -> Lists"
    FREEZE  3
 
 --- ON ---
@@ -27,7 +30,6 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
    SELECT  "C1"
    TOGGLE  "EN"
-        +  "TRUE"
    SELECT  "D1"
      TEXT  "EN"
    SELECT  "C1:D1"
@@ -59,6 +61,10 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
    SELECT  "L1:R2"
     PANEL  "4"
 
+==================================================================
+Agent-specific
+
+
 --- SHEET ---
 
    SELECT "S1:AU1"
@@ -80,7 +86,23 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
      TEXT 0
     PANEL "7"
 
---- Make Sheet ---
+
+--- Input Gmail Label ---
+
+   SELECT "AE2:AU2"
+    PANEL "6"
+   SELECT "AE2:AI2"
+     TEXT "Input label:"
+   SELECT "AJ2:AU2"
+    FIELD "INPUT_LABEL"
+ VALIDATE "Enter the name of a label from your Gmail account"
+        + "IS_GMAIL_LABEL"
+     TEXT "<Input Gmail Label>"
+    PANEL "5"
+
+
+==================================================================
+Manual Actions
 
    SELECT "S2:W2"
      TEXT "[Make Sheet]"
@@ -90,13 +112,40 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
      NOTE "MAKE_SHEET"
         + "---"
 ------------------------
-var sheet = SpreadsheetApp.create("Labels2Lists", 25, 3).getSheets()[0];
-var headers = GAS_MergeSheetHeaders(sheet, ['input_label', 'object_from_gmail_message_function', 'sheet_url', 'output_label']);
+var sheet = SpreadsheetApp.create("🏭 Labels2Lists", 1, 1).getSheets()[0];
+var headers = GAS_MergeSheetHeaders(sheet, ['input_label', 'object_from_gmail_message_function', 'sheet_url']);
+var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-script/reference/gmail/gmail-message\nfunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Util_GetUrlsFromString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Util_GetUrlsFromString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS_GetUrlFromGmailMessage(gmailMessage)\n  };\n}";
 GAS_AddRowsToJournalingSheet(
-      [['<input label>', "// https://developers.google.com/apps-script/reference/gmail/gmail-messagefunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Util_GetUrlsFromString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Util_GetUrlsFromString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS_GetUrlFromGmailMessage(gmailMessage)\n  };\n}", '<sheet url>', '<output label>']],
+      [['<Gmail Label>', stringOfGetObjectFromGmailMessage, '<sheet url>']],
       sheet);
 agent.WriteField('SHEET', GAS_GetUrlFromSheet(sheet));
+agent.EvalNoteByName('REFRESH_LABELS');
 ------------------------
+
+
+   SELECT "X2:AD2"
+     TEXT "[Refresh Labels]"
+       FG "#000"
+       BG "#ffff00"
+   HALIGN "center"
+     NOTE "REFRESH_LABELS"
+        + "---"
+------------------------
+var sheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'));
+var headers = GAS_MergeSheetHeaders(sheet, ['input_label']);
+var ciInputLabelColumn = 1 + headers.indexOf('input_label');
+var labels = GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort();
+var dataValidation = SpreadsheetApp.newDataValidation().requireValueInList(labels).setHelpText("Gmail Label").build();
+var irFirstRow = sheet.getFrozenRows() + 1;
+var nRowCount = sheet.getLastRow() - irFirstRow + 1;
+sheet.getRange(irFirstRow, ciInputLabelColumn,  nRowCount, 1).setDataValidation(dataValidation);
+agent.Log('Applied ' + labels.length + ' label(s)');
+------------------------
+
+
+
+==================================================================
+Scripts
 
 --- MAIN ---
 This is tricky. I use the same block of cells for the field named SCRIPT, which holds the value MAIN, which refers to the note so-named (MAIN), which happens to also be placed on this same block of cells. Normally, the SCRIPT field would be separate and would hold a reference to one of several other NOTEs.
@@ -111,24 +160,64 @@ When a line is entirely dashes and there is a matching line that is entirely das
      NOTE  "MAIN"
         +  "---"
 ------------------------
+var en = Util_boolCast(agent.ReadToggle('EN'));
+if (!en)
+   {
+   agent.Log('[!EN]: Agent is disabled (to enable, set EN=TRUE)');
+   }
+var sheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'));
+var records = GAS_GetObjectsFromSheetP(sheet);
+records.forEach(function (eRecord)
+   {
+   eRecord.GetObjectFromGmailMessage = eval(eRecord.object_from_gmail_message_function);
+   eRecord.outputSheet = GAS_GetSheetFromUrl(eRecord.sheet_url);
+   });
 var inputLabel = GmailApp.getUserLabelByName(agent.ReadField('INPUT_LABEL'));
+var recordsFromLabelName = Util_GetObjectArrayFromKeyDictionaryFromObjectsP(records, 'input_label');
 var threads = inputLabel.getThreads();
-var mapCallback = eval(agent.ReadField('MAP'));
-var objects = threads.map(function (thread)
+var outputs = [];
+threads.forEach(function (eThread)
    {
-   return mapCallback(thread.getMessages()[0]);
+   var processableLabels = eThread.getLabels()
+         .map(function (eLabel) { return eLabel.getName() })
+         .filter(function (eLabelName) { return recordsFromLabelName.hasOwnProperty(eLabelName) });
+   if (1 > processableLabels.length)
+      {
+      if (!en) agent.Log('No labels matched thread with subject "' + eThread.getFirstMessageSubject() + '"');
+      return;
+      }
+   processableLabels.forEach(function (eLabelName)
+      {
+      var eRecord = recordsFromLabelName[eLabelName][0];
+      outputs.push({record: eRecord, label_name:eLabelName, object: eRecord.GetObjectFromGmailMessage(eThread.getMessages()[0])});
+      });
+   
+   if (en)
+      {
+      eThread.removeLabel(inputLabel);
+      }
    });
-var outputSheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'));
-var headers = GAS_MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
-var table = Util_GetTableFromObjectsP(objects, headers);
-GAS_AddRowsToJournalingSheet(Util_GetRowsFromTableP(table).reverse(), outputSheet);
-GAS_TrimSheetRows(outputSheet);
+var outputsFromLabelName = Util_GetObjectArrayFromKeyDictionaryFromObjectsP(outputs, 'label_name');
+Object.keys(outputsFromLabelName).forEach(function (eLabelName)
+   {
+   var eOutputs = outputsFromLabelName[eLabelName];
+   var outputSheet = eOutputs[0].record.outputSheet;
+   var objects = eOutputs.map(function (e) { return e.object });
+   var headers = GAS_MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
+   var table = Util_GetTableFromObjectsP(objects, headers);
+   var rows = Util_GetRowsFromTableP(table);
+   if (en)
+      {
+      GAS_AddRowsToJournalingSheet(rows.reverse(), outputSheet);
+      GAS_TrimSheetRows(outputSheet);
+      agent.Log('Added ' + rows.length + ' email(s) from the label "' + eLabelName + '"');
+      }
+   else
+      {
+      agent.Log('[!EN]: Would have processed ' + rows.length + ' email(s) from the label "' + eLabelName + '"');
+      }
+   });
 agent.WriteField('PROCESSED', Util_intCast(agent.ReadField('PROCESSED')) + threads.length);
-var outputLabel = GmailApp.getUserLabelByName(agent.ReadField('OUTPUT_LABEL'));
-threads.forEach(function (e)
-   {
-   e.removeLabel(inputLabel).addLabel(outputLabel);
-   });
-agent.Snooze(15 * 60 * 1000);
+if (0 === threads.length) agent.Snooze(15 * 60 * 1000);// else agent.Log('Processed ' + threads.length + ' emails');
 ------------------------
       OFF
