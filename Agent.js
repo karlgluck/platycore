@@ -853,7 +853,7 @@ function Agent (sheet_, config_)
          var agentInstructionsText = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
          }
 
-      var multilineConcatenationRegex = new RegExp(/"---+"\s-+\s([\s\S]+?)\s-+/gm);
+      var multilineConcatenationRegex = new RegExp(/"---+"\s---+\s([\s\S]+?)[\r\n]---+/gm);
       var whitespaceRegex = new RegExp(/^\s/);
       var associativeSplitRegex = new RegExp(/^\s+(\S+)\s*(.*)/);
       var agentInstructions = agentInstructionsText
