@@ -96,41 +96,65 @@ var doBlockPump = function () {
             agentMemory = JSON.parse(agentMemory);
             if (!Lang.IsObject(bootSector))
                {
-               var agent = new Agent(sheet, {memory: agentMemory, origin:'doBlockPump - bootSector recovery'});
+               var agent = new Agent(sheet, {memory: agentMemory, origin: 'doBlockPump - bootSector recovery'});
                bootSector = agent.BootSectorGet();
                }
             else
                {
                var agent = null;
                }
-            platycore.agentBootSectorFromSheetId = bootSector;
+            platycore.agentBootSectorFromSheetId[sheetId] = bootSector;
 
             //
             // Update the boot sector's values if we are out of date
             //
             var isCacheExpired = utsLastSaved < utsLastUpdated;
-            if (Lang.IsObject(bootSector.EN))
+            if (isCacheExpired)
                {
-               bootSector.EN.value = Lang.boolCast (
-                     isCacheExpired ? sheet.getRange(bootSector.EN.r, bootSector.EN.c).getValue() : bootSector.EN.value
-                     );
+               delete bootSector.valueFromPropertyName.EN;
+               delete bootSector.valueFromPropertyName.WAKE;
+               delete bootSector.valueFromPropertyName.GO;
                }
-            if (Lang.IsObject(bootSector.WAKE))
+            if (bootSector.rangeNameFromPropertyName.hasOwnProperty('EN'))
                {
-               bootSector.WAKE.value = Lang.intCast (
-                     isCacheExpired ? sheet.getRange(bootSector.WAKE.r, bootSector.WAKE.c).getValue() : bootSector.WAKE.value
-                     );
+               var range = spreadsheet_.getRangeByName(bootSector.rangeNameFromPropertyName.EN);
+               if (Lang.IsObject(range))
+                  {
+                  bootSector.valueFromPropertyName.EN = Lang.boolCast(range.getValue());
+                  }
+               else
+                  {
+                  delete bootSector.rangeNameFromPropertyName.EN;
+                  }
                }
-            if (Lang.IsObject(bootSector.GO))
+            if (bootSector.rangeNameFromPropertyName.hasOwnProperty('WAKE'))
                {
-               bootSector.GO.value = Lang.boolCast (
-                     isCacheExpired ? sheet.getRange(bootSector.GO.r, bootSector.GO.c).getValue() : bootSector.GO.value
-                     );
+               var range = spreadsheet_.getRangeByName(bootSector.rangeNameFromPropertyName.WAKE);
+               if (Lang.IsObject(range))
+                  {
+                  bootSector.valueFromPropertyName.EN = Lang.intCast(range.getValue());
+                  }
+               else
+                  {
+                  delete bootSector.rangeNameFromPropertyName.WAKE;
+                  }
+               }
+            if (bootSector.rangeNameFromPropertyName.hasOwnProperty('GO'))
+               {
+               var range = spreadsheet_.getRangeByName(bootSector.rangeNameFromPropertyName.GO);
+               if (Lang.IsObject(range))
+                  {
+                  bootSector.valueFromPropertyName.EN = Lang.boolCast(range.getValue());
+                  }
+               else
+                  {
+                  delete bootSector.rangeNameFromPropertyName.GO;
+                  }
                }
             
-            var isEnabled = !Lang.IsObject(bootSector.EN) || bootSector.EN.value;
-            var isGo = Lang.IsObject(bootSector.GO) && bootSector.GO.value;
-            var isWake = Lang.IsObject(bootSector.WAKE) && utsIterationStarted > bootSector.WAKE.value;
+            var isEnabled = !bootSector.rangeNameFromPropertyName.hasOwnProperty('EN') || Lang.boolCast(bootSector.valueFromPropertyName.EN);
+            var isGo = bootSector.rangeNameFromPropertyName.hasOwnProperty('GO') && bootSector.valueFromPropertyName.GO;
+            var isWake = bootSector.rangeNameFromPropertyName.hasOwnProperty('WAKE') && utsIterationStarted > bootSector.valueFromPropertyName.WAKE;
 
             }
          else

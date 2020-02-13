@@ -14,27 +14,35 @@ function Agent (sheet_, config_)
    config_ = JSON.parse(JSON.stringify(config_ || {}));
    var self_ = this;
    var isThisOn_ = false;
+   var spreadsheet_ = sheet_.getParent();
+
+   var getRangeNameFromPropertyName = function (name)
+      {
+      return name + '_' + config_.agentName
+      };
+
+   var getRangeFromPropertyName = function (name)
+      {
+      return spreadsheet_.getRangeByName(name + '_' + config_.agentName);
+      };
+
+   // var getAllRangeNames = function ()
+   //    {
+   //    };
 
    self_.BootSectorGet = function ()
       {
       var rv = {
             agentName: config_.agentName,
             sheetNameHint: memory_.sheetNameHint,
-            sheetId: memory_.sheetId
-            };
-      if (!Lang.IsUndefined(self_.ReadToggle('EN')))
-         {
-         rv.EN = memory_.toggleFromName['EN'];
-         }
-      if (!Lang.IsUndefined(self_.ReadField('WAKE')))
-         {
-         rv.WAKE = memory_.fieldFromName['WAKE'];
-         }
-      if (!Lang.IsUndefined(self_.ReadToggle('GO')))
-         {
-         rv.GO = memory_.toggleFromName['GO'];
-         }
-      
+            sheetId: memory_.sheetId,
+            rangeNameFromPropertyName: {
+                  EN:   getRangeNameFromPropertyName('EN'),
+                  GO:   getRangeNameFromPropertyName('GO'),
+                  WAKE: getRangeNameFromPropertyName('WAKE')
+                  },
+            valueFromPropertyName: {}
+            };      
       return rv;
       };
 
@@ -53,31 +61,11 @@ function Agent (sheet_, config_)
       }
    config_.agentName = config_.memory.agentName;
    var memory_ = config_.memory;
-   memory_.toggleFromName = memory_.toggleFromName || {};
-   memory_.fieldFromName = memory_.fieldFromName || {};
-   memory_.noteFromName = memory_.noteFromName || {};
 
-   // memory_.values = memory_.values || {};
-   // memory_.readonly = memory_.readonly || [];
-
-   this.ClearCache = function ()
-      {
-      ['toggleFromName', 'fieldFromName', 'noteFromName'].forEach(function (kDictionary)
-         {
-         var eDictionary = memory_[kDictionary];
-         
-         Object.keys(eDictionary).forEach(function (kName)
-            {
-            var dictionary = eDictionary[kName];
-            delete dictionary.value; // make absolutely sure this doesn't exist
-            });
-
-         });
-      };
-   self_.ClearCache();
+   memory_.valueFromName = {};
+   memory_.readonlyNames = memory_.readonlyNames || [];
 
    console.log('agent created: ' + sheet_.getSheetId(), config_);
-
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -86,14 +74,13 @@ function Agent (sheet_, config_)
 
    if (!config_.hasOwnProperty('dtLockWaitMillis')) config_.dtLockWaitMillis = 15000;
 
+//------------------------------------------------------------------------------------------------------------------------------------
 
-   var getRangeFromAttributeName = function (name) { return sheet_.getParent().getRangeByName(name + '_' + config_.agentName) };
-
-
-   this.CanRead = function (name)
+   var read = function (name, ignoreCache, getValueFromRangeCallback)
       {
-      return memory_.values
+      return (ignoreCache || !memory_.valueFromName.hasOwnProperty(name)) ? (memory_.valueFromName[name] = getValueFromRangeCallback(getRangeFromPropertyName(name))) : memory_.valueFromPropertyName[name];
       };
+
 
 /*************************************************************************************************************************************
 ******            ****     *********     *******     ****   *******         **********************************************************
@@ -105,58 +92,34 @@ function Agent (sheet_, config_)
 ***********   ********     ********      ******      ****         *         **********************************************************
 *************************************************************************************************************************************/
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.ReadToggle = function (name, ignoreCache)
       {
-      try
-         {
-         var toggle = memory_.toggleFromName[name];
-         if (Lang.IsUndefined(toggle))
-            {
-            return undefined;
-            }
-         if (ignoreCache || !toggle.hasOwnProperty('value'))
-            {
-            toggle.value = Lang.boolCast(sheet_.getRange(toggle.r, toggle.c).getValue());
-            }
-         return toggle.value;
-         }
-      catch (e)
-         {
-         console.warn('ReadToggle('+name+') suppressed', e, e.stack);
-         return undefined;
-         }
+      return Lang.boolCast(read(name, ignoreCache, function (range) { return Lang.IsObject(range) ? range.getValue() : undefined }));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.WriteToggle = function (name, value)
       {
-      try
+      var range = getRangeFromPropertyName(name);
+      if (Lang.IsObject(range))
          {
          value = Lang.boolCast(value);
-         if (memory_.toggleFromName.hasOwnProperty(name))
+         if (memory_.readonlyNames.indexOf(name) >= 0)
             {
-            var toggle = memory_.toggleFromName[name];
-            }
-         else 
-            {
-            console.error('writing nonexistant toggle "' + name + '"');
-            return;
-            }
-         var checkboxRange = sheet_.getRange(toggle.r, toggle.c, 1, 1);
-         if (toggle.isReadonly)
-            {
-            checkboxRange.setFormula(value ? '=TRUE' : '=FALSE');
+            range.setFormula(value ? '=TRUE' : '=FALSE');
             }
          else
             {
-            checkboxRange.setValue(value);
+            range.setValue(value);
             }
-         toggle.value = value;
+         memory_.valueFromName[name] = value;
          }
-      catch (e)
+      else 
          {
-         console.warn('WriteToggle('+name+','+value+') suppressed', e, e.stack);
+         agent.Warn('agent.WriteToggle(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -174,48 +137,21 @@ function Agent (sheet_, config_)
 
    this.ReadField = function (name, ignoreCache)
       {
-      try
-         {
-         var field = memory_.fieldFromName[name];
-         if (Lang.IsUndefined(field))
-            {
-            return undefined;
-            }
-         if (ignoreCache || !field.hasOwnProperty('value'))
-            {
-            field.value = sheet_.getRange(field.r, field.c).getValue();
-            }
-         return field.value;
-         }
-      catch (e)
-         {
-         console.warn('ReadField('+name+') suppressed', e, e.stack);
-         return undefined;
-         }
+      return read(name, ignoreCache, function (range) { return Lang.IsObject(range) ? range.getValue() : undefined });
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-   
+
    this.WriteField = function (name, value)
       {
-      try
+      var range = getRangeFromPropertyName(name);
+      if (Lang.IsObject(range))
          {
-         value = Lang.stringCast(value);
-         if (memory_.fieldFromName.hasOwnProperty(name))
-            {
-            var field = memory_.fieldFromName[name];
-            }
-         else 
-            {
-            console.error('writing nonexistant field "' + name + '"');
-            return;
-            }
-         sheet_.getRange(field.r, field.c, field.h, field.w).setValue(value);
-         field.value = value;
+         range.setValue(memory_.valueFromName[name] = value);
          }
-      catch (e)
+      else 
          {
-         console.warn('WriteField('+name+','+value+') suppressed', e, e.stack);
+         agent.Warn('agent.WriteField(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -229,60 +165,25 @@ function Agent (sheet_, config_)
 ******   ******   *****     **********   *****         *******************************************************************************
 *************************************************************************************************************************************/
 
-   this.ReadNote = function (name)
-      {
-      try
-         {
-         var note = memory_.noteFromName[name];
-         if (!note.hasOwnProperty('value'))
-            {
-            note.value = Lang.stringCast(sheet_.getRange(note.r, note.c).getNote());
-            }
-         return note.value;
-         }
-      catch (e)
-         {
-         console.warn('ReadNote('+name+') suppressed', e, e.stack);
-         return undefined;
-         }
-      };
-
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ReadObjectFromNote = function (name)
+   this.ReadNote = function (name, ignoreCache)
       {
-      try
-         {
-         return JSON.parse(self_.ReadNote(name));
-         }
-      catch (e)
-         {
-         return {};
-         }
+      return Lang.stringCast(read(name, ignoreCache, function (range) { return Lang.IsObject(range) ? range.getNote() : undefined }));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.WriteNote = function (name, value)
       {
-      try
+      var range = getRangeFromPropertyName(name);
+      if (Lang.IsObject(range))
          {
-         value = Lang.stringCast(value);
-         if (memory_.noteFromName.hasOwnProperty(name))
-            {
-            var note = memory_.noteFromName[name];
-            }
-         else 
-            {
-            console.error('writing nonexistant note "' + name + '"');
-            return;
-            }
-         sheet_.getRange(note.r, note.c).setNote(value);
-         note.value = value;
+         range.setNote(memory_.valueFromName[name] = Lang.stringCast(value));
          }
-      catch (e)
+      else 
          {
-         console.warn('ReadNote('+name+','+value+') suppressed', e, e.stack);
+         agent.Warn('agent.WriteNote(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -292,19 +193,24 @@ function Agent (sheet_, config_)
 // cost of invoking this function.
 //
 
-   this.FindNoteNameFromRangeP = function (range)
+   this.FindNameUsingRangeP = function (range)
       {
-      var irRow = range.getRow();
-      var icColumn = range.getColumn();
-      var noteFromName = memory_.noteFromName;
-      var noteNames = Object.keys(noteFromName);
-      for (var iNoteName = 0, nNoteNameCount = noteNames.length; iNoteName < nNoteNameCount; ++iNoteName)
+      var searchRow = range.getRow();
+      var searchColumn = range.getColumn();
+      var searchWidth = range.getWidth();
+      var searchHeight = range.getHeight();
+
+      var namedRanges = spreadsheet_.getNamedRanges();
+      for (var iRange = 0, nRangeCount = namedRanges.length; iRange < nRangeCount; ++iRange)
          {
-         var ekNoteName = noteNames[iNoteName];
-         var eNote = noteFromName[ekNoteName];
-         if (irRow == eNote.r && icColumn == eNote.c)
+         var eNamedRange = namedRanges[iRange];
+         var eRange = eNamedRange.getRange();
+         if (eRange.getRow() == searchRow &&
+               eRange.getColumn() == searchColumn &&
+               eRange.getWidth() == searchWidth &&
+               eRange.getHeight() == searchHeight)
             {
-            return ekNoteName;
+            return eNamedRange.getName().substring(0, eNamedRange.length - config_.agentName.length - 1);
             }
          }
       return null;
@@ -450,8 +356,17 @@ function Agent (sheet_, config_)
 
    this.Uninstall = function ()
       {
+      var namedRanges = spreadsheet_.getNamedRanges();
+      for (var iRange = namedRanges.length - 1; iRange >= 0; --iRange)
+         {
+         var eName = namedRanges[iRange].getName();
+         if (eName.endsWith(config_.agentName))
+            {
+            spreadsheet_.removeNamedRange(eName);
+            }
+         }
       PropertiesService.getDocumentProperties().deleteProperty(config_.agentName);
-      sheet_.getParent().deleteSheet(sheet_);
+      spreadsheet_.deleteSheet(sheet_);
       sheet_ = null;
       config_ = null;
       var rvMemory = memory_ || {};
@@ -528,7 +443,7 @@ function Agent (sheet_, config_)
                }
             else
                {
-               sheet_.getParent().toast(config_.agentName + ': could not turn on');
+               spreadsheet_.toast(config_.agentName + ': could not turn on');
                }
             }
          catch (e)
@@ -663,7 +578,7 @@ function Agent (sheet_, config_)
          try
             {
             eval(codeLines
-                  .map(function (e, i) { return e.replace(/;/,';lineNumber='+(i+1)+';'); })
+                  .map(function (e, i) { return e.replace(/;\s$/,';lineNumber='+(i+1)+';'); })
                   .join('\n'));
             }
          catch (e)
@@ -925,20 +840,13 @@ function Agent (sheet_, config_)
 
             case 'TOGGLE':
                var kName = eArguments[0];
-               var toggle = {
-                     "r": selectedRange.getRow(),
-                     "c": selectedRange.getColumn(),
-                     "w": selectedRange.getWidth(),
-                     "h": selectedRange.getHeight(),
-                     "isReadonly": Lang.IsValueContainedInSetP('READONLY', eArgumentSet)
-                     };
-               if (memory_.toggleFromName.hasOwnProperty(kName))
-                  {
-                  self_.Warn('TODO: shift an existing toggle safely (copy value; unmerge old toggle cells)');
-                  }
-               memory_.toggleFromName[kName] = toggle;
                selectedRange.insertCheckboxes();
-               if (!toggle.isReadonly)
+               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
+               if (Lang.IsValueContainedInSetP('READONLY', eArgumentSet))
+                  {
+                  memory_.readonlyNames.push(kName);
+                  }
+               else
                   {
                   selectedRange.setFontColor('#00ffff'); // editable
                   }
@@ -949,25 +857,11 @@ function Agent (sheet_, config_)
 
             case 'FIELD':
                var kName = eArguments[0];
-               var field = {
-                     "r": selectedRange.getRow(),
-                     "c": selectedRange.getColumn(),
-                     "w": selectedRange.getWidth(),
-                     "h": selectedRange.getHeight(),
-                     "isReadonly": Lang.IsValueContainedInSetP('READONLY', eArgumentSet)
-                     };
-               if (memory_.fieldFromName.hasOwnProperty(kName))
-                  {
-                  self_.Warn('TODO: shift an existing field safely (copy value; unmerge old field cells)');
-                  }
-               memory_.fieldFromName[kName] = field;
-               var value = '';
-               self_.Log('+field: ' + kName, value);
-               self_.WriteField(kName, value);
-               
+               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
                var textStyleBuilder = selectedRange.getTextStyle().copy();
-               if (field.isReadonly)
+               if (Lang.IsValueContainedInSetP('READONLY', eArgumentSet))
                   {
+                  memory_.readonlyNames.push(kName);
                   textStyleBuilder.setForegroundColor('#666666');
                   }
                else
@@ -977,15 +871,14 @@ function Agent (sheet_, config_)
                         .setUnderline(true);
                   }
                selectedRange.setTextStyle(textStyleBuilder.build());
+               var value = '';
+               self_.Log('+field: ' + kName, value);
+               self_.WriteField(kName, value);
                break;
             
             case 'NOTE':
                var kName = eArguments[0];
-               var note = {
-                  "r": selectedRange.getRow(),
-                  "c": selectedRange.getColumn()
-               };
-               memory_.noteFromName[kName] = note;
+               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
                var value = eArguments.slice(1).join('\n');
                self_.Log('+note: ' + kName, value);
                self_.WriteNote(kName, value);

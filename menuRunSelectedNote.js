@@ -9,7 +9,7 @@ function menuRunSelectedNote ()
          {
          if (agent.TurnOn())
             {
-            var noteName = agent.FindNoteNameFromRangeP(cellRange);
+            var noteName = agent.FindNameUsingRangeP(cellRange);
             if (null !== noteName)
                {
                agent.EvalNoteByName(noteName);

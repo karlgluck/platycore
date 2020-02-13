@@ -15,5 +15,16 @@ function menuCollectGarbage()
             {
             console.log('removing unused platycore agent key ' + e);
             properties.deleteProperty(e);
+            
+            var namedRanges = spreadsheet_.getNamedRanges();
+            for (var iRange = namedRanges.length - 1; iRange >= 0; --iRange)
+               {
+               var eName = namedRanges[iRange].getName();
+               if (eName.endsWith(e))
+                  {
+                  console.log('removing unused named range ' + eName);
+                  spreadsheet_.removeNamedRange(eName);
+                  }
+               }
             });
    }
