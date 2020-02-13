@@ -5,6 +5,7 @@ Common Initialization
 
      NAME  "Labels -> Lists"
    FREEZE  3
+   REINSTALL "agent.Log(previousInstallMemory)"
 
 --- ON ---
 
