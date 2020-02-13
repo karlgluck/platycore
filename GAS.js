@@ -96,9 +96,9 @@ var GAS_GetSheetFromUrl = function (url)
    var match = url.match(/#gid=(\d+)/);
    var sheets = spreadsheet.getSheets();
    var rvSheet = null;
-   if (Util_IsArray(match))
+   if (Lang.IsArray(match))
       {
-      var sheetId = Util_intCast(match[1]);
+      var sheetId = Lang.intCast(match[1]);
       rvSheet = sheets.find(function (eSheet, iSheet)
          {
          return sheetId == eSheet.getSheetId();
@@ -111,14 +111,14 @@ var GAS_GetSheetFromUrl = function (url)
 
 GAS_GetObjectsFromSheetP = function (sheet)
    {
-   return Util_GetObjectsFromTableP(GAS_GetTableFromSheetP(sheet));
+   return Lang.GetObjectsFromTableP(GAS_GetTableFromSheetP(sheet));
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 GAS_DictionaryFromSheetP = function (sheet, key)
    {
-   return Util_GetDictionaryFromTableP(GAS_GetTableFromSheetP(sheet), key);
+   return Lang.GetDictionaryFromTableP(GAS_GetTableFromSheetP(sheet), key);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------

@@ -31,15 +31,15 @@ function Agent (sheet_, config_)
             sheetNameHint: memory_.sheetNameHint,
             sheetId: memory_.sheetId
             };
-      if (!Util_IsUndefined(self_.ReadToggle('EN')))
+      if (!Lang.IsUndefined(self_.ReadToggle('EN')))
          {
          rv.EN = memory_.toggleFromName['EN'];
          }
-      if (!Util_IsUndefined(self_.ReadField('WAKE')))
+      if (!Lang.IsUndefined(self_.ReadField('WAKE')))
          {
          rv.WAKE = memory_.fieldFromName['WAKE'];
          }
-      if (!Util_IsUndefined(self_.ReadToggle('GO')))
+      if (!Lang.IsUndefined(self_.ReadToggle('GO')))
          {
          rv.GO = memory_.toggleFromName['GO'];
          }
@@ -52,9 +52,9 @@ function Agent (sheet_, config_)
 // Load memory_ for this execution 
 //
 
-   if (!Util_IsObject(config_.memory))
+   if (!Lang.IsObject(config_.memory))
       {
-      if (!Util_IsString(config_.agentName))
+      if (!Lang.IsString(config_.agentName))
          {
          config_.agentName = 'platycoreAgent' + sheet_.getSheetId();
          }
@@ -70,7 +70,7 @@ function Agent (sheet_, config_)
    memory_.scriptNames = memory_.scriptNames || [];
 
 
-   if (!Util_IsObject(sheet_))
+   if (!Lang.IsObject(sheet_))
       {
       }
 
@@ -183,13 +183,13 @@ function Agent (sheet_, config_)
       try
          {
          var toggle = memory_.toggleFromName[name];
-         if (Util_IsUndefined(toggle))
+         if (Lang.IsUndefined(toggle))
             {
             return undefined;
             }
          if (ignoreCache || !toggle.hasOwnProperty('value'))
             {
-            toggle.value = Util_boolCast(sheet_.getRange(toggle.r, toggle.c).getValue());
+            toggle.value = Lang.boolCast(sheet_.getRange(toggle.r, toggle.c).getValue());
             }
          return toggle.value;
          }
@@ -206,7 +206,7 @@ function Agent (sheet_, config_)
       {
       try
          {
-         value = Util_boolCast(value);
+         value = Lang.boolCast(value);
          if (memory_.toggleFromName.hasOwnProperty(name))
             {
             var toggle = memory_.toggleFromName[name];
@@ -250,7 +250,7 @@ function Agent (sheet_, config_)
       try
          {
          var field = memory_.fieldFromName[name];
-         if (Util_IsUndefined(field))
+         if (Lang.IsUndefined(field))
             {
             return undefined;
             }
@@ -273,7 +273,7 @@ function Agent (sheet_, config_)
       {
       try
          {
-         value = Util_stringCast(value);
+         value = Lang.stringCast(value);
          if (memory_.fieldFromName.hasOwnProperty(name))
             {
             var field = memory_.fieldFromName[name];
@@ -297,7 +297,7 @@ function Agent (sheet_, config_)
    this.ReadArrayIndexFromField = function (name, mArrayLength)
       {
       var value = self_.ReadField(name);
-      if (Util_IsNumber(value))
+      if (Lang.IsNumber(value))
          {
          value = value >>> 0;
          if (value > mArrayLength - 1)
@@ -329,7 +329,7 @@ function Agent (sheet_, config_)
          var note = memory_.noteFromName[name];
          if (!note.hasOwnProperty('value'))
             {
-            note.value = Util_stringCast(sheet_.getRange(note.r, note.c).getNote());
+            note.value = Lang.stringCast(sheet_.getRange(note.r, note.c).getNote());
             }
          return note.value;
          }
@@ -360,7 +360,7 @@ function Agent (sheet_, config_)
       {
       try
          {
-         value = Util_stringCast(value);
+         value = Lang.stringCast(value);
          if (memory_.noteFromName.hasOwnProperty(name))
             {
             var note = memory_.noteFromName[name];
@@ -439,7 +439,7 @@ function Agent (sheet_, config_)
          sheet_.getRange(irNewMessage_, starts[iArg], 1, counts[iArg]).mergeAcross().setValue(args[iArg]).setHorizontalAlignment('left');
          }
       sheet_.getRange(irNewMessage_, 1)
-            .setNote(JSON.stringify([new Date().toISOString(),Util_GetStackTrace(2)].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
+            .setNote(JSON.stringify([new Date().toISOString(),Lang.GetStackTrace(2)].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
       return sheet_.getRange(irNewMessage_, 1, 1, 49);
       };
    
@@ -580,15 +580,15 @@ function Agent (sheet_, config_)
          {
          return true;
          }
-      var isAlreadyRunning = Util_boolCast(self_.ReadToggle('ON', true));
+      var isAlreadyRunning = Lang.boolCast(self_.ReadToggle('ON', true));
       var lockValue = self_.ReadField('LOCK', true);
-      var hasLockField = !Util_IsUndefined(lockValue);
+      var hasLockField = !Lang.IsUndefined(lockValue);
       if (hasLockField)
          {
-         lockValue = Util_intCast(lockValue);
+         lockValue = Lang.intCast(lockValue);
          var lockValueWithSentinel = (lockValue - (lockValue % 1000)) + (((lockValue % 1000) + 1) % 1000);
          self_.WriteField('LOCK', lockValueWithSentinel);
-         var canOverrideLock = dtMaxScriptExecutionTime < (Util_GetTimestampNow() - lockValue);
+         var canOverrideLock = dtMaxScriptExecutionTime < (Lang.GetTimestampNow() - lockValue);
          }
       else
          {
@@ -613,7 +613,7 @@ function Agent (sheet_, config_)
          {
          try
             {
-               isAlreadyRunning = Util_boolCast(self_.ReadToggle('ON', true));
+               isAlreadyRunning = Lang.boolCast(self_.ReadToggle('ON', true));
                if (hasLockField)
                   {
                   canTurnOn = self_.ReadField('LOCK', true) === lockValueWithSentinel
@@ -626,7 +626,7 @@ function Agent (sheet_, config_)
 
             if (canTurnOn)
                {
-               self_.WriteField('LOCK', Util_GetTimestampNow());
+               self_.WriteField('LOCK', Lang.GetTimestampNow());
                self_.WriteToggle('ON', true);
                isThisOn_ = true;
                }
@@ -688,7 +688,7 @@ function Agent (sheet_, config_)
          }
    
       var script = self_.ReadField('SCRIPT');
-      if (Util_IsUndefined(script))
+      if (Lang.IsUndefined(script))
          {
          self_.Warn('This agent does not do anything when activated because there is no SCRIPT field');
          return;
@@ -711,7 +711,7 @@ function Agent (sheet_, config_)
          }
 
       var code = self_.ReadNote(noteName);
-      if (Util_IsUndefined(code))
+      if (Lang.IsUndefined(code))
          {
          self_.Error('There is no note with the given name: ' + noteName);
          return null;
@@ -737,7 +737,7 @@ function Agent (sheet_, config_)
       var cellRange = SpreadsheetApp.getCurrentCell();
       var code = cellRange.getNote();
       var rv = null;
-      if (Util_IsString(code))
+      if (Lang.IsString(code))
          {
          rv = this.EvalCode(code);
          }
@@ -775,14 +775,14 @@ function Agent (sheet_, config_)
             self_.Error((sourceLabel || '[eval]')
                   + '(~' + lineNumber + '): ' + (e.message || e.toString()) + '\n\n'
                   + codeLines
-                        .map(function (e, i) { return Util_GetZeroPaddedStringFromPositiveIntegerP(i, 4) + ': ' + e; })
+                        .map(function (e, i) { return Lang.GetStringWithLeadingZeroesFromNumber(i, 4) + ': ' + e; })
                         .slice(
                         Math.max(lineNumber-2,0),
                         Math.min(codeLines.length-1,lineNumber+3)
                         )
                         .join('\n')
                   + '\n\n'
-                  + (Util_IsUndefined(e.stack) ? '     no stack trace' : e.stack)
+                  + (Lang.IsUndefined(e.stack) ? '     no stack trace' : e.stack)
                   );
             }
          })(self_);
@@ -811,28 +811,28 @@ function Agent (sheet_, config_)
 
    this.Snooze = function (dtMilliseconds)
       {
-      var utsNow = Util_GetTimestampNow();
+      var utsNow = Lang.GetTimestampNow();
       var dt = Math.max(15000, dtMilliseconds);
       var maybePreviousWakeTime = self_.ReadField('WAKE');
       var utsNewWakeTime = utsNow + dt;
-      if (Util_IsNumber(maybePreviousWakeTime))
+      if (Lang.IsNumber(maybePreviousWakeTime))
          {
-         maybePreviousWakeTime = Util_intCast(maybePreviousWakeTime);
+         maybePreviousWakeTime = Lang.intCast(maybePreviousWakeTime);
          if (maybePreviousWakeTime < utsNow && maybePreviousWakeTime > (utsNow - 5 * 60 * 1000))
             {
             utsNewWakeTime = maybePreviousWakeTime + dt;
             }
          }
       self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
-      self_.Log('snoozing for ' + Util_stopwatchStringFromDuration(dt) + ' until ' + Util_stopwatchStringFromDuration(utsNewWakeTime - Util_GetTimestampNow()) + ' from now at ' + Util_GetWallTimeFromTimestamp(utsNewWakeTime));
-      self_.BadgeLastOutput(Util_GetMoonPhaseFromDate(new Date(utsNewWakeTime)));
+      self_.Log('snoozing for ' + Lang.stopwatchStringFromDuration(dt) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNow()) + ' from now at ' + Lang.GetWallTimeFromTimestamp(utsNewWakeTime));
+      self_.BadgeLastOutput(Lang.GetMoonPhaseFromDate(new Date(utsNewWakeTime)));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.SnoozeForever = function ()
       {
-      self_.Log(Util_GetMoonPhaseFromDate(Util_GetTimestampNow()) + 'Snoozing, no alarm... ');
+      self_.Log(Lang.GetMoonPhaseFromDate(Lang.GetTimestampNow()) + 'Snoozing, no alarm... ');
       self_.WriteField('WAKE', 'SNOOZE');
       };
 
@@ -842,11 +842,11 @@ function Agent (sheet_, config_)
 
    this.ExecuteRoutineFromUrl = function (urlAgentInstructions)
       {
-      self_.Info('Fetching ' + Util_ClampStringLengthP(urlAgentInstructions, 50));
+      self_.Info('Fetching ' + Lang.ClampStringLengthP(urlAgentInstructions, 50));
       var dataUrlPrefix = 'data:text/plain;base64,';
       if (urlAgentInstructions.substring(0, dataUrlPrefix.length) === dataUrlPrefix)
          {
-         var agentInstructionsText = Util_GetStringFromBase64(urlAgentInstructions.substring(dataUrlPrefix.length));
+         var agentInstructionsText = Lang.GetStringFromBase64(urlAgentInstructions.substring(dataUrlPrefix.length));
          }
       else
          {
@@ -864,12 +864,12 @@ function Agent (sheet_, config_)
             .split(/\n/)
             .filter(function (eLine)   // strip every line that doesn't start with whitespace
                {
-               return eLine.trim().length > 0 && Util_boolCast(whitespaceRegex.exec(eLine))
+               return eLine.trim().length > 0 && Lang.boolCast(whitespaceRegex.exec(eLine))
                })
             .map(function (eLine)      // take the first token and the rest of the line as 2 elements
                {
                var match = associativeSplitRegex.exec(eLine);
-               if (Util_IsArray(match))
+               if (Lang.IsArray(match))
                   {
                   return match.slice(1);
                   }
@@ -913,18 +913,18 @@ function Agent (sheet_, config_)
 
    this.ExecuteRoutine = function (instructions)
       {
-      if (!Util_IsArray(instructions)) throw "instructions";
+      if (!Lang.IsArray(instructions)) throw "instructions";
 
       var selectedRange = null;
-      var mergingInstructionsSet = Util_GetSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT']);
+      var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT']);
       
       for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
          {
          var eInstruction = instructions[iInstruction - 1];
          var eArguments   = instructions[iInstruction - 0];
-         var eArgumentSet = Util_GetSetFromObjectsP(eArguments);
+         var eArgumentSet = Lang.MakeSetFromObjectsP(eArguments);
 
-         if (Util_IsValueContainedInSet(eInstruction, mergingInstructionsSet))
+         if (Lang.IsValueContainedInSetP(eInstruction, mergingInstructionsSet))
             {
             switch (((selectedRange.getWidth() > 1) ? 1 : 0) + ((selectedRange.getHeight() > 1) ? 2 : 0))
                {
@@ -945,13 +945,13 @@ function Agent (sheet_, config_)
                break;
 
             case 'NAME':
-               var name = Util_stringCast(eArguments[0]);
+               var name = Lang.stringCast(eArguments[0]);
                memory_.name = name;
                self_.Info('Building agent "' + name + '" (' + config_.agentName + ')');
                break;
 
             case 'FREEZE':
-               var qrFrozenRows = Util_intCast(eArguments[0]);
+               var qrFrozenRows = Lang.intCast(eArguments[0]);
                var irHeaders = qrFrozenRows;
                sheet_.insertRowsBefore(1, qrFrozenRows);
                sheet_.setFrozenRows(qrFrozenRows);
@@ -991,7 +991,7 @@ function Agent (sheet_, config_)
             case 'REINSTALL': // execute code if this is a reinstall operation; guarantee access to the variable previousInstallMemory
                var code = eArguments.join('\n');
                var previousInstallMemory = config_.previousInstallMemory;
-               if (Util_IsObject(previousInstallMemory))
+               if (Lang.IsObject(previousInstallMemory))
                   {
                   (function (agent, previousInstallMemory)
                      {
@@ -1039,7 +1039,7 @@ function Agent (sheet_, config_)
                      "c": selectedRange.getColumn(),
                      "w": selectedRange.getWidth(),
                      "h": selectedRange.getHeight(),
-                     "isReadonly": Util_IsValueContainedInSet('READONLY', eArgumentSet)
+                     "isReadonly": Lang.IsValueContainedInSetP('READONLY', eArgumentSet)
                      };
                if (memory_.toggleFromName.hasOwnProperty(kName))
                   {
@@ -1051,7 +1051,7 @@ function Agent (sheet_, config_)
                   {
                   selectedRange.setFontColor('#00ffff'); // editable
                   }
-               var value = Util_IsValueContainedInSet('TRUE', eArgumentSet);
+               var value = Lang.IsValueContainedInSetP('TRUE', eArgumentSet);
                self_.Log('+toggle: ' + kName, value);
                self_.WriteToggle(kName, value);
                break;
@@ -1063,7 +1063,7 @@ function Agent (sheet_, config_)
                      "c": selectedRange.getColumn(),
                      "w": selectedRange.getWidth(),
                      "h": selectedRange.getHeight(),
-                     "isReadonly": Util_IsValueContainedInSet('READONLY', eArgumentSet)
+                     "isReadonly": Lang.IsValueContainedInSetP('READONLY', eArgumentSet)
                      };
                if (memory_.fieldFromName.hasOwnProperty(kName))
                   {
@@ -1101,13 +1101,13 @@ function Agent (sheet_, config_)
                break;
             
             case 'PANEL':
-               var color = Util_GetDarkRainbowColorFromAnyP(eArguments[0]);
+               var color = Lang.GetDarkRainbowColorFromAnyP(eArguments[0]);
                selectedRange.setBackground(color)
                     .setBorder(true, true, true, true, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
                break;
 
             case 'VALIDATE':
-               if (Util_IsValueContainedInSet('IS_GMAIL_LABEL', eArgumentSet))
+               if (Lang.IsValueContainedInSetP('IS_GMAIL_LABEL', eArgumentSet))
                   {
                   selectedRange.setDataValidation(
                         SpreadsheetApp.newDataValidation()

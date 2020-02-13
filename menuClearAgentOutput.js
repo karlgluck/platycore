@@ -9,3 +9,7 @@ function menuClearAgentOutput ()
    sheet.insertRowsBefore(irFirstUnfrozenRow, 1);
    sheet.deleteRows(irFirstRowToDelete, mrMaxRows - irFirstRowToDelete + 2);
    }
+
+
+var foo = (function (ns) { ns.afdsa = function () { }; return ns; })(foo || {});
+

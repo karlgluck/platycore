@@ -18,7 +18,7 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
    SELECT  "L1:P1"
     FIELD  "LOCK"
-     EVAL  "agent.WriteField('LOCK', Util_GetTimestampNow())"
+     EVAL  "agent.WriteField('LOCK', Lang.GetTimestampNow())"
    SELECT  "Q1:S1"
      TEXT  "LOCK"
    SELECT  "L2:S2"

@@ -37,7 +37,7 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
    SELECT  "E1:I1"
     FIELD  "WAKE"
-     EVAL  "agent.WriteField('WAKE', Util_GetTimestampNow() + 15000)"
+     EVAL  "agent.WriteField('WAKE', Lang.GetTimestampNow() + 15000)"
    SELECT  "J1:K1"
      TEXT  "WAKE"
    SELECT  "E2:K2"
@@ -50,7 +50,7 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 
    SELECT  "L1:P1"
     FIELD  "LOCK"
-     EVAL  "agent.WriteField('LOCK', Util_GetTimestampNow())"
+     EVAL  "agent.WriteField('LOCK', Lang.GetTimestampNow())"
    SELECT  "Q1:S1"
      TEXT  "LOCK"
    SELECT  "L2:S2"
@@ -86,9 +86,9 @@ TEXT "<Input Gmail Label Name>"
 // https://developers.google.com/apps-script/reference/gmail/gmail-message
 function (gmailMessage) {
   var subject = gmailMessage.getSubject().trim();
-  var subjectUrls = Util_GetUrlsFromString(subject);
+  var subjectUrls = Lang.GetUrlsFromString(subject);
   var body = gmailMessage.getPlainBody().trim();
-  var bodyUrls = Util_GetUrlsFromString(body);
+  var bodyUrls = Lang.GetUrlsFromString(body);
   return {
     'item': subject.trim(),
     'url': subjectUrls.concat(bodyUrls).concat([''])[0],
@@ -155,10 +155,10 @@ var objects = threads.map(function (thread)
    });
 var outputSheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'));
 var headers = GAS_MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
-var table = Util_GetTableFromObjectsP(objects, headers);
-GAS_AddRowsToJournalingSheet(Util_GetRowsFromTableP(table).reverse(), outputSheet);
+var table = Lang.GetTableFromObjectsP(objects, headers);
+GAS_AddRowsToJournalingSheet(Lang.GetRowsFromTableP(table).reverse(), outputSheet);
 GAS_TrimSheetRows(outputSheet);
-agent.WriteField('PROCESSED', Util_intCast(agent.ReadField('PROCESSED')) + threads.length);
+agent.WriteField('PROCESSED', Lang.intCast(agent.ReadField('PROCESSED')) + threads.length);
 var outputLabel = GmailApp.getUserLabelByName(agent.ReadField('OUTPUT_LABEL'));
 threads.forEach(function (e)
    {

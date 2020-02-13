@@ -1,7 +1,8 @@
+var Lang = (function (ns) {
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_ClampStringLengthP(text, length)
+ns.ClampStringLengthP = function (text, length)
    {
    text = String(text);
    if (text.length > length)
@@ -9,85 +10,85 @@ function Util_ClampStringLengthP(text, length)
       return text.substring(0, length - 3) + '...';
       }
    return text;
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetRainbowColorFromAnyP(v)
+ns.GetRainbowColorFromAnyP = function (v)
    {
    var colors = ['#ff0000','#ff9900','#ffff00','#00ff00','#00ffff','#4a86e8','#9900ff'];
    return colors[((v >>> 0) % colors.length)];
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetDarkRainbowColorFromAnyP(v)
+ns.GetDarkRainbowColorFromAnyP = function (v)
    {
    var colors = ['#5b0f00', '#783f04', '#7f6000', '#274e13', '#0c343d', '#1c4587', '#073763', '#20124d', '#4c1130'];
    return colors[((v >>> 0) % colors.length)];
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetStringFromBase64(stringToDecode)
+ns.GetStringFromBase64 = function (stringToDecode)
    {
    return Utilities.ungzip(Utilities.newBlob(Utilities.base64DecodeWebSafe(stringToDecode), 'application/x-gzip')).getDataAsString();
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetBase64FromString(stringToEncode)
+ns.GetBase64FromString = function (stringToEncode)
    {
    return Utilities.base64EncodeWebSafe(Utilities.gzip(Utilities.newBlob(stringToEncode), 'text.zip').getBytes());
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetObjectFromBase64(stringToDecode)
+ns.GetObjectFromBase64 = function (stringToDecode)
    {
-   return JSON.parse(Util_GetStringFromBase64(stringToDecode));
-   }
+   return JSON.parse(ns.GetStringFromBase64(stringToDecode));
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetBase64FromObject(objectToEncode)
+ns.GetBase64FromObject = function (objectToEncode)
    {
-   return Util_GetBase64FromString(JSON.stringify(objectToEncode));
-   }
+   return ns.GetBase64FromString(JSON.stringify(objectToEncode));
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_IsDate(v)
+ns.IsDate = function (v)
    {
    return v instanceof Date && !isNaN(v.getTime());
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/1303646/check-whether-variable-is-number-or-string-in-javascript/20373925
 
-function Util_IsNumber(v)
+ns.IsNumber = function (v)
    {
    return !isNaN(parseFloat(v)) && !isNaN(v - 0)
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_stopwatchStringFromDuration(dtDuration)
+ns.stopwatchStringFromDuration = function (dtDuration)
    {
-   return Util_stopwatchStringFromDurationInSeconds(dtDuration / 1000);
+   return ns.stopwatchStringFromDurationInSeconds(dtDuration / 1000);
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_stopwatchStringFromDurationInMillis(dtMilliseconds)
+ns.stopwatchStringFromDurationInMillis = function (dtMilliseconds)
    {
-   return Util_stopwatchStringFromDurationInSeconds(dtMilliseconds / 1000);
+   return ns.stopwatchStringFromDurationInSeconds(dtMilliseconds / 1000);
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/6312993/javascript-seconds-to-time-string-with-format-hhmmss
 
-function Util_stopwatchStringFromDurationInSeconds(dtSeconds)
+ns.stopwatchStringFromDurationInSeconds = function (dtSeconds)
    {
     var s = parseInt(dtSeconds, 10);
     if (s < 0)
@@ -124,28 +125,28 @@ function Util_stopwatchStringFromDurationInSeconds(dtSeconds)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_Average(numbers)
+ns.Average = function (numbers)
    {
    return Array.isArray(numbers) ? numbers.reduce(function (prev, current) { return prev + current}, 0) / numbers.length : undefined;
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_IsUndefined(v)
+ns.IsUndefined = function (v)
    {
    return 'undefined' === typeof v;
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_IsObject(v)
+ns.IsObject = function (v)
    {
    return 'object' === typeof v && null !== v;
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_IsArray(v)
+ns.IsArray = function (v)
    {
    return Array.isArray(v);
    }
@@ -153,7 +154,7 @@ function Util_IsArray(v)
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
 
-function Util_IsFunction(v)
+ns.IsFunction = function (v)
    {
    return v && {}.toString.call(v) === '[object Function]';
    }
@@ -161,35 +162,35 @@ function Util_IsFunction(v)
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
 
-function Util_IsString(v)
+ns.IsString = function (v)
    {
    return 'string' === typeof v || v instanceof String;
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_IsObjectPropertyTruthy(v, flagName)
+ns.IsObjectPropertyTruthy = function (v, flagName)
    {
    return 'object' === typeof v  && null !== v && !!v[flagName];
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_IsArrayInObjectPropertyP(v, flagName)
+ns.IsArrayInObjectPropertyP = function (v, flagName)
    {
    return 'object' === typeof v  && null !== v && Array.isArray(v[flagName]);
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetTimestampNow()
+ns.GetTimestampNow = function ()
    {
    return new Date().getTime();
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-var Util_MakeLazyConstantMethod = function (self, name, valueCallback)
+ns.MakeLazyConstantMethod = function (self, name, valueCallback)
    {
    self[name] = function ()
       {
@@ -201,7 +202,7 @@ var Util_MakeLazyConstantMethod = function (self, name, valueCallback)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-var Util_GetStackTrace = function (qLevelsUp)
+ns.GetStackTrace = function (qLevelsUp)
    {
    try{
       undefined.hasOwnProperty(null)
@@ -215,12 +216,12 @@ var Util_GetStackTrace = function (qLevelsUp)
 //------------------------------------------------------------------------------------------------------------------------------------
 // http://community.facer.io/t/moon-phase-formula-updated/35691/5
 
-function Util_GetMoonPhaseFromDate (date)
+ns.GetMoonPhaseFromDate = function  (date)
    {
    var moonPhases = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
    var utc = date.getTime();
 
-   var phaseFraction = Util_fmodP(
+   var phaseFraction = ns.fmodP(
          (utc/2551442844-0.228535)
                +0.00591997 * Math.sin(utc/5023359217+3.1705094)
                +0.017672776 * Math.sin(utc/378923968-1.5388144)
@@ -229,12 +230,12 @@ function Util_GetMoonPhaseFromDate (date)
          1
          );
 
-   return moonPhases[Util_GetLoopingIndexFromPercentP(moonPhases.length, phaseFraction)];
+   return moonPhases[ns.GetLoopingIndexFromPercentP(moonPhases.length, phaseFraction)];
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetStringFromTimestamp(utsTime)
+ns.GetStringFromTimestamp = function (utsTime)
    {
    var date = new Date(utsTime);
    if (date instanceof Date && !isNaN(date.getTime()))
@@ -249,22 +250,22 @@ function Util_GetStringFromTimestamp(utsTime)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetStringFromDate(date)
+ns.GetStringFromDate = function (date)
    {
-   return Util_IsDate(date) ? date.toUTCString() + ' (=' + String(utsTime) + ')' : '<invalid date>';
+   return ns.IsDate(date) ? date.toUTCString() + ' (=' + String(utsTime) + ')' : '<invalid date>';
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://gist.github.com/wteuber/6241786
 
-function Util_fmodP(a, b)
+ns.fmodP = function (a, b)
    {
    return Number((a - (Math.floor(a / b) * b)).toPrecision(8));
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetLoopingIndexFromPercentP(nCount, pPercent)
+ns.GetLoopingIndexFromPercentP = function (nCount, pPercent)
    {
    var rvIndex = Math.max(0, Math.floor(nCount * pPercent + 1 / nCount) % nCount);
    return Number(rvIndex) < nCount ? rvIndex : undefined;
@@ -272,7 +273,7 @@ function Util_GetLoopingIndexFromPercentP(nCount, pPercent)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_GetObjectsFromTableP = function (table)
+ns.GetObjectsFromTableP = function (table)
    {
    if (table.length === 0)
       {
@@ -290,14 +291,14 @@ Util_GetObjectsFromTableP = function (table)
       rvObjects.push(obj);
       }
    return rvObjects;
-   };
+   }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_GetTableFromObjectsP = function (objects, headers)
+ns.GetTableFromObjectsP = function (objects, headers)
    {
    var rvTable =
-      [Util_IsArray(headers) ? headers : Object.keys(objects.length < 1 ? [] : objects[0])]
+      [ns.IsArray(headers) ? headers : Object.keys(objects.length < 1 ? [] : objects[0])]
       .concat(objects.map(function (eObject)
          {
          return headers.map(function (eHeader) { return eObject[eHeader] });
@@ -308,14 +309,14 @@ Util_GetTableFromObjectsP = function (objects, headers)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_GetRowsFromTableP = function (table)
+ns.GetRowsFromTableP = function (table)
    {
    return table.slice(1);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_GetKeyValuePairsFromDictionaryP = function (dictionary)
+ns.GetKeyValuePairsFromDictionaryP = function (dictionary)
    {
    return Object.keys(dictionary).map(function (eKey) { return {key:eKey, value:dictionary[eKey]} });
    };
@@ -327,7 +328,7 @@ Util_GetKeyValuePairsFromDictionaryP = function (dictionary)
 //
 //  ==> rv: {1: [{q: 1, t:'apple'}, {q: 1, t:'banana'}], 4: [{q: 2, t:'pear'}]}
 
-Util_GetObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key) {
+ns.GetObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key) {
    if (objects.length === 0) return {};
 
    var retval = {};
@@ -349,7 +350,7 @@ Util_GetObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key) {
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_GetDictionaryFromObjectsP = function (objects, key)
+ns.GetDictionaryFromObjectsP = function (objects, key)
    {
    if (objects.length === 0) return {};
 
@@ -365,7 +366,7 @@ Util_GetDictionaryFromObjectsP = function (objects, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_GetDictionaryFromTableP = function (table, key)
+ns.GetDictionaryFromTableP = function (table, key)
    {
    if (table.length === 0) return {};
   
@@ -394,13 +395,14 @@ Util_GetDictionaryFromTableP = function (table, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_TransposeRowsP(rows) {
-  return rows[0].map(function (x,i) { return rows.map(function (x) { return x[i]; }); });
-}
+ns.TransposeRowsP = function (rows)
+   {
+   return rows[0].map(function (x,i) { return rows.map(function (x) { return x[i]; }); });
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_GetSetFromObjectsP = function (objects)
+ns.MakeSetFromObjectsP = function (objects)
    {
    var rvSet = {};
    for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
@@ -408,73 +410,61 @@ Util_GetSetFromObjectsP = function (objects)
       rvSet[objects[iObject]] = null;
       }
    return rvSet;
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_GetSetFromPropertyOfObjectsP = function (objects, key)
+ns.GetStringWithLeadingZeroesFromNumber = function  (value, length)
    {
-   var rvSet = {};
-   for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
-      {
-      rvSet[objects[iObject][key]] = null;
-      }
-   return rvSet;
-   }
+   return '0000000000000000'.substr(0, length-Math.floor(Math.log(Math.max(1,parseInt(value))) / Math.log(10)) - 1) + String(value);
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetFixedLengthStringFromInteger (value, length)
-   {
-   return '0000000000'.substr(0, length-Math.floor(Math.log(Math.max(1,parseInt(value))) / Math.log(10)) - 1) + String(value);
-   }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-Util_IsValueContainedInSet = function (value, set)
+ns.IsValueContainedInSetP = function (value, set)
    {
    return set.hasOwnProperty(value);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_IsValueMissingFromSet = function (value, set)
+ns.IsValueMissingFromSetP = function (value, set)
    {
    return !set.hasOwnProperty(value);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-Util_intCast = function (any)
+ns.intCast = function (any)
    {
    return parseInt(any) || 0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_boolCast = function (any)
+ns.boolCast = function (any)
    {
    return !!any;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_floatCast = function (any)
+ns.floatCast = function (any)
    {
    return parseFloat(any) || 0.0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_stringCast = function (any)
+ns.stringCast = function (any)
    {
    return String(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_arrayCast = function (any)
+ns.arrayCast = function (any)
    {
-   if (Util_IsArray(any))
+   if (ns.IsArray(any))
       {
       return any;
       }
@@ -486,7 +476,7 @@ Util_arrayCast = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-Util_dateCast = function (any)
+ns.dateCast = function (any)
    {
    var rvDate = new Date(any);
    if (!isNaN(rvDate.getTime()))
@@ -498,14 +488,14 @@ Util_dateCast = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetWallTimeFromTimestamp (utsTimestamp)
+ns.GetWallTimeFromTimestamp = function  (utsTimestamp)
    {
    return new Date(utsTimestamp-new Date().getTimezoneOffset()*60000).toUTCString().slice(-12, -4);
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetUrlsFromString (text)
+ns.GetUrlsFromString = function  (text)
    {
       var urls = [];
       var re = /(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g;
@@ -517,10 +507,6 @@ function Util_GetUrlsFromString (text)
       return urls;
    };
 
-//------------------------------------------------------------------------------------------------------------------------------------
 
-function Util_GetZeroPaddedStringFromPositiveIntegerP (value, qDigitCount)
-   {
-   value = parseInt(value) || 0;
-   return '0000000000000000'.slice(value < 1 ? 1 : (Math.floor(Math.log(value) / Math.log(10)) + 1), qDigitCount) + String(value);
-   };
+return ns;
+})(Lang || {});

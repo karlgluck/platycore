@@ -39,7 +39,7 @@ Common Initialization
 
    SELECT  "E1:I1"
     FIELD  "WAKE"
-     EVAL  "agent.WriteField('WAKE', Util_GetTimestampNow() + 15000)"
+     EVAL  "agent.WriteField('WAKE', Lang.GetTimestampNow() + 15000)"
    SELECT  "J1:K1"
      TEXT  "WAKE"
    SELECT  "E2:K2"
@@ -52,7 +52,7 @@ Common Initialization
 
    SELECT  "L1:P1"
     FIELD  "LOCK"
-     EVAL  "agent.WriteField('LOCK', Util_GetTimestampNow())"
+     EVAL  "agent.WriteField('LOCK', Lang.GetTimestampNow())"
    SELECT  "Q1:R1"
      TEXT  "LOCK"
    SELECT  "L2:R2"
@@ -114,7 +114,7 @@ Manual Actions
 ------------------------
 var sheet = SpreadsheetApp.create("🏭 Labels2Lists", 1, 1).getSheets()[0];
 var headers = GAS_MergeSheetHeaders(sheet, ['input_label', 'object_from_gmail_message_function', 'sheet_url']);
-var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-script/reference/gmail/gmail-message\nfunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Util_GetUrlsFromString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Util_GetUrlsFromString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS_GetUrlFromGmailMessage(gmailMessage)\n  };\n}";
+var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-script/reference/gmail/gmail-message\nfunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Lang.GetUrlsFromString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Lang.GetUrlsFromString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS_GetUrlFromGmailMessage(gmailMessage)\n  };\n}";
 GAS_AddRowsToJournalingSheet(
       [['<Gmail Label>', stringOfGetObjectFromGmailMessage, '<sheet url>']],
       sheet);
@@ -160,7 +160,7 @@ When a line is entirely dashes and there is a matching line that is entirely das
      NOTE  "MAIN"
         +  "---"
 ------------------------
-var en = Util_boolCast(agent.ReadToggle('EN'));
+var en = Lang.boolCast(agent.ReadToggle('EN'));
 if (!en)
    {
    agent.Log('[!EN]: Agent is disabled (to enable, set EN=TRUE)');
@@ -173,7 +173,7 @@ records.forEach(function (eRecord)
    eRecord.outputSheet = GAS_GetSheetFromUrl(eRecord.sheet_url);
    });
 var inputLabel = GmailApp.getUserLabelByName(agent.ReadField('INPUT_LABEL'));
-var recordsFromLabelName = Util_GetObjectArrayFromKeyDictionaryFromObjectsP(records, 'input_label');
+var recordsFromLabelName = Lang.GetObjectArrayFromKeyDictionaryFromObjectsP(records, 'input_label');
 var threads = inputLabel.getThreads();
 var outputs = [];
 threads.forEach(function (eThread)
@@ -197,15 +197,15 @@ threads.forEach(function (eThread)
       eThread.removeLabel(inputLabel);
       }
    });
-var outputsFromLabelName = Util_GetObjectArrayFromKeyDictionaryFromObjectsP(outputs, 'label_name');
+var outputsFromLabelName = Lang.GetObjectArrayFromKeyDictionaryFromObjectsP(outputs, 'label_name');
 Object.keys(outputsFromLabelName).forEach(function (eLabelName)
    {
    var eOutputs = outputsFromLabelName[eLabelName];
    var outputSheet = eOutputs[0].record.outputSheet;
    var objects = eOutputs.map(function (e) { return e.object });
    var headers = GAS_MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
-   var table = Util_GetTableFromObjectsP(objects, headers);
-   var rows = Util_GetRowsFromTableP(table);
+   var table = Lang.GetTableFromObjectsP(objects, headers);
+   var rows = Lang.GetRowsFromTableP(table);
    if (en)
       {
       GAS_AddRowsToJournalingSheet(rows.reverse(), outputSheet);
@@ -217,7 +217,7 @@ Object.keys(outputsFromLabelName).forEach(function (eLabelName)
       agent.Log('[!EN]: Would have processed ' + rows.length + ' email(s) from the label "' + eLabelName + '"');
       }
    });
-agent.WriteField('PROCESSED', Util_intCast(agent.ReadField('PROCESSED')) + threads.length);
+agent.WriteField('PROCESSED', Lang.intCast(agent.ReadField('PROCESSED')) + threads.length);
 if (0 === threads.length) agent.Snooze(15 * 60 * 1000);// else agent.Log('Processed ' + threads.length + ' emails');
 ------------------------
       OFF

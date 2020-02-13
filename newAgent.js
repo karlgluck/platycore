@@ -1,7 +1,7 @@
 
 function newAgentFromText(text)
    {
-   newAgent('data:text/plain;base64,' + Util_GetBase64FromString(text), null, 'newAgentFromText');
+   newAgent('data:text/plain;base64,' + Lang.GetBase64FromString(text), null, 'newAgentFromText');
    }
 
 function newAgent (urlAgentInstructions, previousInstallMemory, origin)
@@ -25,7 +25,7 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
 
    try
       {
-      var utsAgentCreated = Util_GetTimestampNow();
+      var utsAgentCreated = Lang.GetTimestampNow();
       var agent = new Agent(sheet, {
             memory: {
                   agentName: agentName,
