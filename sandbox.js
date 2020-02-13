@@ -1,13 +1,6 @@
 
 /*
 
-- remove conditional format rules: they are extraneous
-- use Agent to control output and read toggles/fields during triggerBlockPump so that it is consistent
-  - just allow it to operate in "offline" mode
-
-
-need to make sure we check in on how conditionalFormatRules_ is being used in Agent.js since we imported code that deals with it and I'm not exactly sure it all works properly.
-
 each Sheet creates an API endpoint with its sheet ID as the key
 the API endpoint is
    ?api=sheet&sheetId=<id>
@@ -27,51 +20,13 @@ in a format that depends on what kind of sheet it is (key/value store, table, et
 // also to run Soundscape... the ability to provide a web interface that can
 // upload and download files, and interact with a database...
 
-// Sheet configuration is stored in platycore.
 
-// query gmail using query (karlgluck + anything @ gmail.com, newer than [last time updated])
-// forward to channel
-
-// the platycore channel for the main matrix 
-
-// channels exist for every Sheet
-// additional channels exist
-   // they can be created implicitly!!
-   // they can be virtual...
-   // if they are not virtual, they are in a sheet
-   // platycore can make channels virtual or not (swap back and forth) 
-// all channel to agent wake-pairs are stored in a sheet managed using GAS.SheetMatrix
-
-function GAS.SheetKeyValueStore ()
-   {
-   // can remove old keys (to help garbage collection)
-   }
-
-function GAS.SheetTable ()
-   {
-   // append or replace modes
-   // can remove old keys (to help garbage collection)
-   }
-
-// used to interface with the sheet as A+B=C
-function GAS.SheetMatrix ()
-   {
-   // can remove old keys (to help garbage collection)
-   }
 
  ==== HARDENING PHASE RIGHT NOW === WOOP WOOP ======
 
 - randomly generate scripts
 - test all operations to see if they break shit
 - boil down ideas and delete loose ends so we have a fresh slate
-
-
-- be able to set next SI / BI
-- be able to set a 'wake timer'
-
-- make the "list as an email contact" agent
-
-- deploy this to Treehouse
 
 
 
@@ -83,66 +38,13 @@ code to detect alternate memory source for data)
 
 
 
-
-to be built later!
-
 record all messages during execution and save them into the properties memory
    - YOU CAN ALWAYS QUERY LAST EXECUTION'S OUTPUT FOR ANY DATA YOU WANT
    - ...and this is actually the preferred method of passing data from one execution to the next
    -  because it makes internal state visible and disentangles the platycore agent's data
          from the platycore's data
 
-this is how you forward data from one execution to another! You just write it
-to the agent, then ask the agent for it back later!
 
-   agent.write('foo',{bar:'baz'});
-      
-      --> writes into the agent's cache and outputs to the 
-
-   agent.read('foo')
-   
-      --> 
-
-
-
-
-00ffff (cyan) is the "you can mess with this" color
-
-
-I switched to using ff00ff (pink) as the "something is different" color
-We now also have a few required flags:
-   GO - does this agent need to run?
-   EN - is this agent enabled?
-   IN - has an input been changed?
-   ON - is this agent running now? (used to make a sheet mutex, readonly)
-And a required field:
-   LAST - Timestamp at which the agent was last accessed, mostly
-          so that we can use the field information from DocumentProperties
-          rather than having to query from the sheet every single
-          time the script runs. That dramatically lowers our number
-          of calls to the google API.
-
-all toggles and fields can be readonly or not
-   normal text color is green-on-black, unless you specify otherwise
-   readonly fields are grayed out a little, unless you specify a foreground color
-   when a toggle or field is changed, the text turns pink
-      - for a toggle, this is a conditional expression turning on to apply pink font color
-      - for a field, this is a conditional expression that turned the font normal-color turning off
-         this is because there is only a condition for matching text, where we need one for
-         whenever the text doesn't match
-
-need to make:
-   (1) the data-storage sheet API
-         data queue: data persists for a period of time after which it will be deleted; each
-               consumer can query for only new data
-   (2) the change notification network (how does "IN" get set for a sheet?)
-
-
-so from here, we move into expanding the "language" of the agent build script:
-- add the ability to add input boxes
-- create the output connection sheet specification and style
-      (round-robin, broadcast, replace table, append row (incl retention policy), set value in key-value store, etc.)
-- change notifications going "down the pipe" -- how do these get queued?
 
 ALSO make sure that EVERYTHING cleans up after itself on its output:
 - that way we can rely on the system scaling when it is running automatically "forever"

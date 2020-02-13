@@ -6,17 +6,8 @@
                //       .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
             //   break;
 
+// sheet_.getParent()
 
-// creating an Agent is a minimal operation to identify whether the Agent needs to run
-// the agent needs to run if:
-// (1) the EN toggle is checked or does not exist
-// and either:
-// (2a) the GO toggle exists and is checked
-// (2b) the WAKE timer exists and the current time is later than the wake timer
-
-// the wake timer's value and the GO toggle are saved in memory
-//    so that Platycore doesn't have to read the sheet every time
-// however, these values are cleared whenever the sheet is updated more recently than the agent was last saved
 
 function Agent (sheet_, config_)
    {
@@ -66,13 +57,9 @@ function Agent (sheet_, config_)
    memory_.fieldFromName = memory_.fieldFromName || {};
    memory_.noteFromName = memory_.noteFromName || {};
 
-   memory_.scriptFromName = memory_.scriptFromName || {};
-   memory_.scriptNames = memory_.scriptNames || [];
+   // memory_.values = memory_.values || {};
+   // memory_.readonly = memory_.readonly || [];
 
-
-   if (!Lang.IsObject(sheet_))
-      {
-      }
 
    this.ClearCache = function ()
       {
@@ -92,46 +79,6 @@ function Agent (sheet_, config_)
 
    console.log('agent created: ' + sheet_.getSheetId(), config_);
 
-//------------------------------------------------------------------------------------------------------------------------------------
-// 
-// 
-// 
-
-
-// maybe add to a 'LoadConditionalFormatRules' that lets us do conditional format rule manipulation on this agent
-
-   // var conditionalFormatRules_ = sheet_.getConditionalFormatRules().map(function (eRule)
-   //    {
-   //    return{
-   //          gasConditionalFormatRule: eRule,
-   //          ranges: eRule.getRanges().map(function (eRange)
-   //             {
-   //             return{
-   //                   r: eRange.getRow(),
-   //                   c: eRange.getColumn(),
-   //                   w: eRange.getWidth(),
-   //                   h: eRange.getHeight(),
-   //                   gasRange: eRange
-   //                   }
-   //             })
-   //          }
-   //    });
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   // var getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
-   //    {
-   //    for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
-   //       {
-   //       var eConditionalFormatRule = conditionalFormatRules_[i];
-   //       var ranges = eConditionalFormatRule.ranges;
-   //       if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
-   //          {
-   //          return eConditionalFormatRule;
-   //          }
-   //       }
-   //    return null;
-   //    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -141,31 +88,13 @@ function Agent (sheet_, config_)
    if (!config_.hasOwnProperty('dtLockWaitMillis')) config_.dtLockWaitMillis = 15000;
 
 
-//------------------------------------------------------------------------------------------------------------------------------------
-//
-// Accessors
-//
+   var getRangeFromAttributeName = function (name) { return sheet_.getParent().getRangeByName(name + '_' + config_.agentName) };
 
 
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   var scriptFromNameP_ = function (name)
+   this.CanRead = function (name)
       {
-      try
-         {
-         var rvScript = memory_.scriptFromName[name];
-         }
-      catch (e)
-         {
-         }
-      finally
-         {
-         return rvScript || { blockCodeNoteNames: [] };
-         }
+      return memory_.values
       };
-
-   
-
 
 /*************************************************************************************************************************************
 ******            ****     *********     *******     ****   *******         **********************************************************
@@ -176,7 +105,6 @@ function Agent (sheet_, config_)
 ***********   ******   *****   ***   ****  ***   ****  **   *******   ****************************************************************
 ***********   ********     ********      ******      ****         *         **********************************************************
 *************************************************************************************************************************************/
-
 
    this.ReadToggle = function (name, ignoreCache)
       {
@@ -292,26 +220,6 @@ function Agent (sheet_, config_)
          }
       };
 
-//------------------------------------------------------------------------------------------------------------------------------------
-   
-   this.ReadArrayIndexFromField = function (name, mArrayLength)
-      {
-      var value = self_.ReadField(name);
-      if (Lang.IsNumber(value))
-         {
-         value = value >>> 0;
-         if (value > mArrayLength - 1)
-            {
-            return undefined;
-            }
-         return value;
-         }
-      else
-         {
-         return undefined;
-         }
-      };
-
 /*************************************************************************************************************************************
 ******    *****   *****     *****            *         *******************************************************************************
 ******  *   ***   ***   ****   *******   *****   *************************************************************************************
@@ -321,7 +229,7 @@ function Agent (sheet_, config_)
 ******   ****  *  ***   *****   ******   *****   *************************************************************************************
 ******   ******   *****     **********   *****         *******************************************************************************
 *************************************************************************************************************************************/
-   
+
    this.ReadNote = function (name)
       {
       try
@@ -513,10 +421,6 @@ function Agent (sheet_, config_)
 **********     ******   ********         *   ******   *   *********   *****   *****         ******************************************
 *************************************************************************************************************************************/
 
-   this.UrlAgentInstructionsGet = function (kName) // this is a tricky function to replace cleanly, but I'd like to get rid of it somehow
-      {
-      return memory_.urlAgentInstructions;
-      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -547,20 +451,13 @@ function Agent (sheet_, config_)
 
    this.Uninstall = function ()
       {
-      if (memory_.hasOwnProperty('uninstall'))
-         {
-         try
-            {
-            eval(memory_.uninstall);
-            }
-         catch (e)
-            {
-            }
-         }
       PropertiesService.getDocumentProperties().deleteProperty(config_.agentName);
       sheet_.getParent().deleteSheet(sheet_);
       sheet_ = null;
-      return memory_;
+      config_ = null;
+      var rvMemory = memory_ || {};
+      memory_ = null;
+      return rvMemory;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -1026,11 +923,6 @@ function Agent (sheet_, config_)
                   default: selectedRange.setNumberFormat(eArguments[0]); break;
                   }
                break;
-
-            case 'UNINSTALL':
-               var uninstallScript = eArguments.join('\n');
-               memory_.uninstall = uninstallScript;
-               return self_.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
 
             case 'TOGGLE':
                var kName = eArguments[0];

@@ -24,7 +24,7 @@ ns.DeleteTriggerByName = function (functionName)
 // 
 //
 
-ns.IsFunctionTriggeredP = function (functionName)
+ns.IsTriggeredFunctionP = function (functionName)
    {
    return ScriptApp.getProjectTriggers().some(function (eTrigger) { return eTrigger.getHandlerFunction() == functionName });
    };
@@ -83,6 +83,14 @@ ns.GetUrlFromGmailMessage = function (gmailMessage)
 ns.GetUrlFromSheet = function (sheet)
    {
    return sheet.getParent().getUrl() + '#gid='+sheet.getSheetId();
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsValidRangeNameP = function (name)
+   {
+   // https://support.google.com/docs/answer/63175
+   return !name.match(/[^A-Za-z0-9_]|^true|^false|^.{250}.|^$/);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -207,6 +215,40 @@ ns.TrimSheetRows = function (sheet)
       }
    };
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
+// ns.GetEditableConditionalFormatRules = function ()
+//    {
+//    return sheet_.getConditionalFormatRules().map(function (eRule)
+//       {
+//       return{
+//             gasConditionalFormatRule: eRule,
+//             ranges: eRule.getRanges().map(function (eRange)
+//                {
+//                return{
+//                      r: eRange.getRow(),
+//                      c: eRange.getColumn(),
+//                      w: eRange.getWidth(),
+//                      h: eRange.getHeight(),
+//                      gasRange: eRange
+//                      }
+//                })
+//             }
+//       });
+//    };
+// getConditionalFormatRuleByArea = function (irRow, icColumn, qrHeight, qcWidth)
+   //    {
+   //    for (var i = 0, n = conditionalFormatRules_.length; i < n; ++i)
+   //       {
+   //       var eConditionalFormatRule = conditionalFormatRules_[i];
+   //       var ranges = eConditionalFormatRule.ranges;
+   //       if (ranges.length == 1 && ranges[0].r == irRow && ranges[0].c == icColumn && ranges[0].h == qrHeight && ranges[0].w == qcWidth)
+   //          {
+   //          return eConditionalFormatRule;
+   //          }
+   //       }
+   //    return null;
+   //    };
 
 
 return ns;
