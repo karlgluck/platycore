@@ -60,7 +60,6 @@ function Agent (sheet_, config_)
    // memory_.values = memory_.values || {};
    // memory_.readonly = memory_.readonly || [];
 
-
    this.ClearCache = function ()
       {
       ['toggleFromName', 'fieldFromName', 'noteFromName'].forEach(function (kDictionary)
@@ -1004,7 +1003,7 @@ function Agent (sheet_, config_)
                   selectedRange.setDataValidation(
                         SpreadsheetApp.newDataValidation()
                               .requireValueInList(
-                                    GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() })
+                                    GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort()
                                     )
                               .setHelpText(eArguments[0])
                               .build()
