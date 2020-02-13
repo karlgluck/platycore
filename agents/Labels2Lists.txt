@@ -73,17 +73,19 @@ Agent-specific
      TEXT "Sheet:"
    SELECT "V1:AU1"
     FIELD "SHEET"
+        + "UPGRADE"
     PANEL "5"
 
 --- Processed ---
    SELECT "AV1:AW2"
+     TEXT 0
     FIELD "PROCESSED"
         + "READONLY"
+        + "UPGRADE"
    HALIGN "center"
    VALIGN "middle"
        FG "#FF0000"
        BG "#440000"
-     TEXT 0
     PANEL "7"
 
 
@@ -94,10 +96,11 @@ Agent-specific
    SELECT "AE2:AI2"
      TEXT "Input label:"
    SELECT "AJ2:AU2"
+     TEXT "<Input Label>"
     FIELD "INPUT_LABEL"
+        + "UPGRADE"
  VALIDATE "Enter the name of a label from your Gmail account"
         + "IS_GMAIL_LABEL"
-     TEXT "<Input Gmail Label>"
     PANEL "5"
 
 

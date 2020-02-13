@@ -32,7 +32,6 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
                   fieldFromName: {},
                   noteFromName: {},
                   scriptFromName: {},
-                  scriptNames: [],
                   sheetNameHint: sheetName,
                   sheetId: sheet.getSheetId(),
                   toggleFromName: {},

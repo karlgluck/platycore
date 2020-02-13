@@ -57,7 +57,7 @@ function Agent (sheet_, config_)
          {
          config_.agentName = 'platycoreAgent' + sheet_.getSheetId();
          }
-      config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty(config_.agentName));
+      config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty(config_.agentName)) || {};
       }
    config_.agentName = config_.memory.agentName;
    var memory_ = config_.memory;
@@ -119,7 +119,7 @@ function Agent (sheet_, config_)
          }
       else 
          {
-         agent.Warn('agent.WriteToggle(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('agent.WriteToggle(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -151,7 +151,7 @@ function Agent (sheet_, config_)
          }
       else 
          {
-         agent.Warn('agent.WriteField(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('agent.WriteField(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -183,7 +183,7 @@ function Agent (sheet_, config_)
          }
       else 
          {
-         agent.Warn('agent.WriteNote(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('agent.WriteNote(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -356,21 +356,24 @@ function Agent (sheet_, config_)
 
    this.Uninstall = function ()
       {
+      var rvMemory = memory_ || {};
+      memory_ = null;
       var namedRanges = spreadsheet_.getNamedRanges();
       for (var iRange = namedRanges.length - 1; iRange >= 0; --iRange)
          {
-         var eName = namedRanges[iRange].getName();
-         if (eName.endsWith(config_.agentName))
+         var eRangeName = namedRanges[iRange].getName();
+         if (eRangeName.endsWith(config_.agentName))
             {
-            spreadsheet_.removeNamedRange(eName);
+            var eName = eRangeName.substring(0, eRangeName.length - config_.agentName.length - 1);
+            rvMemory.valueFromName[eName] = namedRanges[iRange].getRange().getValue();
+            spreadsheet_.removeNamedRange(eRangeName);
             }
          }
-      PropertiesService.getDocumentProperties().deleteProperty(config_.agentName);
       spreadsheet_.deleteSheet(sheet_);
       sheet_ = null;
+      PropertiesService.getDocumentProperties().deleteProperty(config_.agentName);
       config_ = null;
-      var rvMemory = memory_ || {};
-      memory_ = null;
+      console.log('rvMemory', rvMemory);
       return rvMemory;
       };
 
@@ -872,8 +875,16 @@ function Agent (sheet_, config_)
                   }
                selectedRange.setTextStyle(textStyleBuilder.build());
                var value = '';
+               if (Lang.IsValueContainedInSetP('UPGRADE', eArgumentSet))
+                  {
+                  if (Lang.IsObject(previousInstallMemory)
+                        && Lang.IsObject(previousInstallMemory.valueFromName))
+                     {
+                     value = previousInstallMemory.valueFromName[kName];
+                     self_.WriteField(kName, value);
+                     }
+                  }
                self_.Log('+field: ' + kName, value);
-               self_.WriteField(kName, value);
                break;
             
             case 'NOTE':
