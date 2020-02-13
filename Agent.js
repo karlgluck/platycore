@@ -119,7 +119,7 @@ function Agent (sheet_, config_)
          }
       else 
          {
-         self_.Warn('agent.WriteToggle(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('WriteToggle(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -151,7 +151,7 @@ function Agent (sheet_, config_)
          }
       else 
          {
-         self_.Warn('agent.WriteField(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('WriteField(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -183,7 +183,7 @@ function Agent (sheet_, config_)
          }
       else 
          {
-         self_.Warn('agent.WriteNote(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('WriteNote(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -226,7 +226,10 @@ function Agent (sheet_, config_)
 ******      *****         *     *   ****      ******      ****************************************************************************
 *************************************************************************************************************************************/
 
-   var irNewMessage_ = sheet_.getFrozenRows() + 1;
+   var irNewMessage_ = (function (range)
+      {
+      return Lang.IsObject(range) ? range.getRow() + 1 : 1;
+      })(getRangeFromPropertyName('LOG'));
 
    var writeOutputFirstTime_ = function (args)
       {
@@ -394,7 +397,7 @@ function Agent (sheet_, config_)
          {
          return true;
          }
-      var isAlreadyRunning = Lang.boolCast(self_.ReadToggle('ON', true));
+      var isAlreadyRunning = self_.ReadToggle('ON', true);
       var lockValue = self_.ReadField('LOCK', true);
       var hasLockField = !Lang.IsUndefined(lockValue);
       if (hasLockField)
@@ -765,21 +768,27 @@ function Agent (sheet_, config_)
                break;
 
             case 'FREEZE':
-               var qrFrozenRows = Lang.intCast(eArguments[0]);
-               var irHeaders = qrFrozenRows;
-               sheet_.insertRowsBefore(1, qrFrozenRows);
-               sheet_.setFrozenRows(qrFrozenRows);
-               irNewMessage_ = qrFrozenRows + 1;
+               sheet_.setFrozenRows(Lang.intCast(eArguments[0]));
+               break;
+
+            case 'RESERVE':
+               var qrRows = Lang.intCast(eArguments[0]);
+               var irHeaders = qrRows;
+               sheet_.insertRowsBefore(1, qrRows);
+               irNewMessage_ = qrRows + 1;
                var mrMaxRows = sheet_.getMaxRows();
                var riFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
                sheet_.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
                mrMaxRows = riFirstRowToDelete - 1;
-               sheet_.getRange(1, 1, mrMaxRows, 49)
+               sheet_.getRange(1, 1, sheet_.getMaxRows(), sheet_.getMaxColumns())
                      .setFontColor('#00ff00')
                      .setBackground('black')
                      .setFontFamily('Courier New')
                      .setVerticalAlignment('top')
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+                     
+               sheet_.getRange(qrRows, 1, 1, sheet_.getMaxColumns()).setBorder(false, false, true, false, false, false, '#dadfe8', SpreadsheetApp.BorderStyle.SOLID_THICK);
+               spreadsheet_.setNamedRange(getRangeNameFromPropertyName('LOG'), sheet_.getRange(qrRows, 1, sheet_.getMaxRows()-qrRows+1, sheet_.getMaxColumns()));
                break;
 
             case 'REBOOT':

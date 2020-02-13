@@ -1,7 +1,7 @@
 Any line that doesn't start with a space is ignored, so we can write whatever we like up here describing how this works!
 
    NAME  "sleepy"
-   FREEZE  2
+   RESERVE  2
 
 --- ON ---
 

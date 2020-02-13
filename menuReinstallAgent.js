@@ -3,11 +3,11 @@ function menuReinstallAgent()
    {
    var sheet = SpreadsheetApp.getActiveSheet();
    // try   // first, attempt to uninstall the agent
-      {  // the clean way using the API
+   //    {  // the clean way using the API
       var agent = new Agent(sheet);
       var previousInstallMemory = agent.Uninstall();
       var urlAgentInstructions = previousInstallMemory.urlAgentInstructions;
-      }
+   //    }
    // catch (e)
    //    {
    //    try  // fall back to just finding the raw platycore settings

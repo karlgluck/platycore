@@ -3,8 +3,8 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 ==================================================================
 Common Initialization
 
-     NAME  "Labels -> Lists"
-   FREEZE  3
+       NAME  "Labels -> Lists"
+    RESERVE  3
    REINSTALL "agent.Log(previousInstallMemory)"
 
 --- ON ---
@@ -164,7 +164,7 @@ When a line is entirely dashes and there is a matching line that is entirely das
      NOTE  "MAIN"
         +  "---"
 ------------------------
-var en = Lang.boolCast(agent.ReadToggle('EN'));
+var en = agent.ReadToggle('EN');
 if (!en)
    {
    agent.Log('[!EN]: Agent is disabled (to enable, set EN=TRUE)');
