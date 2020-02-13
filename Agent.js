@@ -843,10 +843,10 @@ function Agent (sheet_, config_)
    this.ExecuteRoutineFromUrl = function (urlAgentInstructions)
       {
       self_.Info('Fetching ' + Lang.ClampStringLengthP(urlAgentInstructions, 50));
-      var dataUrlPrefix = 'data:text/plain;base64,';
+      var dataUrlPrefix = 'data:application/x-gzip;base64,';
       if (urlAgentInstructions.substring(0, dataUrlPrefix.length) === dataUrlPrefix)
          {
-         var agentInstructionsText = Lang.GetStringFromBase64(urlAgentInstructions.substring(dataUrlPrefix.length));
+         var agentInstructionsText = Lang.GetStringFromBase64Gzip(urlAgentInstructions.substring(dataUrlPrefix.length));
          }
       else
          {

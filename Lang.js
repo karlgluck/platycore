@@ -30,30 +30,16 @@ ns.GetDarkRainbowColorFromAnyP = function (v)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetStringFromBase64 = function (stringToDecode)
+ns.GetStringFromBase64Gzip = function (stringToDecode)
    {
    return Utilities.ungzip(Utilities.newBlob(Utilities.base64DecodeWebSafe(stringToDecode), 'application/x-gzip')).getDataAsString();
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetBase64FromString = function (stringToEncode)
+ns.GetBase64GzipFromString = function (stringToEncode)
    {
    return Utilities.base64EncodeWebSafe(Utilities.gzip(Utilities.newBlob(stringToEncode), 'text.zip').getBytes());
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.GetObjectFromBase64 = function (stringToDecode)
-   {
-   return JSON.parse(ns.GetStringFromBase64(stringToDecode));
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.GetBase64FromObject = function (objectToEncode)
-   {
-   return ns.GetBase64FromString(JSON.stringify(objectToEncode));
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -169,16 +155,16 @@ ns.IsString = function (v)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsObjectPropertyTruthy = function (v, flagName)
+ns.IsObjectPropertyTruthy = function (v, propertyName)
    {
-   return 'object' === typeof v  && null !== v && !!v[flagName];
+   return 'object' === typeof v  && null !== v && !!v[propertyName];
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsArrayInObjectPropertyP = function (v, flagName)
+ns.IsArrayInObjectPropertyP = function (v, propertyName)
    {
-   return 'object' === typeof v  && null !== v && Array.isArray(v[flagName]);
+   return 'object' === typeof v  && null !== v && Array.isArray(v[propertyName]);
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
