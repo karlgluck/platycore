@@ -40,21 +40,21 @@ in a format that depends on what kind of sheet it is (key/value store, table, et
    // they can be virtual...
    // if they are not virtual, they are in a sheet
    // platycore can make channels virtual or not (swap back and forth) 
-// all channel to agent wake-pairs are stored in a sheet managed using GAS_SheetMatrix
+// all channel to agent wake-pairs are stored in a sheet managed using GAS.SheetMatrix
 
-function GAS_SheetKeyValueStore ()
+function GAS.SheetKeyValueStore ()
    {
    // can remove old keys (to help garbage collection)
    }
 
-function GAS_SheetTable ()
+function GAS.SheetTable ()
    {
    // append or replace modes
    // can remove old keys (to help garbage collection)
    }
 
 // used to interface with the sheet as A+B=C
-function GAS_SheetMatrix ()
+function GAS.SheetMatrix ()
    {
    // can remove old keys (to help garbage collection)
    }

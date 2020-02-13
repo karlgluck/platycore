@@ -1,3 +1,4 @@
+var GAS = (function (ns) {
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -5,7 +6,7 @@
 // 
 //
 
-GAS_DeleteTriggerByName = function (functionName)
+ns.DeleteTriggerByName = function (functionName)
    {
    var triggers = ScriptApp.getProjectTriggers();
    for (var iTrigger = triggers.length - 1; iTrigger >= 0; --iTrigger)
@@ -23,7 +24,7 @@ GAS_DeleteTriggerByName = function (functionName)
 // 
 //
 
-GAS_IsFunctionTriggeredP = function (functionName)
+ns.IsFunctionTriggeredP = function (functionName)
    {
    return ScriptApp.getProjectTriggers().some(function (eTrigger) { return eTrigger.getHandlerFunction() == functionName });
    };
@@ -33,7 +34,7 @@ GAS_IsFunctionTriggeredP = function (functionName)
 // 
 //
 
-function GAS_GetA1AddressFromCoordinatesP (irRow, icColumn)
+ns.GetA1AddressFromCoordinatesP = function  (irRow, icColumn)
    {
    var iLetter, rvColumnLetters = '$';
    while (icColumn > 0)
@@ -43,14 +44,14 @@ function GAS_GetA1AddressFromCoordinatesP (irRow, icColumn)
       icColumn = (icColumn - iLetter - 1) / 26;
       }
    return '$' + rvColumnLetters + (irRow >>> 0).toString(); // can't have more than 2^32 rows so >>> is ok
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
 // 
 //
 
-var GAS_UpdateConditionalFormatRule = function (sheet, irRow, icColumn, wcWidth, hrHeight, callback)
+ns.UpdateConditionalFormatRule = function (sheet, irRow, icColumn, wcWidth, hrHeight, callback)
    {
    wcWidth = wcWidth || 1;
    hrHeight = hrHeight || 1;
@@ -72,21 +73,21 @@ var GAS_UpdateConditionalFormatRule = function (sheet, irRow, icColumn, wcWidth,
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-var GAS_GetUrlFromGmailMessage = function (gmailMessage)
+ns.GetUrlFromGmailMessage = function (gmailMessage)
    {
    return 'https://mail.google.com/mail/u/0/#inbox/' + gmailMessage.getId()
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-var GAS_GetUrlFromSheet = function (sheet)
+ns.GetUrlFromSheet = function (sheet)
    {
    return sheet.getParent().getUrl() + '#gid='+sheet.getSheetId();
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-var GAS_GetSheetFromUrl = function (url)
+ns.GetSheetFromUrl = function (url)
    {
    var spreadsheet = SpreadsheetApp.openByUrl(url);
    if (!spreadsheet)
@@ -109,21 +110,21 @@ var GAS_GetSheetFromUrl = function (url)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-GAS_GetObjectsFromSheetP = function (sheet)
+ns.GetObjectsFromSheetP = function (sheet)
    {
-   return Lang.GetObjectsFromTableP(GAS_GetTableFromSheetP(sheet));
+   return Lang.GetObjectsFromTableP(GAS.GetTableFromSheetP(sheet));
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-GAS_DictionaryFromSheetP = function (sheet, key)
+ns.DictionaryFromSheetP = function (sheet, key)
    {
-   return Lang.GetDictionaryFromTableP(GAS_GetTableFromSheetP(sheet), key);
+   return Lang.GetDictionaryFromTableP(GAS.GetTableFromSheetP(sheet), key);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-GAS_GetTableFromSheetP = function (sheet)
+ns.GetTableFromSheetP = function (sheet)
    {
    var irHeaders = Math.max(1, sheet.getFrozenRows());
    var qRows = sheet.getLastRow() - irHeaders + 1;
@@ -133,7 +134,7 @@ GAS_GetTableFromSheetP = function (sheet)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-GAS_MergeSheetHeaders = function (sheet, requiredHeaders)
+ns.MergeSheetHeaders = function (sheet, requiredHeaders)
    {
    var irHeaderRow = sheet.getFrozenRows();  // Get the row index that contains all of the
    if (irHeaderRow < 1)                      // headers, and make sure we have at least a
@@ -169,7 +170,7 @@ GAS_MergeSheetHeaders = function (sheet, requiredHeaders)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-GAS_AddRowsToJournalingSheet = function (rows, sheet)
+ns.AddRowsToJournalingSheet = function (rows, sheet)
    {
    if (rows.length < 1)
       {
@@ -182,7 +183,7 @@ GAS_AddRowsToJournalingSheet = function (rows, sheet)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-GAS_LimitAndTrimSheetRows = function (sheet, qMaximumRows)
+ns.LimitAndTrimSheetRows = function (sheet, qMaximumRows)
    {
    var irMaxRows = sheet.getMaxRows();
    var irFirstRowToDelete = Math.max(Math.min(sheet.getLastRow() + 1, qMaximumRows), sheet.getFrozenRows() + 2);
@@ -195,7 +196,7 @@ GAS_LimitAndTrimSheetRows = function (sheet, qMaximumRows)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-GAS_TrimSheetRows = function (sheet)
+ns.TrimSheetRows = function (sheet)
    {
    var irMaxRows = sheet.getMaxRows();
    var irFirstRowToDelete = Math.max(sheet.getLastRow() + 1, sheet.getFrozenRows() + 2);
@@ -208,4 +209,5 @@ GAS_TrimSheetRows = function (sheet)
 
 
 
-
+return ns;
+})(GAS || {});

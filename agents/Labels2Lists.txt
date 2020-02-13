@@ -113,12 +113,12 @@ Manual Actions
         + "---"
 ------------------------
 var sheet = SpreadsheetApp.create("🏭 Labels2Lists", 1, 1).getSheets()[0];
-var headers = GAS_MergeSheetHeaders(sheet, ['input_label', 'object_from_gmail_message_function', 'sheet_url']);
-var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-script/reference/gmail/gmail-message\nfunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Lang.GetUrlsFromString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Lang.GetUrlsFromString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS_GetUrlFromGmailMessage(gmailMessage)\n  };\n}";
-GAS_AddRowsToJournalingSheet(
+var headers = GAS.MergeSheetHeaders(sheet, ['input_label', 'object_from_gmail_message_function', 'sheet_url']);
+var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-script/reference/gmail/gmail-message\nfunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Lang.GetUrlsFromString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Lang.GetUrlsFromString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS.GetUrlFromGmailMessage(gmailMessage)\n  };\n}";
+GAS.AddRowsToJournalingSheet(
       [['<Gmail Label>', stringOfGetObjectFromGmailMessage, '<sheet url>']],
       sheet);
-agent.WriteField('SHEET', GAS_GetUrlFromSheet(sheet));
+agent.WriteField('SHEET', GAS.GetUrlFromSheet(sheet));
 agent.EvalNoteByName('REFRESH_LABELS');
 ------------------------
 
@@ -131,8 +131,8 @@ agent.EvalNoteByName('REFRESH_LABELS');
      NOTE "REFRESH_LABELS"
         + "---"
 ------------------------
-var sheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'));
-var headers = GAS_MergeSheetHeaders(sheet, ['input_label']);
+var sheet = GAS.GetSheetFromUrl(agent.ReadField('SHEET'));
+var headers = GAS.MergeSheetHeaders(sheet, ['input_label']);
 var ciInputLabelColumn = 1 + headers.indexOf('input_label');
 var labels = GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort();
 var dataValidation = SpreadsheetApp.newDataValidation().requireValueInList(labels).setHelpText("Gmail Label").build();
@@ -165,12 +165,12 @@ if (!en)
    {
    agent.Log('[!EN]: Agent is disabled (to enable, set EN=TRUE)');
    }
-var sheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'));
-var records = GAS_GetObjectsFromSheetP(sheet);
+var sheet = GAS.GetSheetFromUrl(agent.ReadField('SHEET'));
+var records = GAS.GetObjectsFromSheetP(sheet);
 records.forEach(function (eRecord)
    {
    eRecord.GetObjectFromGmailMessage = eval(eRecord.object_from_gmail_message_function);
-   eRecord.outputSheet = GAS_GetSheetFromUrl(eRecord.sheet_url);
+   eRecord.outputSheet = GAS.GetSheetFromUrl(eRecord.sheet_url);
    });
 var inputLabel = GmailApp.getUserLabelByName(agent.ReadField('INPUT_LABEL'));
 var recordsFromLabelName = Lang.GetObjectArrayFromKeyDictionaryFromObjectsP(records, 'input_label');
@@ -203,13 +203,13 @@ Object.keys(outputsFromLabelName).forEach(function (eLabelName)
    var eOutputs = outputsFromLabelName[eLabelName];
    var outputSheet = eOutputs[0].record.outputSheet;
    var objects = eOutputs.map(function (e) { return e.object });
-   var headers = GAS_MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
+   var headers = GAS.MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
    var table = Lang.GetTableFromObjectsP(objects, headers);
    var rows = Lang.GetRowsFromTableP(table);
    if (en)
       {
-      GAS_AddRowsToJournalingSheet(rows.reverse(), outputSheet);
-      GAS_TrimSheetRows(outputSheet);
+      GAS.AddRowsToJournalingSheet(rows.reverse(), outputSheet);
+      GAS.TrimSheetRows(outputSheet);
       agent.Log('Added ' + rows.length + ' email(s) from the label "' + eLabelName + '"');
       }
    else
@@ -218,6 +218,13 @@ Object.keys(outputsFromLabelName).forEach(function (eLabelName)
       }
    });
 agent.WriteField('PROCESSED', Lang.intCast(agent.ReadField('PROCESSED')) + threads.length);
-if (0 === threads.length) agent.Snooze(15 * 60 * 1000);// else agent.Log('Processed ' + threads.length + ' emails');
+if (0 === threads.length)
+   {
+   agent.Snooze(15 * 60 * 1000);
+   }
+else
+   {
+   agent.Log('Processed ' + threads.length + ' emails');
+   }
 ------------------------
       OFF

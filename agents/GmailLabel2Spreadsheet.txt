@@ -93,7 +93,7 @@ function (gmailMessage) {
     'item': subject.trim(),
     'url': subjectUrls.concat(bodyUrls).concat([''])[0],
     'details': body,
-    'email': GAS_GetUrlFromGmailMessage(gmailMessage)
+    'email': GAS.GetUrlFromGmailMessage(gmailMessage)
   };
 }
 ---------------------
@@ -153,11 +153,11 @@ var objects = threads.map(function (thread)
    {
    return mapCallback(thread.getMessages()[0]);
    });
-var outputSheet = GAS_GetSheetFromUrl(agent.ReadField('SHEET'));
-var headers = GAS_MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
+var outputSheet = GAS.GetSheetFromUrl(agent.ReadField('SHEET'));
+var headers = GAS.MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
 var table = Lang.GetTableFromObjectsP(objects, headers);
-GAS_AddRowsToJournalingSheet(Lang.GetRowsFromTableP(table).reverse(), outputSheet);
-GAS_TrimSheetRows(outputSheet);
+GAS.AddRowsToJournalingSheet(Lang.GetRowsFromTableP(table).reverse(), outputSheet);
+GAS.TrimSheetRows(outputSheet);
 agent.WriteField('PROCESSED', Lang.intCast(agent.ReadField('PROCESSED')) + threads.length);
 var outputLabel = GmailApp.getUserLabelByName(agent.ReadField('OUTPUT_LABEL'));
 threads.forEach(function (e)
