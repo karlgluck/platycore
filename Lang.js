@@ -109,33 +109,45 @@ ns.stopwatchStringFromDurationInSeconds = function (dtSeconds)
       }
    }
 
+ns.IsMeaningful = function (any)
+   {
+   return !ns.IsUndefined(any) && null !== any && (!ns.IsString(any) || any.trim().length > 0);
+   };
+
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.Average = function (numbers)
    {
    return Array.isArray(numbers) ? numbers.reduce(function (prev, current) { return prev + current}, 0) / numbers.length : undefined;
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.IsUndefined = function (v)
    {
    return 'undefined' === typeof v;
-   }
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsNotUndefined = function (v)
+   {
+   return 'undefined' !== typeof v;
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.IsObject = function (v)
    {
    return 'object' === typeof v && null !== v;
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.IsArray = function (v)
    {
    return Array.isArray(v);
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
@@ -143,7 +155,7 @@ ns.IsArray = function (v)
 ns.IsFunction = function (v)
    {
    return v && {}.toString.call(v) === '[object Function]';
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
@@ -151,28 +163,28 @@ ns.IsFunction = function (v)
 ns.IsString = function (v)
    {
    return 'string' === typeof v || v instanceof String;
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.IsObjectPropertyTruthy = function (v, propertyName)
    {
    return 'object' === typeof v  && null !== v && !!v[propertyName];
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.IsArrayInObjectPropertyP = function (v, propertyName)
    {
    return 'object' === typeof v  && null !== v && Array.isArray(v[propertyName]);
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.GetTimestampNow = function ()
    {
    return new Date().getTime();
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -295,6 +307,13 @@ ns.GetTableFromObjectsP = function (objects, headers)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.GetHeadersFromTableP = function (table)
+   {
+   return table[0];
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.GetRowsFromTableP = function (table)
    {
    return table.slice(1);
@@ -305,6 +324,47 @@ ns.GetRowsFromTableP = function (table)
 ns.GetKeyValuePairsFromDictionaryP = function (dictionary)
    {
    return Object.keys(dictionary).map(function (eKey) { return {key:eKey, value:dictionary[eKey]} });
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.MakeRelationshipsUsingTable = function (table)
+   {
+   var headers = table[0];
+   var iMainColumn, relationshipTargetNames, propertyNames, kRelationshipSource, kRelationshipTargets;
+   for (var iHeader = 0, nHeaderCount = headers.length; iHeader < nHeaderCount; ++iHeader)
+      {
+      var eHeader = headers[iHeader];
+      var split = eHeader.indexOf(' | ');
+      if (split < 0)
+         {
+         continue;
+         }
+      iMainColumn = iHeader;
+      propertyNames = headers.slice(0, iMainColumn);
+      relationshipTargetNames = headers.slice(iMainColumn + 1);
+      kRelationshipSource = eHeader.slice(0, split);
+      kRelationshipTargets = eHeader.slice(split + 3);
+      }
+
+   var rvRelationships = [];
+
+   if (Lang.IsString(kRelationshipSource) && Lang.IsString(kRelationshipTargets))
+      {
+      for (var iRow = 1, nRows = table.length; iRow < nRows; ++iRow)
+         {
+         var row = table[iRow];
+         var obj = {};
+         propertyNames.forEach(function (e, i) { obj[e] = row[i] });
+         obj[kRelationshipSource] = row[iMainColumn];
+         obj[kRelationshipTargets] = relationshipTargetNames
+               .map(function (e, i) { return Lang.IsMeaningful(row[i]) ? row[i] : undefined })
+               .filter(Lang.IsNotUndefined);
+         rvRelationships.push(obj);
+         }
+      }
+
+   return rvRelationships;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------

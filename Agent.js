@@ -361,20 +361,16 @@ function Agent (sheet_, config_)
       {
       var rvMemory = memory_ || {};
       memory_ = null;
-      var namedRanges = spreadsheet_.getNamedRanges();
-      for (var iRange = namedRanges.length - 1; iRange >= 0; --iRange)
-         {
-         var eRangeName = namedRanges[iRange].getName();
-         if (eRangeName.endsWith(config_.agentName))
-            {
-            var eName = eRangeName.substring(0, eRangeName.length - config_.agentName.length - 1);
-            rvMemory.valueFromName[eName] = namedRanges[iRange].getRange().getValue();
-            spreadsheet_.removeNamedRange(eRangeName);
-            }
-         }
+      sheet_.getNamedRanges().forEach(function (eRange) { eRange.remove() });
       spreadsheet_.deleteSheet(sheet_);
       sheet_ = null;
-      PropertiesService.getDocumentProperties().deleteProperty(config_.agentName);
+      try
+         {
+         PropertiesService.getDocumentProperties().deleteProperty(config_.agentName);
+         }
+      catch (e)
+         {
+         }
       config_ = null;
       console.log('rvMemory', rvMemory);
       return rvMemory;
