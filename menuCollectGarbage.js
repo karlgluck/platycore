@@ -8,16 +8,51 @@ function menuCollectGarbage()
    //
    // Remove agent keys for agents that don't exist anymore
    //
-   properties.getKeys()
+   var propertyKeys = properties.getKeys();
+   propertyKeys
          .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' })
          .filter(function (e) { return Lang.IsValueMissingFromSetP(sheetIdSet, e.substring(14)) })
          .forEach(function (e)
             {
             console.log('removing unused platycore agent key ' + e);
             properties.deleteProperty(e);
-            
             });
 
+   var channelsSheet = spreadsheet.getSheetByName('channels');
+   if (!Lang.IsObject(channelsSheet))
+      {
+      channelsSheet = spreadsheet.insertSheet('channels', 0);
+      }
+      channelsSheet.getRange(1, 1, 1, 1).setValue('last_updated');
+      channelsSheet.getRange(1, 2, 1, 1).setValue('drive_file_url | agents').setTextRotation(45).setVerticalAlignment('middle').setHorizontalAlignment('center');
+      channelsSheet.getRange(2, 1, channelsSheet.getMaxRows() - 1, 1).setNumberFormat('M/d/yyyy H:mm:ss');
+      channelsSheet.getRange(2, 3, channelsSheet.getMaxRows() - 1, channelsSheet.getMaxColumns() - 2).insertCheckboxes();
+      channelsSheet.setRowHeight(1, 175);
+      channelsSheet.setColumnWidth(2, 300);
+
+   var icLastColumn = channelsSheet.getLastColumn();
+   console.log(JSON.stringify(propertyKeys));
+   var channelsAgentNames = icLastColumn > 2 ? channelsSheet.getRange(1,3, 1, icLastColumn - 2).getValues()[0] : [];
+   var existingAgentNames = Object.keys(sheetIdSet).map(e => 'platycoreAgent'+e).filter(e => 0 <= propertyKeys.indexOf(e));
+   var deadAgents = channelsAgentNames.filter(e => !existingAgentNames.includes(e));
+   if (deadAgents.length > 0)
+      {
+      deadAgents.map(eAgentName => channelsAgentNames.indexOf(eAgentName) + 3)
+            .reverse()
+            .forEach(eicColumn => channelsSheet.deleteColumn(eicColumn));
+      }
+   var newAgents = existingAgentNames.filter(e => !channelsAgentNames.includes(e));
+   if (newAgents.length > 0)
+      {
+      channelsSheet.insertColumnsAfter(2, newAgents.length);
+      channelsSheet.getRange(1, 3, 1, newAgents.length).setValues([newAgents]).setTextRotation(90).setVerticalAlignment('bottom');
+      channelsSheet.setColumnWidths(3, newAgents.length, channelsSheet.getRowHeight(2));
+      var irLastRow = channelsSheet.getLastRow();
+      if (irLastRow > 1)
+         {
+         channelsSheet.getRange(2, 3, irLastRow - 1, newAgents.length).insertCheckboxes();
+         }
+      }
 
    //
    // Remove invalid named ranges

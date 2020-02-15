@@ -631,7 +631,7 @@ function Agent (sheet_, config_)
       if (Lang.IsNumber(maybePreviousWakeTime))
          {
          maybePreviousWakeTime = Lang.intCast(maybePreviousWakeTime);
-         if (maybePreviousWakeTime < utsNow && maybePreviousWakeTime > (utsNow - 5 * 60 * 1000))
+         if (maybePreviousWakeTime < utsNow && maybePreviousWakeTime > (utsNow - dt))
             {
             utsNewWakeTime = maybePreviousWakeTime + dt;
             }
@@ -964,7 +964,6 @@ function Agent (sheet_, config_)
 ********   *****   **   *****   ******   *****   ********   *****   ******   *********************************************************
 **********     ********      *********   *****   **********      *********   *********************************************************
 *************************************************************************************************************************************/
-
 
 
 

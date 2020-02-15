@@ -69,8 +69,6 @@ var doBlockPump = function () {
          //
          // Load the sheet and its boot sector
          //
-         console.log('iSheet_', iSheet_);
-         console.log('nSheetCount_', nSheetCount_);
          if (iSheet_ < nSheetCount_)
             {
             var sheet = sheets_[iSheet_];
@@ -216,24 +214,27 @@ var doBlockPump = function () {
       //
       // Look through the channels and propagate changes
       //
-      var relationships = Lang.MakeRelationshipsUsingTable(GAS.GetTableFromSheetP(spreadsheet_.getSheetByName('channels')));
-      relationships.forEach(function (eRelationship)
-         {
-         var utsLastUpdated = DriveApp.getFileById(eRelationship.drive_file_url.match(/[-\w]{25,}/)).getLastUpdated().getTime();
-         var utsLastTriggered = new Date(eRelationship.last_updated).getTime();
-         if (utsLastUpdated != utsLastTriggered)
-            {
-            eRelationship.agents.forEach(function (eAgentName)
-               {
-               var goRange = spreadsheet_.getRangeByName('GO_' + eAgentName);
-               if (Lang.IsObject(goRange))
-                  {
-                  console.log(eRelationship.drive_file_url + ' triggered ' + eAgentName);
-                  goRange.setFormula("=TRUE");
-                  }
-               });
-            }
-         });
+
+      // var channelsTable = GAS.GetTableFromSheetP(spreadsheet_.getSheetByName('channels'));
+      // var icLastUpdated = 1 + channelsTable[0].indexOf('last_updated');
+      // var relationships = Lang.MakeRelationshipsUsingTable(channelsTable);
+      // relationships.forEach(function (eRelationship)
+      //    {
+      //    var utsLastUpdated = DriveApp.getFileById(eRelationship.drive_file_url.match(/[-\w]{25,}/)).getLastUpdated().getTime();
+      //    var utsLastTriggered = new Date(eRelationship.last_updated).getTime();
+      //    if (utsLastUpdated != utsLastTriggered)
+      //       {
+      //       eRelationship.agents.forEach(function (eAgentName)
+      //          {
+      //          var goRange = spreadsheet_.getRangeByName('GO_' + eAgentName);
+      //          if (Lang.IsObject(goRange))
+      //             {
+      //             console.log(eRelationship.drive_file_url + ' triggered ' + eAgentName);
+      //             goRange.setFormula("=TRUE");
+      //             }
+      //          });
+      //       }
+      //    });
 
       //
       // Update the save

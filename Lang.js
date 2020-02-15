@@ -109,9 +109,21 @@ ns.stopwatchStringFromDurationInSeconds = function (dtSeconds)
       }
    }
 
+//------------------------------------------------------------------------------------------------------------------------------------
+// "Meaningfulness" is the idea that the variable
+// is not only valid, but also that it contains
+// some sort of information.
+
 ns.IsMeaningful = function (any)
    {
    return !ns.IsUndefined(any) && null !== any && (!ns.IsString(any) || any.trim().length > 0);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.TestMeaningfulValue = function (any)
+   {
+   return ns.IsMeaningful(any) ? any : undefined;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -321,7 +333,7 @@ ns.GetRowsFromTableP = function (table)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetKeyValuePairsFromDictionaryP = function (dictionary)
+ns.MakeKeyValuePairsUsingDictionaryP = function (dictionary)
    {
    return Object.keys(dictionary).map(function (eKey) { return {key:eKey, value:dictionary[eKey]} });
    };
@@ -336,20 +348,20 @@ ns.MakeRelationshipsUsingTable = function (table)
       {
       var eHeader = headers[iHeader];
       var split = eHeader.indexOf(' | ');
-      if (split < 0)
+      if (split > 0)
          {
-         continue;
+         iMainColumn = iHeader;
+         propertyNames = headers.slice(0, iMainColumn);
+         relationshipTargetNames = headers.slice(iMainColumn + 1);
+         kRelationshipSource = eHeader.slice(0, split);
+         kRelationshipTargets = eHeader.slice(split + 3);
+         break;
          }
-      iMainColumn = iHeader;
-      propertyNames = headers.slice(0, iMainColumn);
-      relationshipTargetNames = headers.slice(iMainColumn + 1);
-      kRelationshipSource = eHeader.slice(0, split);
-      kRelationshipTargets = eHeader.slice(split + 3);
       }
 
    var rvRelationships = [];
 
-   if (Lang.IsString(kRelationshipSource) && Lang.IsString(kRelationshipTargets))
+   if (ns.IsString(kRelationshipSource) && ns.IsString(kRelationshipTargets))
       {
       for (var iRow = 1, nRows = table.length; iRow < nRows; ++iRow)
          {
@@ -358,13 +370,31 @@ ns.MakeRelationshipsUsingTable = function (table)
          propertyNames.forEach(function (e, i) { obj[e] = row[i] });
          obj[kRelationshipSource] = row[iMainColumn];
          obj[kRelationshipTargets] = relationshipTargetNames
-               .map(function (e, i) { return Lang.IsMeaningful(row[i]) ? row[i] : undefined })
-               .filter(Lang.IsNotUndefined);
+                     .map(function (e, i) { return ns.boolCast(row[iMainColumn+1+i]) ? e : undefined })
+                     .filter(ns.IsNotUndefined);
          rvRelationships.push(obj);
          }
       }
 
    return rvRelationships;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.MakeObjectUsingKeyValuePairs = function (pairs)
+   {
+   var rvObject = {};
+   pairs.forEach(function (eKeyValuePair) { rvObject[eKeyValuePair[0]] = eKeyValuePair[1] });
+   return rvObject;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.MakeIndexFromContentDictionaryUsingArrayP = function (array)
+   {
+   var rvObject = {};
+   array.forEach(function (e, i) { rvObject[e] = i; });
+   return rvObject;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -374,11 +404,13 @@ ns.MakeRelationshipsUsingTable = function (table)
 //
 //  ==> rv: {1: [{q: 1, t:'apple'}, {q: 1, t:'banana'}], 4: [{q: 2, t:'pear'}]}
 
-ns.GetObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key) {
+ns.GetObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key)
+   {
    if (objects.length === 0) return {};
 
    var retval = {};
-   for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject) {
+   for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
+      {
       var eObject = objects[iObject];
       var kValue = eObject[key];
       if (retval.hasOwnProperty(kValue))
@@ -389,7 +421,7 @@ ns.GetObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key) {
          {
          retval[kValue] = [eObject];
          }
-   }
+      }
 
    return retval;
    };
