@@ -23,12 +23,39 @@ function menuCollectGarbage()
       {
       channelsSheet = spreadsheet.insertSheet('channels', 0);
       }
-      channelsSheet.getRange(1, 1, 1, 1).setValue('last_updated');
-      channelsSheet.getRange(1, 2, 1, 1).setValue('drive_file_url | agents').setTextRotation(45).setVerticalAlignment('middle').setHorizontalAlignment('center');
-      channelsSheet.getRange(2, 1, channelsSheet.getMaxRows() - 1, 1).setNumberFormat('M/d/yyyy H:mm:ss');
-      channelsSheet.getRange(2, 3, channelsSheet.getMaxRows() - 1, channelsSheet.getMaxColumns() - 2).insertCheckboxes();
-      channelsSheet.setRowHeight(1, 175);
-      channelsSheet.setColumnWidth(2, 300);
+
+   (function (qcMissingCols)
+      {
+      if (qcMissingCols > 0)
+         {
+         channelsSheet.insertRowsAfter(channelsSheet.getMaxRows(), qcMissingCols);
+         }
+      })(2 - channelsSheet.getMaxColumns());
+   
+   (function (qcAgentCheckboxes)
+      {
+      })();
+   
+   (function (qrDataRows, qcAgentCheckboxes)
+      {
+      if (qrDataRows > 0)
+         {
+         channelsSheet.getRange(2, 1, qrDataRows, 1).setNumberFormat('M/d/yyyy H:mm:ss');
+         channelsSheet.setRowHeights(2, qrDataRows, 21);
+         if (qcAgentCheckboxes > 0)
+            {
+            channelsSheet.setColumnWidths(3, qcAgentCheckboxes, 21);
+            channelsSheet.getRange(2, 3, qrDataRows, qcAgentCheckboxes).insertCheckboxes();
+            }
+         }
+      })(channelsSheet.getMaxRows() - 1, channelsSheet.getMaxColumns() - 2);
+
+
+   channelsSheet.getRange(1, 1, 1, 1).setValue('last_updated');
+   channelsSheet.getRange(1, 2, 1, 1).setValue('drive_file_url | agents').setTextRotation(45).setVerticalAlignment('middle').setHorizontalAlignment('center');
+   channelsSheet.setRowHeight(1, 175);
+   channelsSheet.setColumnWidth(2, 300);
+   GAS.TrimSheetRows(channelsSheet);
 
    var icLastColumn = channelsSheet.getLastColumn();
    console.log(JSON.stringify(propertyKeys));
