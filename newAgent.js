@@ -4,7 +4,7 @@ function newAgentFromText(text)
    newAgent('data:application/x-gzip;base64,' + Lang.GetBase64GzipFromString(text), null, 'newAgentFromText');
    }
 
-function newAgent (urlAgentInstructions, previousInstallMemory, origin)
+function newAgent (urlAgentInstructions, kPreviousAgentId)
    {
 
    var spreadsheet = SpreadsheetApp.getActive();
@@ -17,33 +17,17 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
       spreadsheet.deleteSheet(sheet);
       }
    sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
-   var agentName = 'platycoreAgent' + sheet.getSheetId();
-   PropertiesService.getDocumentProperties().setProperty(agentName, JSON.stringify({urlAgentInstructions:urlAgentInstructions})); // save a minimal agent first so that reinstall always works
+   sheet.getRange('A1').insertCheckboxes().check().setNote(
+      '  INTERACTIVE_ONLY' // prevent automation from running this code accidentally
+      + (Lang.IsMeaningful(kPreviousAgentId) ? '\n  UPGRADE "' + kPreviousAgentId + '"' : '')
+      + '\n  INSTALL "' + urlAgentInstructions + '"'
+      );
    sheet.activate();
-   sheet.insertColumns(1, 23); // add to the default 26 columns (A-Z)
-   sheet.setColumnWidths(1, 49, sheet.getRowHeight(1)); // square the cells
 
    try
       {
-      var utsAgentCreated = Lang.GetTimestampNow();
-      var agent = new Agent(sheet, {
-            memory: {
-                  agentName: agentName,
-                  fieldFromName: {},
-                  noteFromName: {},
-                  scriptFromName: {},
-                  sheetNameHint: sheetName,
-                  sheetId: sheet.getSheetId(),
-                  toggleFromName: {},
-                  urlAgentInstructions: urlAgentInstructions
-                  },
-            previousInstallMemory: previousInstallMemory,
-            origin: origin || 'newAgent',
-            utsSheetLastUpdated: utsAgentCreated
-            });
-      agent.OverrideTurnOn();
-      agent.Save();
-      agent = agent.ExecuteRoutineFromUrl(urlAgentInstructions);
+      var agent = new Agent(sheet);
+      agent.Preboot();
       }
    catch (e)
       {
@@ -58,18 +42,6 @@ function newAgent (urlAgentInstructions, previousInstallMemory, origin)
          console.error(e2, e2.stack);
          }
       return;
-      }
-   finally
-      {
-      try
-         {
-         agent.Save();
-         spreadsheet.toast('platycoreAgent' + sheet.getSheetId() + ' installed successfully. There are now ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
-         }
-      catch (e)
-         {
-         console.error(e, e.stack);
-         }
       }
 
    return agent;

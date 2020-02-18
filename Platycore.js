@@ -10,11 +10,13 @@ var Platycore = (function (ns) {
 var scriptProperties = PropertiesService.getScriptProperties();
 var defaultValueFromSettingName = {
       'DocumentTryLockWaitTime': 15000,
-      'Verbose': false
+      'Verbose': true
       };
 Object.keys(defaultValueFromSettingName).forEach(function (eSettingName) {
    ns[eSettingName] = Lang.TestMeaningfulValue(scriptProperties.getProperty(eSettingName)) || defaultValueFromSettingName[eSettingName];
    });
 
+
+return ns;
 
 })(Platycore || {});

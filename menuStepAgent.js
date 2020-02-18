@@ -3,7 +3,7 @@ function menuStepAgent()
    {
    try
       {
-      var agent = new Agent(SpreadsheetApp.getActiveSheet(), {origin:'menuStepAgent'});
+      var agent = new Agent(SpreadsheetApp.getActiveSheet());
       try
          {
          if (agent.TurnOn())

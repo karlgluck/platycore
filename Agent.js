@@ -2,25 +2,35 @@
 function Agent (sheet_, previousInstallMemory)
    {
    var self_ = this;
+   var kAgentId_ = 'A'+sheet_.getSheetId();
    var isThisOn_ = false;
+   var isThisPrebooted_ = false;
    var spreadsheet_ = sheet_.getParent();
+   var irNewMessage_ = 2;
+   var readonlyNames_ = [];
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    var getRangeNameFromPropertyName = function (name)
       {
-      return name + '_' + self_.GetName()
+      return kAgentId_ + ':' + name;
       };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    var getRangeFromPropertyName = function (name)
       {
-      return spreadsheet_.getRangeByName(name + '_' + self_.GetName());
+      return spreadsheet_.getRangeByName(kAgentId_ + ':' + name);
       };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    this.BootSectorGet = function ()
       {
       var rv = {
-            agentName: self_.GetName(),
-            sheetNameHint: memory_.sheetNameHint,
-            sheetId: memory_.sheetId,
+            agentName: kIdTag,
+            sheetNameHint: sheet_.getName(),
+            sheetId: sheet_.getSheetId(),
             rangeNameFromPropertyName: {
                   EN:   getRangeNameFromPropertyName('EN'),
                   GO:   getRangeNameFromPropertyName('GO'),
@@ -35,14 +45,14 @@ function Agent (sheet_, previousInstallMemory)
 
    this.GetName = function ()
       {
-      return sheet_.getSheetId() + '(' + sheet_.getName() + ')';
+      return sheet_.getName();
       };
-
+   
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   var read = function (name, ignoreCache, getValueFromRangeCallback)
+   this.GetAgentId = function ()
       {
-      return (ignoreCache || !memory_.valueFromName.hasOwnProperty(name)) ? (memory_.valueFromName[name] = getValueFromRangeCallback(getRangeFromPropertyName(name))) : memory_.valueFromPropertyName[name];
+      return kAgentId_;
       };
 
 
@@ -60,7 +70,8 @@ function Agent (sheet_, previousInstallMemory)
 
    this.ReadToggle = function (name, ignoreCache)
       {
-      return Lang.boolCast(read(name, ignoreCache, function (range) { return Lang.IsObject(range) ? range.getValue() : undefined }));
+      var range = getRangeFromPropertyName(name);
+      return Lang.IsObject(range) ? range.isChecked() : undefined;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -71,7 +82,7 @@ function Agent (sheet_, previousInstallMemory)
       if (Lang.IsObject(range))
          {
          value = Lang.boolCast(value);
-         if (memory_.readonlyNames.indexOf(name) >= 0)
+         if (readonlyNames_.indexOf(name) >= 0)
             {
             range.setFormula(value ? '=TRUE' : '=FALSE');
             }
@@ -79,7 +90,6 @@ function Agent (sheet_, previousInstallMemory)
             {
             range.setValue(value);
             }
-         memory_.valueFromName[name] = value;
          }
       else 
          {
@@ -101,7 +111,8 @@ function Agent (sheet_, previousInstallMemory)
 
    this.ReadField = function (name, ignoreCache)
       {
-      return read(name, ignoreCache, function (range) { return Lang.IsObject(range) ? range.getValue() : undefined });
+      var range = getRangeFromPropertyName(name);
+      return Lang.IsObject(range) ? range.getValue() : undefined;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -111,7 +122,7 @@ function Agent (sheet_, previousInstallMemory)
       var range = getRangeFromPropertyName(name);
       if (Lang.IsObject(range))
          {
-         range.setValue(memory_.valueFromName[name] = value);
+         range.setValue(value);
          }
       else 
          {
@@ -133,7 +144,8 @@ function Agent (sheet_, previousInstallMemory)
 
    this.ReadNote = function (name, ignoreCache)
       {
-      return Lang.stringCast(read(name, ignoreCache, function (range) { return Lang.IsObject(range) ? range.getNote() : undefined }));
+      var range = getRangeFromPropertyName(name);
+      return Lang.IsObject(range) ? range.getNote() : undefined;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -143,7 +155,7 @@ function Agent (sheet_, previousInstallMemory)
       var range = getRangeFromPropertyName(name);
       if (Lang.IsObject(range))
          {
-         range.setNote(memory_.valueFromName[name] = Lang.stringCast(value));
+         range.setNote(Lang.stringCast(value));
          }
       else 
          {
@@ -174,7 +186,7 @@ function Agent (sheet_, previousInstallMemory)
                eRange.getWidth() == searchWidth &&
                eRange.getHeight() == searchHeight)
             {
-            return eNamedRange.getName().substring(0, eNamedRange.length - self_.GetName().length - 1);
+            return eNamedRange.getName().substring(getRangeNameFromPropertyName('').length);
             }
          }
       return null;
@@ -190,7 +202,6 @@ function Agent (sheet_, previousInstallMemory)
 ******      *****         *     *   ****      ******      ****************************************************************************
 *************************************************************************************************************************************/
 
-
    var writeOutputFirstTime_ = function (args)
       {
       writeOutputNormal_(['']); // feed an extra line so that the bordering of the last line of the previous output doesn't get removed
@@ -203,9 +214,11 @@ function Agent (sheet_, previousInstallMemory)
 
    var writeOutputNormal_ = function (args)
       {
+      var startsFromArgCount = [[],[ 2],[ 2,21],[ 2,21,36],[ 2,21,29,40]];
+      var countsFromArgCount = [[],[48],[19,29],[19,15,14],[19, 7,10, 9]];
       var nArgCount = Math.min(args.length, startsFromArgCount.length - 1);
-      var starts = [[],[ 2],[ 2,21],[ 2,21,36],[ 2,21,29,40]][nArgCount];
-      var counts = [[],[48],[19,29],[19,15,14],[19, 7,10, 9]][nArgCount];
+      var starts = startsFromArgCount[nArgCount];
+      var counts = countsFromArgCount[nArgCount];
       sheet_.insertRowBefore(irNewMessage_);
       for (var iArg = nArgCount - 1; iArg >= 0; --iArg)
          {
@@ -289,55 +302,31 @@ function Agent (sheet_, previousInstallMemory)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.Reboot = function ()
-      {
-      self_.Save();
-      var rvAgent = new Agent(sheet_);
-      if (isThisOn_)
-         {
-         rvAgent.OverrideTurnOn();
-         }
-      sheet_ = null;
-      memory_ = null;
-      return rvAgent;
-      };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
    this.Save = function ()
       {
       console.log('saving agent ' + self_.GetName());
-      var documentProperties = PropertiesService.getDocumentProperties();
-      var savedMemory = JSON.parse(JSON.stringify(memory_));
-      delete savedMemory.valueFromName;
-      documentProperties.setProperty(self_.GetName(), JSON.stringify(savedMemory));
+      sheet_.getRange('A1').setNote(
+            '  READONLY ' + JSON.stringify(readonlyNames_)
+            // +'\n'
+            );
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.Uninstall = function ()
       {
-      var rvMemory = memory_ || {};
-      memory_ = null;
-      sheet_.getNamedRanges().forEach(function (eRange) { eRange.remove() });
+      var valueFromPropertyName = {};
+      var qPrefixLength = getRangeNameFromPropertyName('').length;
+      sheet_.getNamedRanges().forEach(function (eRange)
+         {
+         valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = eRange.getRange().getValue();
+         eRange.remove();
+         });
       spreadsheet_.deleteSheet(sheet_);
       sheet_ = null;
-      try
-         {
-         PropertiesService.getDocumentProperties().deleteProperty(self_.GetName());
-         }
-      catch (e)
-         {
-         }
-      console.log('rvMemory', rvMemory);
-      return rvMemory;
-      };
 
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   this.OverrideTurnOn = function ()
-      {
-      isThisOn_ = true;
+      var documentCache = CacheService.getDocumentCache();
+      documentCache.put(kAgentId_, JSON.stringify(valueFromPropertyName));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -607,12 +596,13 @@ function Agent (sheet_, previousInstallMemory)
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-//
-//
 
    this.ExecuteRoutineFromUrl = function (urlAgentInstructions)
       {
-      self_.Info('Fetching ' + Lang.ClampStringLengthP(urlAgentInstructions, 50));
+      if (Platycore.Verbose)
+         {
+         self_.Info('Fetching ' + Lang.ClampStringLengthP(urlAgentInstructions, 50));
+         }
       var dataUrlPrefix = 'data:application/x-gzip;base64,';
       if (urlAgentInstructions.substring(0, dataUrlPrefix.length) === dataUrlPrefix)
          {
@@ -626,6 +616,8 @@ function Agent (sheet_, previousInstallMemory)
       return self_.ExecuteRoutineFromText(agentInstructionsText);
       };
    
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.ExecuteRoutineFromText = function (agentInstructionsText)
       {
       var multilineObjectConcatenationRegex = new RegExp(/{---+}\s---+\s([\s\S]*?)[\r\n]---+/gm);
@@ -655,7 +647,10 @@ function Agent (sheet_, previousInstallMemory)
                   }
                else
                   {
-                  self_.Warn('invalid line: ' + eLine);
+                  if (Platycore.Verbose)
+                     {
+                     self_.Warn('invalid line: ' + eLine);
+                     }
                   return ['REM', JSON.stringify(eLine)];
                   }
                })
@@ -678,7 +673,10 @@ function Agent (sheet_, previousInstallMemory)
             ;
 
       agentInstructionsText = '[' + agentInstructions.join(',') + ']';
-      self_.Info('agentInstructionsText', agentInstructionsText);
+      if (isThisOn_ && Platycore.Verbose)
+         {
+         self_.Info('agentInstructionsText', agentInstructionsText);
+         }
       return self_.ExecuteRoutine(JSON.parse(agentInstructionsText));
       };
 
@@ -697,6 +695,7 @@ function Agent (sheet_, previousInstallMemory)
 
       var selectedRange = null;
       var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT']);
+      var previousAgentValueFromPropertyName = null;
       
       for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
          {
@@ -714,10 +713,38 @@ function Agent (sheet_, previousInstallMemory)
                }
             }
 
+         console.log(eInstruction);
+
          switch (eInstruction)
             {
             default:
                self_.Error('invalid instruction', eInstruction);
+               break;
+
+            case 'INTERACTIVE_ONLY':
+               if (!Lang.IsObject(SpreadsheetApp.getActive()))
+                  {
+                  return;
+                  }
+               break;
+
+            case 'UPGRADE':
+               previousAgentValueFromPropertyName = (function (v)
+                  {
+                  try
+                     {
+                     return JSON.parse(v);
+                     }
+                  catch (e)
+                     {
+                     return null;
+                     }
+                  })(CacheService.getDocumentCache().get(Lang.stringCast(eArguments[0])));
+               break;
+
+            case 'INSTALL':
+               isThisOn_ = true;
+               self_.ExecuteRoutineFromUrl(Lang.stringCast(eArguments[0]));
                break;
 
             case 'SELECT':
@@ -726,8 +753,7 @@ function Agent (sheet_, previousInstallMemory)
 
             case 'NAME':
                var name = Lang.stringCast(eArguments[0]);
-               sheet_.setName(name);
-               self_.Info('Building agent ' + self_.GetName());
+               sheet_.setName(name + sheet_.getSheetId());
                break;
 
             case 'FREEZE':
@@ -735,31 +761,45 @@ function Agent (sheet_, previousInstallMemory)
                break;
 
             case 'RESERVE':
-               var qrRows = Lang.intCast(eArguments[0]);
-               var irHeaders = qrRows;
-               sheet_.insertRowsBefore(1, qrRows);
-               irNewMessage_ = qrRows + 1;
+               
                var mrMaxRows = sheet_.getMaxRows();
-               var riFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
-               sheet_.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
-               mrMaxRows = riFirstRowToDelete - 1;
-               sheet_.setRowHeights(1, mrMaxRows, 21);
-               sheet_.getRange(1, 1, mrMaxRows, sheet_.getMaxColumns())
+               var mrMaxColumns = sheet_.getMaxColumns();
+               sheet_.getRange(1, 1, mrMaxRows, mrMaxColumns)
                      .setFontColor('#b7b7b7')
                      .setBackground('black')
                      .setFontFamily('IBM Plex Mono')
                      .setVerticalAlignment('top')
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
 
-               sheet_.getRange(qrRows, 1, 1, sheet_.getMaxColumns()).setBorder(false, false, true, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
+               sheet_.setRowHeights(1, mrMaxRows, 21);
+               sheet_.setColumnWidths(1, sheet_.getMaxColumns(), 21); // square the cells
+
+               var qcExtraColumns = mrMaxColumns - 49;
+               var icLastColumn = sheet_.getLastColumn();
+               if (qcExtraColumns < 0)
+                  {
+                  sheet.insertColumnsAfter(Math.max(1, icLastColumn), -qcExtraColumns);
+                  }
+               else if (qcExtraColumns > 0)
+                  {
+                  sheet.deleteColumns(mrMaxColumns - qcExtraColumns + 1, qcExtraColumns);
+                  }
+               mrMaxColumns = 49;
+
+               var qrRows = Lang.intCast(eArguments[0]);
+               var irHeaders = qrRows;
+               sheet_.insertRowsBefore(irNewMessage_, qrRows);
+               mrMaxRows += qrRows;
+               irNewMessage_ = qrRows + 1;
+               var riFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
+               sheet_.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
+               mrMaxRows = riFirstRowToDelete - 1;
+
+               sheet_.getRange(qrRows, 1, 1, mrMaxColumns).setBorder(false, false, true, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
                sheet_.getRange(1, 1, qrRows, 1).mergeVertically().setBackground('#b7b7b7').setFontColor('#000000');
                //spreadsheet_.setNamedRange(getRangeNameFromPropertyName('LOG'), sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns()));
                break;
 
-            case 'REBOOT':
-               self_.Log('Rebooting...');
-               return self_.Reboot().ExecuteRoutine(instructions.slice(iInstruction+1));
-            
             case 'OFF':
                self_.TurnOff();
                break;
@@ -814,13 +854,17 @@ function Agent (sheet_, previousInstallMemory)
                   }
                break;
 
+            case 'READONLY':
+               readonlyNames_ = Lang.arrayCast(eArguments[1]);
+               break;
+
             case 'TOGGLE':
                var kName = eArguments[0];
                selectedRange.insertCheckboxes();
                spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
                if (Lang.IsValueContainedInSetP('READONLY', eArgumentSet))
                   {
-                  memory_.readonlyNames.push(kName);
+                  readonlyNames_.push(kName);
                   }
                else
                   {
@@ -837,7 +881,7 @@ function Agent (sheet_, previousInstallMemory)
                var textStyleBuilder = selectedRange.getTextStyle().copy();
                if (Lang.IsValueContainedInSetP('READONLY', eArgumentSet))
                   {
-                  memory_.readonlyNames.push(kName);
+                  readonlyNames_.push(kName);
                   textStyleBuilder.setForegroundColor('#666666');
                   }
                else
@@ -947,31 +991,37 @@ function Agent (sheet_, previousInstallMemory)
 // output is logged.
 //
 
-   var irNewMessage_ = 2;
-
-   (function (range)
+   this.Preboot = function ()
       {
+      var range = sheet_.getRange('A1');
+
       var note = null;
       if (range.isPartOfMerge())
          {
          irNewMessage_ = 1 + range.getMergedRanges()[0].getNumRows();
          }
-      if (range.isChecked())
+      if (true === range.isChecked())
          {
          note = range.getNote();
          }
       if (Lang.IsMeaningful(note))
          {
-         self_.ExecuteRoutineFromText(note);
+         try
+            {
+            self_.ExecuteRoutineFromText(note);
+            isThisPrebooted_ = true;
+            }
+         catch (e)
+            {
+            if (Platycore.Verbose)
+               {
+               console.warn("Exception while running preboot script for " + kAgentId_, e, e.stack);
+               }
+            }
          }
-      })(sheet_.getRange('A1'));
 
-   var memory_ = {};
-
-   memory_.valueFromName = {};
-   memory_.readonlyNames = memory_.readonlyNames || [];
-
-   console.log('agent online: ' + sheetId_);
+      return isThisPrebooted_;
+      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 

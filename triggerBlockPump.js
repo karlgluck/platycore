@@ -73,28 +73,26 @@ var doBlockPump = function () {
             {
             var sheet = sheets_[iSheet_];
             iSheet_ = (iSheet_ + 1 ) % nSheetCount_;
-            var sheetId = sheet.getSheetId();
-            var bootSector = platycore.agentBootSectorFromSheetId[sheetId];
-            var agentMemory = properties_.getProperty('platycoreAgent'+sheetId);
+            var agent = new Agent(sheet);
             }
          else
             {
             qSheetsLeftToSearch = 0;
             var sheet = null;
-            var sheetId = null;
-            var bootSector = null;
-            var agentMemory = null;
+            var agent = null;
+            }
+         
+         if (agent.Preboot())
+            {
+
             }
 
-         console.log('sheetId', sheetId);
-         console.log('bootSector', bootSector);
-         console.log('agentMemory', agentMemory);
          if (null !== agentMemory)
             {
             agentMemory = JSON.parse(agentMemory);
             if (!Lang.IsObject(bootSector))
                {
-               var agent = new Agent(sheet, {memory: agentMemory, origin: 'doBlockPump - bootSector recovery'});
+               var agent = new Agent(sheet);
                bootSector = agent.BootSectorGet();
                }
             else

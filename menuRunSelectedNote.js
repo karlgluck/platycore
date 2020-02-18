@@ -4,7 +4,7 @@ function menuRunSelectedNote ()
    try
       {
       var cellRange = SpreadsheetApp.getCurrentCell();
-      var agent = new Agent(cellRange.getSheet(), {origin:'menuRunSelectedNote'});
+      var agent = new Agent(cellRange.getSheet());
       try
          {
          if (agent.TurnOn())
