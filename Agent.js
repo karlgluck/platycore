@@ -352,7 +352,9 @@ function Agent (sheet_, config_)
       {
       console.log('saving agent ' + config_.agentName);
       var documentProperties = PropertiesService.getDocumentProperties();
-      documentProperties.setProperty(config_.agentName, JSON.stringify(memory_));
+      var savedMemory = JSON.parse(JSON.stringify(memory_));
+      delete savedMemory.valueFromName;
+      documentProperties.setProperty(config_.agentName, JSON.stringify(savedMemory));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -666,10 +668,20 @@ function Agent (sheet_, config_)
          var agentInstructionsText = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
          }
 
-      var multilineConcatenationRegex = new RegExp(/"---+"\s---+\s([\s\S]+?)[\r\n]---+/gm);
+      return self_.ExecuteRoutineFromText(agentInstructionsText);
+      };
+   
+   this.ExecuteRoutineFromText = function (agentInstructionsText)
+      {
+      var multilineObjectConcatenationRegex = new RegExp(/{---+}\s---+\s([\s\S]*?)[\r\n]---+/gm);
+      var multilineConcatenationRegex = new RegExp(/"---+"\s---+\s([\s\S]*?)[\r\n]---+/gm);
       var whitespaceRegex = new RegExp(/^\s/);
       var associativeSplitRegex = new RegExp(/^\s+(\S+)\s*(.*)/);
       var agentInstructions = agentInstructionsText
+            .replace(multilineObjectConcatenationRegex, function (matched, group, index) // allow easy multi-line concatenation
+               {
+               return JSON.parse(group);
+               })
             .replace(multilineConcatenationRegex, function (matched, group, index) // allow easy multi-line concatenation
                {
                return JSON.stringify(group);
