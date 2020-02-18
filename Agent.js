@@ -1,39 +1,24 @@
 
-            //case 'TOOLBAR':
-               // var irToolbar = instructions[++iInstruction];
-               // sheet_.getRange(irToolbar, 1, 1, 49)
-               //       .setBackground('#434343')
-               //       .setBorder(false, false, true, false, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM)
-            //   break;
-
-// sheet_.getParent()
-
-
-function Agent (sheet_, config_)
+function Agent (sheet_, previousInstallMemory)
    {
-   config_ = JSON.parse(JSON.stringify(config_ || {}));
    var self_ = this;
    var isThisOn_ = false;
    var spreadsheet_ = sheet_.getParent();
 
    var getRangeNameFromPropertyName = function (name)
       {
-      return name + '_' + config_.agentName
+      return name + '_' + self_.GetName()
       };
 
    var getRangeFromPropertyName = function (name)
       {
-      return spreadsheet_.getRangeByName(name + '_' + config_.agentName);
+      return spreadsheet_.getRangeByName(name + '_' + self_.GetName());
       };
 
-   // var getAllRangeNames = function ()
-   //    {
-   //    };
-
-   self_.BootSectorGet = function ()
+   this.BootSectorGet = function ()
       {
       var rv = {
-            agentName: config_.agentName,
+            agentName: self_.GetName(),
             sheetNameHint: memory_.sheetNameHint,
             sheetId: memory_.sheetId,
             rangeNameFromPropertyName: {
@@ -45,34 +30,13 @@ function Agent (sheet_, config_)
             };      
       return rv;
       };
-
+   
 //------------------------------------------------------------------------------------------------------------------------------------
-//
-// Load memory_ for this execution 
-//
 
-   if (!Lang.IsObject(config_.memory))
+   this.GetName = function ()
       {
-      if (!Lang.IsString(config_.agentName))
-         {
-         config_.agentName = 'platycoreAgent' + sheet_.getSheetId();
-         }
-      config_.memory = JSON.parse(PropertiesService.getDocumentProperties().getProperty(config_.agentName)) || {};
-      }
-   config_.agentName = config_.memory.agentName;
-   var memory_ = config_.memory;
-
-   memory_.valueFromName = {};
-   memory_.readonlyNames = memory_.readonlyNames || [];
-
-   console.log('agent created: ' + sheet_.getSheetId(), config_);
-
-//------------------------------------------------------------------------------------------------------------------------------------
-//
-// Apply defaults
-//
-
-   if (!config_.hasOwnProperty('dtLockWaitMillis')) config_.dtLockWaitMillis = 15000;
+      return sheet_.getSheetId() + '(' + sheet_.getName() + ')';
+      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -210,7 +174,7 @@ function Agent (sheet_, config_)
                eRange.getWidth() == searchWidth &&
                eRange.getHeight() == searchHeight)
             {
-            return eNamedRange.getName().substring(0, eNamedRange.length - config_.agentName.length - 1);
+            return eNamedRange.getName().substring(0, eNamedRange.length - self_.GetName().length - 1);
             }
          }
       return null;
@@ -226,29 +190,22 @@ function Agent (sheet_, config_)
 ******      *****         *     *   ****      ******      ****************************************************************************
 *************************************************************************************************************************************/
 
-   var irNewMessage_ = (function (range)
-      {
-      return Lang.IsObject(range) ? range.getRow() + 1 : 1;
-      })(getRangeFromPropertyName('LOG'));
 
    var writeOutputFirstTime_ = function (args)
       {
       writeOutputNormal_(['']); // feed an extra line so that the bordering of the last line of the previous output doesn't get removed
       var rvRange = writeOutputNormal_(args);
       sheet_.getRange(irNewMessage_ + 1, 1, 1, 49)
-            .setBorder(true, false, false, false, false, false, '#dadfe8', SpreadsheetApp.BorderStyle.SOLID_THICK);
+            .setBorder(true, false, false, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
       writeOutput_ = writeOutputNormal_;
       return rvRange;
       };
 
-   var startsFromArgCount = [[],[ 2],[ 2,21],[ 2,21,36],[ 2,21,29,40]];
-   var countsFromArgCount = [[],[48],[19,29],[19,15,14],[19, 7,10, 9]];
-
    var writeOutputNormal_ = function (args)
       {
       var nArgCount = Math.min(args.length, startsFromArgCount.length - 1);
-      var starts = startsFromArgCount[nArgCount];
-      var counts = countsFromArgCount[nArgCount];
+      var starts = [[],[ 2],[ 2,21],[ 2,21,36],[ 2,21,29,40]][nArgCount];
+      var counts = [[],[48],[19,29],[19,15,14],[19, 7,10, 9]][nArgCount];
       sheet_.insertRowBefore(irNewMessage_);
       for (var iArg = nArgCount - 1; iArg >= 0; --iArg)
          {
@@ -269,7 +226,7 @@ function Agent (sheet_, config_)
    this.Log = function (message)
       {
       console.log.apply(console, arguments);
-      writeOutput_(arguments).setFontColor('#00ff00').setBackground('black');
+      writeOutput_(arguments).setFontColor('#b7b7b7').setBackground('black');
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -335,13 +292,12 @@ function Agent (sheet_, config_)
    this.Reboot = function ()
       {
       self_.Save();
-      var rvAgent = new Agent(sheet_, config_);
+      var rvAgent = new Agent(sheet_);
       if (isThisOn_)
          {
          rvAgent.OverrideTurnOn();
          }
       sheet_ = null;
-      config_ = null;
       memory_ = null;
       return rvAgent;
       };
@@ -350,11 +306,11 @@ function Agent (sheet_, config_)
 
    this.Save = function ()
       {
-      console.log('saving agent ' + config_.agentName);
+      console.log('saving agent ' + self_.GetName());
       var documentProperties = PropertiesService.getDocumentProperties();
       var savedMemory = JSON.parse(JSON.stringify(memory_));
       delete savedMemory.valueFromName;
-      documentProperties.setProperty(config_.agentName, JSON.stringify(savedMemory));
+      documentProperties.setProperty(self_.GetName(), JSON.stringify(savedMemory));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -368,12 +324,11 @@ function Agent (sheet_, config_)
       sheet_ = null;
       try
          {
-         PropertiesService.getDocumentProperties().deleteProperty(config_.agentName);
+         PropertiesService.getDocumentProperties().deleteProperty(self_.GetName());
          }
       catch (e)
          {
          }
-      config_ = null;
       console.log('rvMemory', rvMemory);
       return rvMemory;
       };
@@ -414,7 +369,7 @@ function Agent (sheet_, config_)
       if (canTurnOn)
          {
          var lock = LockService.getDocumentLock();
-         if (!lock.tryLock(config_.dtLockWaitMillis))
+         if (!lock.tryLock(Platycore.DocumentTryLockWaitTime))
             {
             lock = null;
             }
@@ -447,7 +402,7 @@ function Agent (sheet_, config_)
                }
             else
                {
-               spreadsheet_.toast(config_.agentName + ': could not turn on');
+               spreadsheet_.toast(self_.GetName() + ': could not turn on');
                }
             }
          catch (e)
@@ -475,7 +430,7 @@ function Agent (sheet_, config_)
       self_.Save();
       isThisOn_ = false;
       var lock = LockService.getDocumentLock();
-      if (lock.tryLock(config_.dtLockWaitMillis))
+      if (lock.tryLock(Platycore.DocumentTryLockWaitTime))
          {
          try
             {
@@ -771,8 +726,8 @@ function Agent (sheet_, config_)
 
             case 'NAME':
                var name = Lang.stringCast(eArguments[0]);
-               memory_.name = name;
-               self_.Info('Building agent "' + name + '" (' + config_.agentName + ')');
+               sheet_.setName(name);
+               self_.Info('Building agent ' + self_.GetName());
                break;
 
             case 'FREEZE':
@@ -788,15 +743,17 @@ function Agent (sheet_, config_)
                var riFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
                sheet_.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
                mrMaxRows = riFirstRowToDelete - 1;
-               sheet_.getRange(1, 1, sheet_.getMaxRows(), sheet_.getMaxColumns())
-                     .setFontColor('#00ff00')
+               sheet_.setRowHeights(1, mrMaxRows, 21);
+               sheet_.getRange(1, 1, mrMaxRows, sheet_.getMaxColumns())
+                     .setFontColor('#b7b7b7')
                      .setBackground('black')
-                     .setFontFamily('Courier New')
+                     .setFontFamily('IBM Plex Mono')
                      .setVerticalAlignment('top')
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-                     
-               sheet_.getRange(qrRows, 1, 1, sheet_.getMaxColumns()).setBorder(false, false, true, false, false, false, '#dadfe8', SpreadsheetApp.BorderStyle.SOLID_THICK);
-               spreadsheet_.setNamedRange(getRangeNameFromPropertyName('LOG'), sheet_.getRange(qrRows, 1, sheet_.getMaxRows()-qrRows+1, sheet_.getMaxColumns()));
+
+               sheet_.getRange(qrRows, 1, 1, sheet_.getMaxColumns()).setBorder(false, false, true, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
+               sheet_.getRange(1, 1, qrRows, 1).mergeVertically().setBackground('#b7b7b7').setFontColor('#000000');
+               //spreadsheet_.setNamedRange(getRangeNameFromPropertyName('LOG'), sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns()));
                break;
 
             case 'REBOOT':
@@ -821,7 +778,6 @@ function Agent (sheet_, config_)
 
             case 'REINSTALL': // execute code if this is a reinstall operation; guarantee access to the variable previousInstallMemory
                var code = eArguments.join('\n');
-               var previousInstallMemory = config_.previousInstallMemory;
                if (Lang.IsObject(previousInstallMemory))
                   {
                   (function (agent, previousInstallMemory)
@@ -980,4 +936,44 @@ function Agent (sheet_, config_)
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
+//
+// We can tell if this is a Platycore Agent if it has a
+// checkbox with a note in cell A1. If the checkbox is
+// checked, that means it is okay to evaluate the note
+// in order to boot an Agent.
+//
+// The number of rows merged into A1 determine the
+// reserved area of the agent, below which is where the
+// output is logged.
+//
+
+   var irNewMessage_ = 2;
+
+   (function (range)
+      {
+      var note = null;
+      if (range.isPartOfMerge())
+         {
+         irNewMessage_ = 1 + range.getMergedRanges()[0].getNumRows();
+         }
+      if (range.isChecked())
+         {
+         note = range.getNote();
+         }
+      if (Lang.IsMeaningful(note))
+         {
+         self_.ExecuteRoutineFromText(note);
+         }
+      })(sheet_.getRange('A1'));
+
+   var memory_ = {};
+
+   memory_.valueFromName = {};
+   memory_.readonlyNames = memory_.readonlyNames || [];
+
+   console.log('agent online: ' + sheetId_);
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+
    }
