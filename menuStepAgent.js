@@ -4,20 +4,23 @@ function menuStepAgent()
    try
       {
       var agent = new Agent(SpreadsheetApp.getActiveSheet());
-      try
+      if (agent.Preboot())
          {
-         if (agent.TurnOn())
+         try
             {
-            agent.Step();
+            if (agent.TurnOn())
+               {
+               agent.Step();
+               }
             }
-         }
-      catch (e)
-         {
-         agent.Error('Step', e, e.stack);
-         }
-      finally
-         {
-         agent.TurnOff();
+         catch (e)
+            {
+            agent.Error('Step', e, e.stack);
+            }
+         finally
+            {
+            agent.TurnOff();
+            }
          }
       }
    catch (e)

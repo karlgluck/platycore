@@ -6,7 +6,7 @@ function menuReinstallAgent()
       var agent = new Agent(SpreadsheetApp.getActiveSheet());
       var kAgentId = agent.GetAgentId();
       agent.Uninstall();
-      newAgent(urlAgentInstructions, kAgentId, 'menuReinstallAgent');
+      newAgent(urlAgentInstructions, kAgentId);
       }
    catch (e)
       {

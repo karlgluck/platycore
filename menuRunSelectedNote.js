@@ -7,7 +7,7 @@ function menuRunSelectedNote ()
       var agent = new Agent(cellRange.getSheet());
       try
          {
-         if (agent.TurnOn())
+         if (agent.Preboot() && agent.TurnOn())
             {
             var noteName = agent.FindNameUsingRangeP(cellRange);
             if (null !== noteName)
@@ -25,7 +25,7 @@ function menuRunSelectedNote ()
          }
       catch (e)
          {
-         agent.Error('Run Selected Node', e, e.stack);
+         agent.Error('Run selected note', e, e.stack);
          }
       finally
          {

@@ -6,6 +6,15 @@ Common Initialization
        NAME  "Labels to Lists"
     RESERVE  7
 
+--- REINSTALL ---
+
+   SELECT  "AS6:AV6"
+     TEXT  "[Reinstall]"
+       FG "#000"
+       BG "#ffff00"
+   HALIGN "center"
+     WRITE_REINSTALL_NOTE
+
 --- EN ---
 
    SELECT  "C2"

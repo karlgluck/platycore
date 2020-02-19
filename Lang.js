@@ -162,6 +162,13 @@ ns.IsArray = function (v)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+
+ns.MakeArray = function (nLength, defaultValue)
+   {
+   return Array.apply(null, new Array(nLength)).fill(defaultValue);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
 
 ns.IsFunction = function (v)

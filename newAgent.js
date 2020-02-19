@@ -1,7 +1,7 @@
 
 function newAgentFromText(text)
    {
-   newAgent('data:application/x-gzip;base64,' + Lang.GetBase64GzipFromString(text), null, 'newAgentFromText');
+   newAgent('data:application/x-gzip;base64,' + Lang.GetBase64GzipFromString(text), null);
    }
 
 function newAgent (urlAgentInstructions, kPreviousAgentId)

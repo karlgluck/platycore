@@ -22,24 +22,6 @@ function Agent (sheet_, previousInstallMemory)
       {
       return spreadsheet_.getRangeByName(kAgentId_ + '_' + name);
       };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   this.BootSectorGet = function ()
-      {
-      var rv = {
-            agentName: kIdTag,
-            sheetNameHint: sheet_.getName(),
-            sheetId: sheet_.getSheetId(),
-            rangeNameFromPropertyName: {
-                  EN:   getRangeNameFromPropertyName('EN'),
-                  GO:   getRangeNameFromPropertyName('GO'),
-                  WAKE: getRangeNameFromPropertyName('WAKE')
-                  },
-            valueFromPropertyName: {}
-            };      
-      return rv;
-      };
    
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -202,17 +184,17 @@ function Agent (sheet_, previousInstallMemory)
 ******      *****         *     *   ****      ******      ****************************************************************************
 *************************************************************************************************************************************/
 
-   var writeOutputFirstTime_ = function (args)
+   var writeOutputFirstTime_ = function (badge, args)
       {
-      writeOutputNormal_(['']); // feed an extra line so that the bordering of the last line of the previous output doesn't get removed
-      var rvRange = writeOutputNormal_(args);
-      sheet_.getRange(irNewMessage_ + 1, 1, 1, 49)
+      sheet_.insertRowsBefore(irNewMessage_, 1);
+      var rvRange = writeOutputNormal_(badge, args);
+      sheet_.getRange(rvRange.getRow() + 1, 1, 1, 49)
             .setBorder(true, false, false, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
       writeOutput_ = writeOutputNormal_;
       return rvRange;
       };
 
-   var writeOutputNormal_ = function (args)
+   var writeOutputNormal_ = function (badge, args)
       {
       var startsFromArgCount = [[],[ 2],[ 2,21],[ 2,21,36],[ 2,21,29,40]];
       var countsFromArgCount = [[],[48],[19,29],[19,15,14],[19, 7,10, 9]];
@@ -220,13 +202,19 @@ function Agent (sheet_, previousInstallMemory)
       var starts = startsFromArgCount[nArgCount];
       var counts = countsFromArgCount[nArgCount];
       sheet_.insertRowBefore(irNewMessage_);
+      var values = Lang.MakeArray(49, null);
+      values[0] = badge;
       for (var iArg = nArgCount - 1; iArg >= 0; --iArg)
          {
-         sheet_.getRange(irNewMessage_, starts[iArg], 1, counts[iArg]).mergeAcross().setValue(args[iArg]).setHorizontalAlignment('left');
+         values[starts[iArg]-1] = args[iArg];
          }
-      sheet_.getRange(irNewMessage_, 1)
-            .setNote(JSON.stringify([new Date().toISOString(),Lang.GetStackTrace(2)].concat(Object.keys(args).map(function (kArg){return args[kArg]}))));
-      return sheet_.getRange(irNewMessage_, 1, 1, 49);
+      var range = sheet_.getRange(irNewMessage_, 1, 1, 49);
+      var notes = Lang.MakeArray(49, null);
+      notes[0] = new Date().toISOString() + '\n\n' + Lang.GetStackTrace(4) + '\n\n' + Object.keys(args).map(function (kArg){return args[kArg]}).join('\n\n');
+      range.setValues([values]).setNotes([notes]);
+      // for some reason this never works to shrink autosized rows
+      //sheet_.setRowHeights(irNewMessage_, sheet_.getMaxRows() - irNewMessage_, 21);
+      return range;
       };
    
    var writeOutput_ = writeOutputFirstTime_;
@@ -239,7 +227,15 @@ function Agent (sheet_, previousInstallMemory)
    this.Log = function (message)
       {
       console.log.apply(console, arguments);
-      writeOutput_(arguments).setFontColor('#b7b7b7').setBackground('black');
+      writeOutput_('', arguments).setFontColor('#b7b7b7').setBackground('black');
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   this.LogWithBadge = function (badge, message)
+      {
+      console.log.apply(console, arguments);
+      writeOutput_(badge, Array(arguments).slice(1)).setFontColor('#b7b7b7').setBackground('black');
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -250,7 +246,7 @@ function Agent (sheet_, previousInstallMemory)
    this.Info = function (message)
       {
       console.info.apply(console, arguments);
-      writeOutput_(arguments).setFontColor('white').setBackground('black');
+      writeOutput_('', arguments).setFontColor('white').setBackground('black');
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -261,8 +257,7 @@ function Agent (sheet_, previousInstallMemory)
    this.Warn = function (message)
       {
       console.warn.apply(console, arguments);
-      writeOutput_(arguments).setFontColor('yellow').setBackground('#38340a');
-      self_.BadgeLastOutput('⚠️');
+      writeOutput_('⚠️', arguments).setFontColor('yellow').setBackground('#38340a');
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -273,20 +268,7 @@ function Agent (sheet_, previousInstallMemory)
    this.Error = function (message)
       {
       console.error.apply(console, arguments);
-      writeOutput_(arguments).setFontColor('red').setBackground('#3d0404');
-      self_.BadgeLastOutput('❌');
-      };
-
-
-//------------------------------------------------------------------------------------------------------------------------------------
-//
-// Adds a single-character emoji to the left column of the last
-// output, where the note that holds the JSON is attached.
-//
-
-   this.BadgeLastOutput = function (badge)
-      {
-      sheet_.getRange(irNewMessage_, 1).setValue(badge);
+      writeOutput_('❌', arguments).setFontColor('red').setBackground('#3d0404');
       };
 
 /*************************************************************************************************************************************
@@ -324,6 +306,8 @@ function Agent (sheet_, previousInstallMemory)
          });
       spreadsheet_.deleteSheet(sheet_);
       sheet_ = null;
+      isThisOn_ = false;
+      isThisPrebooted_ = false;      
 
       var documentCache = CacheService.getDocumentCache();
       documentCache.put(kAgentId_, JSON.stringify(valueFromPropertyName));
@@ -417,7 +401,7 @@ function Agent (sheet_, previousInstallMemory)
       {
       if (!isThisOn_)
          {
-         throw "cannot turn off; was not on";
+         return;
          }
       self_.Save();
       isThisOn_ = false;
@@ -586,8 +570,10 @@ function Agent (sheet_, previousInstallMemory)
             }
          }
       self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
-      self_.Log('snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNow()) + ' from now at ' + Lang.GetWallTimeFromTimestamp(utsNewWakeTime));
-      self_.BadgeLastOutput(Lang.GetMoonPhaseFromDate(new Date(utsNewWakeTime)));
+      self_.LogWithBadge(
+            Lang.GetMoonPhaseFromDate(new Date(utsNewWakeTime)),
+            'snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNow()) + ' from now at ' + Lang.GetWallTimeFromTimestamp(utsNewWakeTime)
+            );
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -747,7 +733,46 @@ function Agent (sheet_, previousInstallMemory)
 
             case 'INSTALL':
                isThisOn_ = true;
-               self_.ExecuteRoutineFromUrl(Lang.stringCast(eArguments[0]));
+               var installationUrl = Lang.stringCast(eArguments[0]);
+               CacheService.getDocumentCache().put(kAgentId_ + '.INSTALL', installationUrl);
+               self_.ExecuteRoutineFromUrl(installationUrl);
+               break;
+            
+            case 'UNINSTALL':
+               self_.Uninstall();
+               break;
+
+            case 'CONTINUE_IN_NEW_AGENT':
+               var sheet = spreadsheet.insertSheet();
+               sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "CONTINUE_IN_NEW_AGENT"');
+               var agent = new Agent(sheet);
+               if (agent.Preboot())
+                  {
+                  agent.ExecuteRoutine(instructions.slice(iInstruction+1))
+                  }
+               iInstruction = nInstructionCount;
+               break;
+
+            case 'WRITE_REINSTALL_NOTE':
+               selectedRange.setNote(
+                     'Run this note to reinstall ' + kAgentId_
+                     + '\n  INTERACTIVE_ONLY'
+                     + '\n  UNINSTALL'
+                     + '\n  CONTINUE_IN_NEW_AGENT'
+                     + '\n  UPGRADE "' + kAgentId_ + '"'
+                     + '\n  INSTALL "' + (CacheService.getDocumentCache().get(kAgentId_ + '.INSTALL')) + '"'
+                  );
+               break;
+
+            case 'IF_REINSTALLING': // execute code if this is a reinstall operation; guarantee access to the variable previousAgentValueFromPropertyName
+               var code = eArguments.join('\n');
+               if (Lang.IsObject(previousAgentValueFromPropertyName))
+                  {
+                  (function (agent, previousAgentValueFromPropertyName)
+                     {
+                     eval(code);
+                     })(self_, previousAgentValueFromPropertyName);
+                  }
                break;
 
             case 'SELECT':
@@ -772,6 +797,7 @@ function Agent (sheet_, previousInstallMemory)
                      .setBackground('black')
                      .setFontFamily('IBM Plex Mono')
                      .setVerticalAlignment('top')
+                     .setWrap(false)
                      .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
 
                sheet_.setRowHeights(1, mrMaxRows, 21);
@@ -800,6 +826,8 @@ function Agent (sheet_, previousInstallMemory)
 
                sheet_.getRange(qrRows, 1, 1, mrMaxColumns).setBorder(false, false, true, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
                sheet_.getRange(1, 1, qrRows, 1).mergeVertically().setBackground('#b7b7b7').setFontColor('#000000');
+               var logRange = sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns());
+               logRange.setWrap(false).setWrapStrategy(SpreadsheetApp.WrapStrategy.OVERFLOW);
                //spreadsheet_.setNamedRange(getRangeNameFromPropertyName('LOG'), sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns()));
                break;
 
@@ -817,17 +845,6 @@ function Agent (sheet_, previousInstallMemory)
 
             case 'ERROR':
                self_.Error(eArguments.join('\n'));
-               break;
-
-            case 'REINSTALL': // execute code if this is a reinstall operation; guarantee access to the variable previousInstallMemory
-               var code = eArguments.join('\n');
-               if (Lang.IsObject(previousInstallMemory))
-                  {
-                  (function (agent, previousInstallMemory)
-                     {
-                     eval(code);
-                     })(self_, previousInstallMemory);
-                  }
                break;
 
             case 'EVAL':
@@ -874,6 +891,15 @@ function Agent (sheet_, previousInstallMemory)
                   selectedRange.setFontColor('#00ffff'); // editable
                   }
                var value = Lang.IsValueContainedInSetP('TRUE', eArgumentSet);
+               if (Lang.IsValueContainedInSetP('UPGRADE', eArgumentSet))
+                  {
+                  var previousValue;
+                  if (Lang.IsObject(previousAgentValueFromPropertyName)
+                        && Lang.IsMeaningful(previousValue = previousAgentValueFromPropertyName[kName]))
+                     {
+                     value = previousValue;
+                     }
+                  }
                self_.Log('+toggle: ' + kName, value);
                self_.WriteToggle(kName, value);
                break;
@@ -897,12 +923,16 @@ function Agent (sheet_, previousInstallMemory)
                var value = '';
                if (Lang.IsValueContainedInSetP('UPGRADE', eArgumentSet))
                   {
-                  if (Lang.IsObject(previousInstallMemory)
-                        && Lang.IsObject(previousInstallMemory.valueFromName))
+                  var previousValue;
+                  if (Lang.IsObject(previousAgentValueFromPropertyName)
+                        && Lang.IsMeaningful(previousValue = previousAgentValueFromPropertyName[kName]))
                      {
-                     value = previousInstallMemory.valueFromName[kName];
-                     self_.WriteField(kName, value);
+                     value = previousValue;
                      }
+                  }
+               if (Lang.IsMeaningful(value))
+                  {
+                  self_.WriteField(kName, value);
                   }
                self_.Log('+field: ' + kName, value);
                break;
@@ -911,6 +941,16 @@ function Agent (sheet_, previousInstallMemory)
                var kName = eArguments[0];
                spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
                var value = eArguments.slice(1).join('\n');
+               // doesn't apply, but the principle is the same -- maybe unify these?
+               // if (Lang.IsValueContainedInSetP('UPGRADE', eArgumentSet))
+               //    {
+               //    var previousValue;
+               //    if (Lang.IsObject(previousAgentValueFromPropertyName)
+               //          && Lang.IsMeaningful(previousValue = previousAgentValueFromPropertyName[kName]))
+               //       {
+               //       value = previousValue;
+               //       }
+               //    }
                self_.Log('+note: ' + kName, value);
                self_.WriteNote(kName, value);
                break;
