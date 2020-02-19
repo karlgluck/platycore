@@ -307,7 +307,8 @@ function Agent (sheet_, previousInstallMemory)
       spreadsheet_.deleteSheet(sheet_);
       sheet_ = null;
       isThisOn_ = false;
-      isThisPrebooted_ = false;      
+      isThisPrebooted_ = false;
+      console.log('[Uninstall] valueFromPropertyName', valueFromPropertyName);
 
       var documentCache = CacheService.getDocumentCache();
       documentCache.put(kAgentId_, JSON.stringify(valueFromPropertyName));
@@ -584,14 +585,8 @@ function Agent (sheet_, previousInstallMemory)
       self_.WriteField('WAKE', 'SNOOZE');
       };
 
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   this.ExecuteRoutineFromUrl = function (urlAgentInstructions)
+   var getRoutineTextFromUrl = function (urlAgentInstructions)
       {
-      if (Platycore.Verbose)
-         {
-         self_.Info('Fetching ' + Lang.ClampStringLengthP(urlAgentInstructions, 50));
-         }
       var dataUrlPrefix = 'data:application/x-gzip;base64,';
       if (urlAgentInstructions.substring(0, dataUrlPrefix.length) === dataUrlPrefix)
          {
@@ -601,13 +596,21 @@ function Agent (sheet_, previousInstallMemory)
          {
          var agentInstructionsText = UrlFetchApp.fetch(urlAgentInstructions,{'headers':{'Cache-Control':'max-age=0'}}).getContentText();
          }
-
-      return self_.ExecuteRoutineFromText(agentInstructionsText);
+      return agentInstructionsText;
       };
-   
+
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ExecuteRoutineFromText = function (agentInstructionsText)
+   this.ExecuteRoutineFromUrl = function (urlAgentInstructions)
+      {
+      if (Platycore.Verbose)
+         {
+         self_.Info('Fetching ' + Lang.ClampStringLengthP(urlAgentInstructions, 50));
+         }
+      return self_.ExecuteRoutineFromText(getRoutineTextFromUrl(urlAgentInstructions));
+      };
+
+   var getRoutineFromText = function (agentInstructionsText)
       {
       var multilineObjectConcatenationRegex = new RegExp(/{---+}\s---+\s([\s\S]*?)[\r\n]---+/gm);
       var multilineConcatenationRegex = new RegExp(/"---+"\s---+\s([\s\S]*?)[\r\n]---+/gm);
@@ -662,11 +665,15 @@ function Agent (sheet_, previousInstallMemory)
             ;
 
       agentInstructionsText = '[' + agentInstructions.join(',') + ']';
-      if (isThisOn_ && Platycore.Verbose)
-         {
-         self_.Info('agentInstructionsText', agentInstructionsText);
-         }
-      return self_.ExecuteRoutine(JSON.parse(agentInstructionsText));
+      return JSON.parse(agentInstructionsText);
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   this.ExecuteRoutineFromText = function (agentInstructionsText)
+      {
+      var routine = getRoutineFromText(agentInstructionsText);
+      return self_.ExecuteRoutine(routine);
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -685,6 +692,7 @@ function Agent (sheet_, previousInstallMemory)
       var selectedRange = null;
       var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT']);
       var previousAgentValueFromPropertyName = null;
+      var installationUrl = null;
       
       for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
          {
@@ -729,13 +737,22 @@ function Agent (sheet_, previousInstallMemory)
                      return null;
                      }
                   })(CacheService.getDocumentCache().get(Lang.stringCast(eArguments[0])));
+               self_.Log('upgrading from ' + eArguments[0], previousAgentValueFromPropertyName);
                break;
 
             case 'INSTALL':
                isThisOn_ = true;
-               var installationUrl = Lang.stringCast(eArguments[0]);
-               CacheService.getDocumentCache().put(kAgentId_ + '.INSTALL', installationUrl);
-               self_.ExecuteRoutineFromUrl(installationUrl);
+               installationUrl = Lang.stringCast(eArguments[0]);
+               try
+                  {
+                  instructions = instructions.concat(getRoutineFromText(getRoutineTextFromUrl(installationUrl)));
+                  nInstructionCount = instructions.length;
+                  }
+               catch (e)
+                  {
+                  self_.Error('Unable to INSTALL:' + String(e), e.stack);
+                  nInstructionCount = 0;
+                  }
                break;
             
             case 'UNINSTALL':
@@ -760,16 +777,23 @@ function Agent (sheet_, previousInstallMemory)
                //       + '\n  UNINSTALL'
                //       + '\n  CONTINUE_IN_NEW_AGENT'
                //       + '\n  UPGRADE "' + kAgentId_ + '"'
-               //       + '\n  INSTALL "' + (CacheService.getDocumentCache().get(kAgentId_ + '.INSTALL')) + '"'
+               //       + '\n  INSTALL "' + installationUrl + '"'
                //    );
-               selectedRange.setNote(
-                     'agent.ExecuteRoutineFromText('
-                     + '"\\n  INTERACTIVE_ONLY'
-                     + '\\n  UNINSTALL'
-                     + '\\n  CONTINUE_IN_NEW_AGENT'
-                     + '\\n  UPGRADE \\"' + kAgentId_ + '\\"'
-                     + '\\n  INSTALL \\"' + (CacheService.getDocumentCache().get(kAgentId_ + '.INSTALL')) + '\\""'
-                  );
+               if (Lang.IsString(installationUrl))
+                  {
+                  selectedRange.setNote(
+                        'agent.ExecuteRoutineFromText('
+                        + '"\\n  INTERACTIVE_ONLY'
+                        + '\\n  UNINSTALL'
+                        + '\\n  CONTINUE_IN_NEW_AGENT'
+                        + '\\n  UPGRADE \\"' + kAgentId_ + '\\"'
+                        + '\\n  INSTALL \\"' + installationUrl + '\\"")'
+                        );
+                  }
+               else
+                  {
+                  self_.Warn('WRITE_REINSTALL_NOTE has no installationUrl; ignoring');
+                  }
                break;
 
             case 'IF_REINSTALLING': // execute code if this is a reinstall operation; guarantee access to the variable previousAgentValueFromPropertyName
@@ -929,6 +953,7 @@ function Agent (sheet_, previousInstallMemory)
                   }
                selectedRange.setTextStyle(textStyleBuilder.build());
                var value = '';
+               console.log('upgrading field ' + kName + ' from ', previousAgentValueFromPropertyName);
                if (Lang.IsValueContainedInSetP('UPGRADE', eArgumentSet))
                   {
                   var previousValue;
