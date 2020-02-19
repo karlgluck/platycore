@@ -743,7 +743,7 @@ function Agent (sheet_, previousInstallMemory)
                break;
 
             case 'CONTINUE_IN_NEW_AGENT':
-               var sheet = spreadsheet.insertSheet();
+               var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
                sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "CONTINUE_IN_NEW_AGENT"');
                var agent = new Agent(sheet);
                if (agent.Preboot())
@@ -754,13 +754,21 @@ function Agent (sheet_, previousInstallMemory)
                break;
 
             case 'WRITE_REINSTALL_NOTE':
+               // selectedRange.setNote(
+               //       'Run this note to reinstall ' + kAgentId_
+               //       + '\n  INTERACTIVE_ONLY'
+               //       + '\n  UNINSTALL'
+               //       + '\n  CONTINUE_IN_NEW_AGENT'
+               //       + '\n  UPGRADE "' + kAgentId_ + '"'
+               //       + '\n  INSTALL "' + (CacheService.getDocumentCache().get(kAgentId_ + '.INSTALL')) + '"'
+               //    );
                selectedRange.setNote(
-                     'Run this note to reinstall ' + kAgentId_
-                     + '\n  INTERACTIVE_ONLY'
-                     + '\n  UNINSTALL'
-                     + '\n  CONTINUE_IN_NEW_AGENT'
-                     + '\n  UPGRADE "' + kAgentId_ + '"'
-                     + '\n  INSTALL "' + (CacheService.getDocumentCache().get(kAgentId_ + '.INSTALL')) + '"'
+                     'agent.ExecuteRoutineFromText('
+                     + '"\\n  INTERACTIVE_ONLY'
+                     + '\\n  UNINSTALL'
+                     + '\\n  CONTINUE_IN_NEW_AGENT'
+                     + '\\n  UPGRADE \\"' + kAgentId_ + '\\"'
+                     + '\\n  INSTALL \\"' + (CacheService.getDocumentCache().get(kAgentId_ + '.INSTALL')) + '\\""'
                   );
                break;
 
