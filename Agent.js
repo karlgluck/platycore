@@ -333,8 +333,10 @@ function Agent (sheet_, previousInstallMemory)
 
    this.TurnOn = function ()
       {
-      var dtMaxScriptExecutionTime = (60 *  5/*m*/+30/*s*/) * 1000;
-
+      if (!isThisPrebooted_)
+         {
+         throw "not prebooted";
+         }
       if (isThisOn_)
          {
          return true;
@@ -347,10 +349,11 @@ function Agent (sheet_, previousInstallMemory)
          lockValue = Lang.intCast(lockValue);
          var lockValueWithSentinel = (lockValue - (lockValue % 1000)) + (((lockValue % 1000) + 1) % 1000);
          self_.WriteField('LOCK', lockValueWithSentinel);
-         var canOverrideLock = dtMaxScriptExecutionTime < (Lang.GetTimestampNow() - lockValue);
+         var canOverrideLock = Platycore.PumpRuntimeLimit < (Lang.GetTimestampNow() - lockValue);
          }
       else
          {
+         var lockValueWithSentinel = null;
          var canOverrideLock = false;
          }
 
@@ -571,19 +574,19 @@ function Agent (sheet_, previousInstallMemory)
    this.Snooze = function (dtMilliseconds)
       {
       var utsNow = Lang.GetTimestampNow();
-      var dt = Math.max(15000, dtMilliseconds);
+      dtMilliseconds = Math.max(15000, dtMilliseconds);
       var maybePreviousWakeTime = self_.ReadField('WAKE');
-      var utsNewWakeTime = utsNow + dt;
+      var utsNewWakeTime = utsNow + dtMilliseconds;
       if (Lang.IsNumber(maybePreviousWakeTime))
          {
          maybePreviousWakeTime = Lang.intCast(maybePreviousWakeTime);
-         if (maybePreviousWakeTime < utsNow && maybePreviousWakeTime > (utsNow - dt))
+         if (maybePreviousWakeTime < utsNow && maybePreviousWakeTime > (utsNow - dtMilliseconds))
             {
-            utsNewWakeTime = maybePreviousWakeTime + dt;
+            utsNewWakeTime = maybePreviousWakeTime + dtMilliseconds;
             }
          }
       self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
-      self_.Log('snoozing for ' + Lang.stopwatchStringFromDuration(dt) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNow()) + ' from now at ' + Lang.GetWallTimeFromTimestamp(utsNewWakeTime));
+      self_.Log('snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNow()) + ' from now at ' + Lang.GetWallTimeFromTimestamp(utsNewWakeTime));
       self_.BadgeLastOutput(Lang.GetMoonPhaseFromDate(new Date(utsNewWakeTime)));
       };
 
