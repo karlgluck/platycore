@@ -9,13 +9,11 @@ var doBlockPump = function () {
 
    var spreadsheet_ = SpreadsheetApp.getActiveSpreadsheet();
    var file_ = DriveApp.getFileById(spreadsheet_.getId());
-   var properties_ = PropertiesService.getDocumentProperties();
-   var dtSingleBlockRuntimeLimit_ = 60/*seconds*/ * 1000; // print an error if any agent executes longer than this time
-   var utsExecutionCutoffTime_ = Lang.GetTimestampNow() + 1000 * 60 * 5 - dtSingleBlockRuntimeLimit_;
-   var dtSingleBlockRuntimeWarningThreshold_ = 0.70/*percent*/ * dtSingleBlockRuntimeLimit_; // print a warning if the agent runs longer than this time
+   var utsExecutionCutoffTime_ = Lang.GetTimestampNow() + Platycore.PumpRuntimeLimit - Platycore.BlockRuntimeLimit;
    var sheets_ = spreadsheet_.getSheets();
    var nSheetCount_ = sheets_.length;
-   var iSheet_ = 0;
+   var iSheet_ = -1;
+   var utsLastSync = Lang.GetTimestampNow();
 
    doBlockPump = function ()
       {
@@ -24,37 +22,14 @@ var doBlockPump = function () {
       // Recover from errors in previous executions
       //
 
-      try
-         {
-         var platycore = JSON.parse(properties_.getProperty('platycore'));
-         var lastPumpKey = properties_.getProperty('platycoreLastPumpKey');
-         if (lastPumpKey !== platycore.pumpKey)
-            {
-            // Something went wrong during the last execution
-            // and platycore died. In the future, run a
-            // careful recovery. For now, nuke it and start
-            // over.
-            throw 'platycore is broken'
-            }
-         }
-      catch (e)
-         {
-         var platycore = {
-               utsLastSaved: 0,
-               agentBootSectorFromSheetId: {}
-               };
-         }
-      platycore.pumpKey = Utilities.getUuid();
-      properties_.setProperty('platycoreLastPumpKey', platycore.pumpKey);
-
-      var utsLastSaved = platycore.utsLastSaved;
       var utsLastUpdated = file_.getLastUpdated().getTime();
       var utsIterationStarted = Lang.GetTimestampNow();
 
-      if (utsLastSaved < utsLastUpdated)
+      if (utsLastSync < utsLastUpdated)
          {
+         utsLastSync = utsLastUpdated;
          sheets_ = spreadsheet_.getSheets();
-         iSheet_ = 0;
+         iSheet_ = -1;
          }
 
       if (iSheet_ >= nSheetCount_)
@@ -66,113 +41,25 @@ var doBlockPump = function () {
       while (--qSheetsLeftToSearch >= 0)
          {
 
-         //
-         // Load the sheet and its boot sector
-         //
-         if (iSheet_ < nSheetCount_)
-            {
-            var sheet = sheets_[iSheet_];
-            iSheet_ = (iSheet_ + 1 ) % nSheetCount_;
-            var agent = new Agent(sheet);
-            }
-         else
-            {
-            qSheetsLeftToSearch = 0;
-            var sheet = null;
-            var agent = null;
-            }
+         iSheet_ = (iSheet_ + 1 ) % nSheetCount_;
+         var sheet = sheets_[iSheet_];
+         var agent = new Agent(sheet);
+
+         var isEnabled = false;
+         var isGo = false;
+         var isWake = false;
          
          if (agent.Preboot())
             {
-
+            isEnabled = (function (en) { return Lang.IsUndefined(en) || Lang.boolCast(en) })(agent.ReadToggle('EN'));
+            isGo = (function (go) { return !Lang.IsUndefined(go) && Lang.boolCast(go) })(agent.ReadToggle('GO'));
+            isWake = (function (wake) { return Lang.IsNumber(wake) && utsIterationStarted > wake })(agent.ReadField('WAKE'));
             }
 
-         if (null !== agentMemory)
-            {
-            agentMemory = JSON.parse(agentMemory);
-            if (!Lang.IsObject(bootSector))
-               {
-               var agent = new Agent(sheet);
-               bootSector = agent.BootSectorGet();
-               }
-            else
-               {
-               var agent = null;
-               }
-            platycore.agentBootSectorFromSheetId[sheetId] = bootSector;
-
-            //
-            // Update the boot sector's values if we are out of date
-            //
-            var isCacheExpired = utsLastSaved < utsLastUpdated;
-            if (isCacheExpired)
-               {
-               delete bootSector.valueFromPropertyName.EN;
-               delete bootSector.valueFromPropertyName.WAKE;
-               delete bootSector.valueFromPropertyName.GO;
-               }
-            if (bootSector.rangeNameFromPropertyName.hasOwnProperty('EN'))
-               {
-               var range = spreadsheet_.getRangeByName(bootSector.rangeNameFromPropertyName.EN);
-               if (Lang.IsObject(range))
-                  {
-                  bootSector.valueFromPropertyName.EN = Lang.boolCast(range.getValue());
-                  }
-               else
-                  {
-                  delete bootSector.rangeNameFromPropertyName.EN;
-                  }
-               }
-            if (bootSector.rangeNameFromPropertyName.hasOwnProperty('WAKE'))
-               {
-               var range = spreadsheet_.getRangeByName(bootSector.rangeNameFromPropertyName.WAKE);
-               if (Lang.IsObject(range))
-                  {
-                  bootSector.valueFromPropertyName.EN = Lang.intCast(range.getValue());
-                  }
-               else
-                  {
-                  delete bootSector.rangeNameFromPropertyName.WAKE;
-                  }
-               }
-            if (bootSector.rangeNameFromPropertyName.hasOwnProperty('GO'))
-               {
-               var range = spreadsheet_.getRangeByName(bootSector.rangeNameFromPropertyName.GO);
-               if (Lang.IsObject(range))
-                  {
-                  bootSector.valueFromPropertyName.EN = Lang.boolCast(range.getValue());
-                  }
-               else
-                  {
-                  delete bootSector.rangeNameFromPropertyName.GO;
-                  }
-               }
-            
-            var isEnabled = !bootSector.rangeNameFromPropertyName.hasOwnProperty('EN') || Lang.boolCast(bootSector.valueFromPropertyName.EN);
-            var isGo = bootSector.rangeNameFromPropertyName.hasOwnProperty('GO') && bootSector.valueFromPropertyName.GO;
-            var isWake = bootSector.rangeNameFromPropertyName.hasOwnProperty('WAKE') && utsIterationStarted > bootSector.valueFromPropertyName.WAKE;
-
-            }
-         else
-            {
-            var agent = null;
-            var isCacheExpired = false;
-            var isEnabled = false;
-            var isGo = false;
-            var isWake = false;
-            }
-
-         console.log('isEnabled', isEnabled);
-         console.log('isGo', isGo);
-         console.log('isWake', isWake);
          if (isEnabled && (isGo || isWake))
             {
             qSheetsLeftToSearch = 0;
-            if (!Lang.IsObject(agent))
-               {
-               agent = new Agent(sheet, {sheetId: sheetId, memory: agentMemory, origin:'doBlockPump - step'});
-               }
-            agentMemory = null; // no longer valid
+            agent = new Agent(sheet);            
             try
                {
                if (agent.TurnOn())
@@ -189,13 +76,9 @@ var doBlockPump = function () {
                      {
                      var dtRuntime = Lang.GetTimestampNow() - utsIterationStarted;
                      agent.Log('turned off after ' + Lang.stopwatchStringFromDuration(dtRuntime) + ' at ' + Lang.GetWallTimeFromTimestamp(Lang.GetTimestampNow()));
-                     if (dtRuntime > dtSingleBlockRuntimeLimit_)
+                     if (dtRuntime > Platycore.BlockRuntimeLimit)
                         {
                         agent.Error('agent is running for too long!');
-                        }
-                     else if (dtRuntime > dtSingleBlockRuntimeWarningThreshold_)
-                        {
-                        agent.Warn('agent is starting to run for a long time');
                         }
                      agent.TurnOff();
                      }
@@ -233,26 +116,6 @@ var doBlockPump = function () {
       //          });
       //       }
       //    });
-
-      //
-      // Update the save
-      //
-
-      var documentLock = LockService.getDocumentLock();
-      if (documentLock.tryLock(dtSingleBlockRuntimeLimit_/4))
-         {
-         try{
-            if (properties_.getProperty('platycoreLastPumpKey') === platycore.pumpKey)
-               {
-               platycore.utsLastSaved = Lang.GetTimestampNow();
-               properties_.setProperty('platycore', JSON.stringify(platycore));
-               }
-            }
-         finally
-            {
-            documentLock.releaseLock();
-            }
-         }
 
       return Lang.GetTimestampNow() < utsExecutionCutoffTime_;
 

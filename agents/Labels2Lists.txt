@@ -3,64 +3,55 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 ==================================================================
 Common Initialization
 
-       NAME  "Labels -> Lists"
-    RESERVE  3
-   REINSTALL "agent.Log(previousInstallMemory)"
-
---- ON ---
-
-   SELECT  "A2"
-   TOGGLE  "ON"
-        +  "TRUE"
-        +  "READONLY"
-   SELECT  "B2"
-     TEXT  "ON"
-   SELECT  "A2:B2"
-    PANEL  "0"
-
---- GO ---
-
-   SELECT  "A1"
-   TOGGLE  "GO"
-   SELECT  "B1"
-     TEXT  "GO"
-   SELECT  "A1:B1"
-    PANEL  "1"
+       NAME  "Labels to Lists"
+    RESERVE  7
 
 --- EN ---
 
-   SELECT  "C1"
+   SELECT  "C2"
    TOGGLE  "EN"
-   SELECT  "D1"
+   SELECT  "D2"
      TEXT  "EN"
-   SELECT  "C1:D1"
-    PANEL  "2"
+
+--- ON ---
+
+   SELECT  "C3"
+   TOGGLE  "ON"
+        +  "TRUE"
+        +  "READONLY"
+   SELECT  "D3"
+     TEXT  "ON"
+
+--- GO ---
+
+   SELECT  "C4"
+   TOGGLE  "GO"
+   SELECT  "D4"
+     TEXT  "GO"
 
 --- WAKE ---
 
-   SELECT  "E1:I1"
+   SELECT  "H2:L2"
     FIELD  "WAKE"
      EVAL  "agent.WriteField('WAKE', Lang.GetTimestampNow() + 15000)"
-   SELECT  "J1:K1"
+    PANEL  5
+   SELECT  "F2:G2"
      TEXT  "WAKE"
-   SELECT  "E2:K2"
-  FORMULA  "=(E1-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   SELECT  "F3:L3"
+  FORMULA  "=(H2-(60*2+4)*1000)/1000/60/60/24+25568.6681"
    FORMAT  "DATETIME"
-   SELECT  "E1:K2"
-    PANEL  "3"
 
 --- LOCK ---
 
-   SELECT  "L1:P1"
+   SELECT  "H5:L5"
     FIELD  "LOCK"
      EVAL  "agent.WriteField('LOCK', Lang.GetTimestampNow())"
-   SELECT  "Q1:R1"
+    PANEL  5
+   SELECT  "F5:G5"
      TEXT  "LOCK"
-   SELECT  "L2:R2"
-  FORMULA  "=(L1-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   SELECT  "F6:L6"
+  FORMULA  "=(H5-(60*2+4)*1000)/1000/60/60/24+25568.6681"
    FORMAT  "DATETIME"
-   SELECT  "L1:R2"
-    PANEL  "4"
 
 ==================================================================
 Agent-specific
@@ -68,16 +59,17 @@ Agent-specific
 
 --- SHEET ---
 
-   SELECT "S1:AU1"
-    PANEL "6"
-   SELECT "S1:U1"
+   SELECT "N2:R2"
      TEXT "Sheet:"
-   SELECT "V1:AU1"
+   HALIGN "right"
+   SELECT "S2:AH2"
     FIELD "SHEET"
         + "UPGRADE"
     PANEL "5"
 
 --- Processed ---
+      REM "---"
+----------------------
    SELECT "AV1:AW2"
      TEXT 0
     FIELD "PROCESSED"
@@ -88,15 +80,15 @@ Agent-specific
        FG "#FF0000"
        BG "#440000"
     PANEL "7"
+----------------------
 
 
 --- Input Gmail Label ---
 
-   SELECT "AE2:AU2"
-    PANEL "6"
-   SELECT "AE2:AI2"
+   SELECT "N4:R4"
      TEXT "Input label:"
-   SELECT "AJ2:AU2"
+   HALIGN "right"
+   SELECT "S4:AC4"
      TEXT "<Input Label>"
     FIELD "INPUT_LABEL"
         + "UPGRADE"
@@ -108,7 +100,7 @@ Agent-specific
 ==================================================================
 Manual Actions
 
-   SELECT "S2:W2"
+   SELECT "AJ2:AN2"
      TEXT "[Make Sheet]"
        FG "#000"
        BG "#ffff00"
@@ -127,7 +119,7 @@ agent.EvalNoteByName('REFRESH_LABELS');
 ------------------------
 
 
-   SELECT "X2:AD2"
+   SELECT "AP2:AV2"
      TEXT "[Refresh Labels]"
        FG "#000"
        BG "#ffff00"
@@ -154,13 +146,14 @@ Scripts
 --- MAIN ---
 This is tricky. I use the same block of cells for the field named SCRIPT, which holds the value MAIN, which refers to the note so-named (MAIN), which happens to also be placed on this same block of cells. Normally, the SCRIPT field would be separate and would hold a reference to one of several other NOTEs.
 
-   SELECT  "C2:D2"
+   SELECT  "N6:R6"
+     TEXT  "SCRIPT"
+   HALIGN  "right"
+   SELECT  "S6:U6"
     FIELD  "SCRIPT"
      TEXT  "MAIN"
    HALIGN  "center"
     PANEL  "5"
-Below is the only exception to the rule that "everything that doesn't start with a space is ignored".
-When a line is entirely dashes and there is a matching line that is entirely dashes, and the line preceding the earlier line ends with a quoted set of dashes, then the quoted dashes are replaced with the JSON-encoded text content of the lines between the dashed lines, and all other text is removed.
      NOTE  "MAIN"
         +  "---"
 ------------------------

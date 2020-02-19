@@ -1,22 +1,8 @@
 function menuCollectGarbage()
    {
    var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-   var properties = PropertiesService.getDocumentProperties();
 
    var sheetIdSet = Lang.MakeSetFromObjectsP(spreadsheet.getSheets().map(function (eSheet) { return String(eSheet.getSheetId()) }));
-
-   //
-   // Remove agent keys for agents that don't exist anymore
-   //
-   var propertyKeys = properties.getKeys();
-   propertyKeys
-         .filter(function (e) { return e.substring(0, 14) === 'platycoreAgent' })
-         .filter(function (e) { return Lang.IsValueMissingFromSetP(sheetIdSet, e.substring(14)) })
-         .forEach(function (e)
-            {
-            console.log('removing unused platycore agent key ' + e);
-            properties.deleteProperty(e);
-            });
 
    var channelsSheet = spreadsheet.getSheetByName('channels');
    if (!Lang.IsObject(channelsSheet))

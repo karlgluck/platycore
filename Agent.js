@@ -13,14 +13,14 @@ function Agent (sheet_, previousInstallMemory)
 
    var getRangeNameFromPropertyName = function (name)
       {
-      return kAgentId_ + ':' + name;
+      return kAgentId_ + '_' + name;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    var getRangeFromPropertyName = function (name)
       {
-      return spreadsheet_.getRangeByName(kAgentId_ + ':' + name);
+      return spreadsheet_.getRangeByName(kAgentId_ + '_' + name);
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------

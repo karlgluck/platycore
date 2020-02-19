@@ -24,11 +24,6 @@ function onOpen()
 
    ui.createMenu('Platycore')
          .addItem('Collect Garbage', 'menuCollectGarbage')
-         .addSeparator()
-         .addItem('Write Agent Memory', 'menuWriteAgentMemory')
-         .addItem('Read Agent Memory', 'menuReadAgentMemory')
-         .addSeparator()
-         .addItem('Write Platycore Properties', 'menuWriteDocumentProperties')
          .addToUi();
    
    }
