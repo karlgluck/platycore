@@ -988,7 +988,7 @@ function Agent (sheet_)
                      && Lang.IsObject(previousAgentValueFromPropertyName)
                      && Lang.IsMeaningful(previousValue = previousAgentValueFromPropertyName[kName]))
                   {
-                  (writeMethodFromTypeName[eArguments[0]])(previousValue);
+                  (writeMethodFromTypeName[eArguments[0]])(kName, previousValue);
                   }
                break;
             
