@@ -923,7 +923,7 @@ function Agent (sheet_)
                if (Lang.IsString(name))
                   {
                   var shouldAdd = eArguments.length < 1 || Lang.IsStringAffirmative(eArguments[0]);
-                  (shouldAdd ? readonlyNames_.push : readonlyNames_.remove)();
+                  (shouldAdd ? readonlyNames_.push : readonlyNames_.remove)(name);
                   }
                else
                   {
