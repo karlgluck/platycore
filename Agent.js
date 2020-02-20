@@ -1,5 +1,5 @@
 
-function Agent (sheet_, previousInstallMemory)
+function Agent (sheet_)
    {
    var self_ = this;
    var kAgentId_ = 'A'+sheet_.getSheetId();
@@ -22,7 +22,7 @@ function Agent (sheet_, previousInstallMemory)
       {
       return spreadsheet_.getRangeByName(kAgentId_ + '_' + name);
       };
-   
+
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.GetName = function ()
@@ -403,25 +403,32 @@ function Agent (sheet_, previousInstallMemory)
 
    this.TurnOff = function ()
       {
+
       if (!isThisOn_)
          {
          return;
          }
-      self_.Save();
+
       isThisOn_ = false;
-      var lock = LockService.getDocumentLock();
-      if (lock.tryLock(Platycore.DocumentTryLockWaitTime))
+
+      if (Lang.IsObject(sheet_))
          {
-         try
+         self_.Save();
+         var lock = LockService.getDocumentLock();
+         if (lock.tryLock(Platycore.DocumentTryLockWaitTime))
             {
-            self_.WriteToggle('ON', false);
-            }
-         finally
-            {
-            lock.releaseLock();
-            lock = null;
+            try
+               {
+               self_.WriteToggle('ON', false);
+               }
+            finally
+               {
+               lock.releaseLock();
+               lock = null;
+               }
             }
          }
+
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
