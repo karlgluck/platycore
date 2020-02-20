@@ -11,7 +11,6 @@ function onOpen()
          .addSeparator()
          .addItem('Clear Output', 'menuClearAgentOutput')
          .addSeparator()
-         .addItem('Reinstall', 'menuReinstallAgent')
          .addItem('Uninstall', 'menuUninstallAgent')
          .addToUi();
 
