@@ -221,14 +221,17 @@ Object.keys(outputsFromLabelName).forEach(function (eLabelName)
       agent.Log('[!EN]: Would have processed ' + rows.length + ' email(s) from the label "' + eLabelName + '"');
       }
    });
-agent.WriteField('PROCESSED', Lang.intCast(agent.ReadField('PROCESSED')) + threads.length);
-if (0 === threads.length)
+if (0 < threads.length)
    {
-   agent.Snooze(15 * 60 * 1000);
+   agent.Log('Processed ' + threads.length + ' emails');
+   }
+if (en)
+   {
+   agent.WriteField('PROCESSED', Lang.intCast(agent.ReadField('PROCESSED')) + threads.length);
    }
 else
    {
-   agent.Log('Processed ' + threads.length + ' emails');
+   agent.Snooze(15 * 60 * 1000);
    }
 ------------------------
       OFF
