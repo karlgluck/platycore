@@ -453,55 +453,31 @@ function Agent (sheet_)
          return;
          }
 
-      var rv = this.EvalNoteByName(script);
+      var rv = this.ExecuteRoutineByName(script);
+      return rv;
       };
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
-// Execute the code in the note named
+// Execute the routine in the note named
 //
 
-   this.EvalNoteByName = function (noteName)
+   this.ExecuteRoutineByName = function (noteName)
       {
       if (!isThisOn_)
          {
-         throw "must be turned on, otherwise the program might not have exclusive control of the agent"
+         throw "!isThisOn_"
          }
 
-      var code = self_.ReadNote(noteName);
-      if (Lang.IsUndefined(code))
+      var routine = self_.ReadNote(noteName);
+      if (Lang.IsUndefined(routine))
          {
          self_.Error('There is no note with the given name: ' + noteName);
          return null;
          }
 
-      var rv = this.EvalCode (code, noteName);
-      return rv;
-      };
-
-
-//------------------------------------------------------------------------------------------------------------------------------------
-//
-// Execute the code in the currently selected note
-//
-
-   this.EvalSelectedNote = function ()
-      {
-      if (!isThisOn_)
-         {
-         throw "must be turned on, otherwise the program might not have exclusive control of the agent"
-         }
-
-      var cellRange = SpreadsheetApp.getCurrentCell();
-      var code = cellRange.getNote();
-      var rv = null;
-      if (Lang.IsString(code))
-         {
-         rv = this.EvalCode(code);
-         }
-
-      return rv;
+      return this.ExecuteRoutineFromText(routine);
       };
 
 
@@ -597,6 +573,8 @@ function Agent (sheet_)
       self_.WriteField('WAKE', 'SNOOZE');
       };
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
    var getRoutineTextFromUrl = function (urlAgentInstructions)
       {
       var dataUrlPrefix = 'data:application/x-gzip;base64,';
@@ -621,6 +599,8 @@ function Agent (sheet_)
          }
       return self_.ExecuteRoutineFromText(getRoutineTextFromUrl(urlAgentInstructions));
       };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    var getRoutineFromText = function (agentInstructionsText)
       {
@@ -699,7 +679,7 @@ function Agent (sheet_)
 
    this.ExecuteRoutine = function (instructions)
       {
-      if (!Lang.IsArray(instructions)) throw "instructions";
+      if (!Lang.IsArray(instructions)) throw "!Lang.IsArray(instructions)";
 
       var selectedRange = null;
       var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT']);
@@ -783,24 +763,16 @@ function Agent (sheet_)
                break;
 
             case 'WRITE_REINSTALL_NOTE':
-               // selectedRange.setNote(
-               //       'Run this note to reinstall ' + kAgentId_
-               //       + '\n  INTERACTIVE_ONLY'
-               //       + '\n  UNINSTALL'
-               //       + '\n  CONTINUE_IN_NEW_AGENT'
-               //       + '\n  UPGRADE "' + kAgentId_ + '"'
-               //       + '\n  INSTALL "' + installationUrl + '"'
-               //    );
                if (Lang.IsString(installationUrl))
                   {
                   selectedRange.setNote(
-                        'agent.ExecuteRoutineFromText('
-                        + '"\\n  INTERACTIVE_ONLY'
-                        + '\\n  UNINSTALL'
-                        + '\\n  CONTINUE_IN_NEW_AGENT'
-                        + '\\n  UPGRADE \\"' + kAgentId_ + '\\"'
-                        + '\\n  INSTALL \\"' + installationUrl + '\\"")'
-                        );
+                        'Run this note to reinstall ' + kAgentId_
+                        + '\n  INTERACTIVE_ONLY'
+                        + '\n  UNINSTALL'
+                        + '\n  CONTINUE_IN_NEW_AGENT'
+                        + '\n  UPGRADE "' + kAgentId_ + '"'
+                        + '\n  INSTALL "' + installationUrl + '"'
+                     );
                   }
                else
                   {
@@ -893,10 +865,7 @@ function Agent (sheet_)
 
             case 'EVAL':
                var code = eArguments.join('\n');
-               (function (agent)
-                  {
-                  eval(code);
-                  })(self_);
+               self_.EvalCode(code, 'EVAL@'+iInstruction);                  
                break;
             
             case 'FORMULA':
@@ -1001,9 +970,9 @@ function Agent (sheet_)
                break;
                
             case 'CODE':
-               //// TODO: make sure every newline literal from the args has a space after it
-               //var value = '  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------';
-               selectedRange.setNote(eArguments.join('\n'));
+               // TODO: make sure every newline literal from the args has a space after it
+               var value = '  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------';
+               selectedRange.setNote(value);
                break;
             
             case 'PANEL':

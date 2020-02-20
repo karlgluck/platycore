@@ -12,14 +12,14 @@ function menuRunSelectedNote ()
             var noteName = agent.FindNameUsingRangeP(cellRange);
             if (null !== noteName)
                {
-               agent.EvalNoteByName(noteName);
+               agent.ExecuteRoutineByName(noteName);
                }
             else
                {
-               var code = cellRange.getNote();
+               var routine = cellRange.getNote();
                var cellRangeA1Notation = cellRange.getA1Notation();
-               agent.Warn(cellRangeA1Notation + ' is not a named NOTE known to the Agent; executing code directly:', code);
-               agent.EvalCode(code, cellRangeA1Notation);
+               agent.Warn(cellRangeA1Notation + ' is not a named NOTE known to the Agent; executing directly:', routine);
+               agent.ExecuteRoutineFromText(routine);
                }
             }
          }

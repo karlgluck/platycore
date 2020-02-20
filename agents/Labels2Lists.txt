@@ -122,7 +122,7 @@ GAS.AddRowsToJournalingSheet(
       [['<Gmail Label>', stringOfGetObjectFromGmailMessage, '<sheet url>']],
       sheet);
 agent.WriteField('SHEET', GAS.GetUrlFromSheet(sheet));
-agent.EvalNoteByName('REFRESH_LABELS');
+agent.ExecuteRoutineByName('REFRESH_LABELS');
 ------------------------
 
 
