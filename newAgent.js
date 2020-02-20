@@ -18,7 +18,7 @@ function newAgent (urlAgentInstructions, kPreviousAgentId)
       }
    sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
    sheet.getRange('A1').insertCheckboxes().check().setNote(
-      '  INTERACTIVE_ONLY' // prevent automation from running this code accidentally
+      '  INTERACTIVE_ONLY'
       + (Lang.IsMeaningful(kPreviousAgentId) ? '\n  UPGRADE "' + kPreviousAgentId + '"' : '')
       + '\n  INSTALL "' + urlAgentInstructions + '"'
       );

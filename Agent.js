@@ -206,7 +206,7 @@ function Agent (sheet_, previousInstallMemory)
       values[0] = badge;
       for (var iArg = nArgCount - 1; iArg >= 0; --iArg)
          {
-         values[starts[iArg]-1] = args[iArg];
+         values[starts[iArg]-1] = String(args[iArg]).replace(/\r?\n/g, '⏎');
          }
       var range = sheet_.getRange(irNewMessage_, 1, 1, 49);
       var notes = Lang.MakeArray(49, null);
@@ -737,7 +737,7 @@ function Agent (sheet_, previousInstallMemory)
                      return null;
                      }
                   })(CacheService.getDocumentCache().get(Lang.stringCast(eArguments[0])));
-               self_.Log('upgrading from ' + eArguments[0], previousAgentValueFromPropertyName);
+               self_.Log('upgrading from ' + eArguments[0], JSON.stringify(previousAgentValueFromPropertyName));
                break;
 
             case 'INSTALL':
@@ -839,11 +839,11 @@ function Agent (sheet_, previousInstallMemory)
                var icLastColumn = sheet_.getLastColumn();
                if (qcExtraColumns < 0)
                   {
-                  sheet.insertColumnsAfter(Math.max(1, icLastColumn), -qcExtraColumns);
+                  sheet_.insertColumnsAfter(Math.max(1, icLastColumn), -qcExtraColumns);
                   }
                else if (qcExtraColumns > 0)
                   {
-                  sheet.deleteColumns(mrMaxColumns - qcExtraColumns + 1, qcExtraColumns);
+                  sheet_.deleteColumns(mrMaxColumns - qcExtraColumns + 1, qcExtraColumns);
                   }
                mrMaxColumns = 49;
 
