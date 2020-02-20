@@ -291,7 +291,7 @@ function Agent (sheet_)
    this.Save = function ()
       {
       sheet_.getRange('A1').setNote(
-            '  READONLY ' + JSON.stringify(readonlyNames_)
+            '  SET_READONLY ' + JSON.stringify(readonlyNames_)
             // +'\n'
             );
       };
@@ -304,7 +304,9 @@ function Agent (sheet_)
       var qPrefixLength = getRangeNameFromPropertyName('').length;
       sheet_.getNamedRanges().forEach(function (eRange)
          {
-         valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = eRange.getRange().getValue();
+         var range = eRange.getRange();
+         var noteValue = range.getNote();
+         valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningful(noteValue) ? noteValue : range.getValue();
          eRange.remove();
          });
       spreadsheet_.deleteSheet(sheet_);
@@ -917,6 +919,19 @@ function Agent (sheet_)
                break;
 
             case 'READONLY':
+               var name = self_.FindNameUsingRangeP(selectedRange);
+               if (Lang.IsString(name))
+                  {
+                  var shouldAdd = eArguments.length < 1 || Lang.IsStringAffirmative(eArguments[0]);
+                  (shouldAdd ? readonlyNames_.push : readonlyNames_.remove)();
+                  }
+               else
+                  {
+                  self_.Warn('READONLY skipped because the currently selected range is not named');
+                  }
+               break;
+
+            case 'SET_READONLY':
                readonlyNames_ = Lang.arrayCast(eArguments[1]);
                break;
 
@@ -933,16 +948,7 @@ function Agent (sheet_)
                   selectedRange.setFontColor('#00ffff'); // editable
                   }
                var value = Lang.IsValueContainedInSetP('TRUE', eArgumentSet);
-               if (Lang.IsValueContainedInSetP('UPGRADE', eArgumentSet))
-                  {
-                  var previousValue;
-                  if (Lang.IsObject(previousAgentValueFromPropertyName)
-                        && Lang.IsMeaningful(previousValue = previousAgentValueFromPropertyName[kName]))
-                     {
-                     value = previousValue;
-                     }
-                  }
-               self_.Log('+toggle: ' + kName, value);
+               self_.Log('+toggle: ' + kName);
                self_.WriteToggle(kName, value);
                break;
 
@@ -963,39 +969,41 @@ function Agent (sheet_)
                   }
                selectedRange.setTextStyle(textStyleBuilder.build());
                var value = '';
-               console.log('upgrading field ' + kName + ' from ', previousAgentValueFromPropertyName);
-               if (Lang.IsValueContainedInSetP('UPGRADE', eArgumentSet))
-                  {
-                  var previousValue;
-                  if (Lang.IsObject(previousAgentValueFromPropertyName)
-                        && Lang.IsMeaningful(previousValue = previousAgentValueFromPropertyName[kName]))
-                     {
-                     value = previousValue;
-                     }
-                  }
                if (Lang.IsMeaningful(value))
                   {
                   self_.WriteField(kName, value);
                   }
                self_.Log('+field: ' + kName, value);
                break;
+
+            case 'RESTORE':
+               var writeMethodFromTypeName = {
+                  NOTE: self_.WriteNote,
+                  FIELD: self_.WriteField,
+                  TOGGLE: self_.WriteToggle
+               };
+               var kName = self_.FindNameUsingRangeP(selectedRange);
+               var previousValue = null;
+               if (Lang.IsString(kName)
+                     && Lang.IsObject(previousAgentValueFromPropertyName)
+                     && Lang.IsMeaningful(previousValue = previousAgentValueFromPropertyName[kName]))
+                  {
+                  (writeMethodFromTypeName[eArguments[0]])(previousValue);
+                  }
+               break;
             
             case 'NOTE':
                var kName = eArguments[0];
                spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
-               var value = eArguments.slice(1).join('\n');
-               // doesn't apply, but the principle is the same -- maybe unify these?
-               // if (Lang.IsValueContainedInSetP('UPGRADE', eArgumentSet))
-               //    {
-               //    var previousValue;
-               //    if (Lang.IsObject(previousAgentValueFromPropertyName)
-               //          && Lang.IsMeaningful(previousValue = previousAgentValueFromPropertyName[kName]))
-               //       {
-               //       value = previousValue;
-               //       }
-               //    }
+               var value = ' ';
                self_.Log('+note: ' + kName, value);
                self_.WriteNote(kName, value);
+               break;
+               
+            case 'CODE':
+               //// TODO: make sure every newline literal from the args has a space after it
+               //var value = '  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------';
+               selectedRange.setNote(eArguments.join('\n'));
                break;
             
             case 'PANEL':

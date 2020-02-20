@@ -252,6 +252,14 @@ ns.GetMoonPhaseFromDate = function  (date)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.IsStringAffirmative = function (s)
+   {
+   var lowercaseString = String(s).trim().toLowerCase();
+   return ['yes','ok','on','true'].some(function (e) { return lowercaseString === e });
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.GetClockFromDate = function (date)
    {
    var qShortHand = date.getHours() % 12

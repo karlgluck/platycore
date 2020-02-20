@@ -18,7 +18,7 @@ Common Initialization
    SELECT  "C3"
    TOGGLE  "ON"
         +  "TRUE"
-        +  "READONLY"
+ READONLY
    SELECT  "D3"
      TEXT  "ON"
 
@@ -33,6 +33,7 @@ Common Initialization
 
    SELECT  "H2:L2"
     FIELD  "WAKE"
+   RESTORE "FIELD"
      EVAL  "agent.WriteField('WAKE', Lang.GetTimestampNow() + 15000)"
     PANEL  5
    SELECT  "F2:G2"
@@ -56,7 +57,6 @@ Common Initialization
 ==================================================================
 Agent-specific
 
-
 --- SHEET ---
 
    SELECT "N2:R2"
@@ -64,15 +64,15 @@ Agent-specific
    HALIGN "right"
    SELECT "S2:AH2"
     FIELD "SHEET"
-        + "UPGRADE"
+  RESTORE "FIELD"
     PANEL "5"
 
 --- Processed ---
    SELECT "C6:D6"
      TEXT 0
     FIELD "PROCESSED"
-        + "READONLY"
-        + "UPGRADE"
+ READONLY
+  RESTORE "FIELD"
    HALIGN "center"
    VALIGN "middle"
        FG "#FF0000"
@@ -87,7 +87,7 @@ Agent-specific
    SELECT "S4:AC4"
      TEXT "<Input Label>"
     FIELD "INPUT_LABEL"
-        + "UPGRADE"
+  RESTORE "FIELD"
  VALIDATE "Enter the name of a label from your Gmail account"
         + "IS_GMAIL_LABEL"
     PANEL "5"
@@ -113,7 +113,7 @@ Manual Actions
        BG "#ffff00"
    HALIGN "center"
      NOTE "MAKE_SHEET"
-        + "---"
+     CODE "---"
 ------------------------
 var sheet = SpreadsheetApp.create("🏭 Labels2Lists", 1, 1).getSheets()[0];
 var headers = GAS.MergeSheetHeaders(sheet, ['input_label', 'object_from_gmail_message_function', 'sheet_url']);
@@ -132,7 +132,7 @@ agent.EvalNoteByName('REFRESH_LABELS');
        BG "#ffff00"
    HALIGN "center"
      NOTE "REFRESH_LABELS"
-        + "---"
+     CODE "---"
 ------------------------
 var sheet = GAS.GetSheetFromUrl(agent.ReadField('SHEET'));
 var headers = GAS.MergeSheetHeaders(sheet, ['input_label']);
@@ -162,7 +162,7 @@ This is tricky. I use the same block of cells for the field named SCRIPT, which 
    HALIGN  "center"
     PANEL  "5"
      NOTE  "MAIN"
-        +  "---"
+     CODE  "---"
 ------------------------
 var en = agent.ReadToggle('EN');
 if (!en)
