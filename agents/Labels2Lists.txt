@@ -18,7 +18,7 @@ Common Initialization
    SELECT  "C3"
    TOGGLE  "ON"
         +  "TRUE"
- READONLY
+        +  "READONLY"
    SELECT  "D3"
      TEXT  "ON"
 
@@ -71,7 +71,7 @@ Agent-specific
    SELECT "C6:D6"
      TEXT 0
     FIELD "PROCESSED"
- READONLY
+        + "READONLY"
   RESTORE "FIELD"
    HALIGN "center"
    VALIGN "middle"

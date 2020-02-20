@@ -918,18 +918,18 @@ function Agent (sheet_)
                   }
                break;
 
-            case 'READONLY':
-               var name = self_.FindNameUsingRangeP(selectedRange);
-               if (Lang.IsString(name))
-                  {
-                  var shouldAdd = eArguments.length < 1 || Lang.IsStringAffirmative(eArguments[0]);
-                  (shouldAdd ? readonlyNames_.push : readonlyNames_.remove)(name);
-                  }
-               else
-                  {
-                  self_.Warn('READONLY skipped because the currently selected range is not named');
-                  }
-               break;
+            // case 'READONLY':
+            //    var name = self_.FindNameUsingRangeP(selectedRange);
+            //    if (Lang.IsString(name))
+            //       {
+            //       var shouldAdd = eArguments.length < 1 || Lang.IsStringAffirmative(eArguments[0]);
+            //       (shouldAdd ? readonlyNames_.push : readonlyNames_.remove)(name);
+            //       }
+            //    else
+            //       {
+            //       self_.Warn('READONLY skipped because the currently selected range is not named');
+            //       }
+            //    break;
 
             case 'SET_READONLY':
                readonlyNames_ = Lang.arrayCast(eArguments[1]);
