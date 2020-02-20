@@ -6,15 +6,6 @@ Common Initialization
        NAME  "Labels to Lists"
     RESERVE  7
 
---- REINSTALL ---
-
-   SELECT  "AS6:AV6"
-     TEXT  "[Reinstall]"
-       FG "#000"
-       BG "#ffff00"
-   HALIGN "center"
-     WRITE_REINSTALL_NOTE
-
 --- EN ---
 
    SELECT  "C2"
@@ -77,9 +68,7 @@ Agent-specific
     PANEL "5"
 
 --- Processed ---
-      REM "---"
-----------------------
-   SELECT "AV1:AW2"
+   SELECT "C6:D6"
      TEXT 0
     FIELD "PROCESSED"
         + "READONLY"
@@ -89,8 +78,6 @@ Agent-specific
        FG "#FF0000"
        BG "#440000"
     PANEL "7"
-----------------------
-
 
 --- Input Gmail Label ---
 
@@ -108,6 +95,17 @@ Agent-specific
 
 ==================================================================
 Manual Actions
+
+--- [Reinstall] ---
+
+   SELECT  "AS6:AV6"
+     TEXT  "[Reinstall]"
+       FG "#000"
+       BG "#ffff00"
+   HALIGN "center"
+     WRITE_REINSTALL_NOTE
+
+--- [Make Sheet] ---
 
    SELECT "AJ2:AN2"
      TEXT "[Make Sheet]"

@@ -252,6 +252,38 @@ ns.GetMoonPhaseFromDate = function  (date)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.GetClockFromDate = function (date)
+   {
+   var qShortHand = date.getHours() % 12
+   var qMinutes = date.getMinutes();
+   var qLongHand = (qMinutes - (qMinutes % 30)) / 30 ? 1 : 0;
+   
+   var clockEmojis = ['\uD83D\uDD5B', '\uD83D\uDD67', '\uD83D\uDD50', '\uD83D\uDD5C', '\uD83D\uDD51', '\uD83D\uDD5D', '\uD83D\uDD52', '\uD83D\uDD5E', '\uD83D\uDD53', '\uD83D\uDD5F', '\uD83D\uDD54', '\uD83D\uDD60', '\uD83D\uDD55', '\uD83D\uDD61', '\uD83D\uDD56', '\uD83D\uDD62', '\uD83D\uDD57', '\uD83D\uDD63', '\uD83D\uDD58', '\uD83D\uDD64', '\uD83D\uDD59', '\uD83D\uDD65', '\uD83D\uDD5A', '\uD83D\uDD66'];
+   var iClockFace = qShortHand * 2 + qLongHand;
+   return clockEmojis[iClockFace];
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+// https://dmitripavlutin.com/what-every-javascript-developer-should-know-about-unicode/#21-characters-and-code-points
+// GetUnicodeSurrogatePairFromAstralCodePoint(0x1F600); // => [0xD83D, 0xDE00]
+
+ns.GetUnicodeSurrogatePairFromAstralCodePoint = function (astralCodePoint)
+   {
+   var highSurrogate = Math.floor((astralCodePoint - 0x10000) / 0x400) + 0xD800;
+   var lowSurrogate = (astralCodePoint - 0x10000) % 0x400 + 0xDC00;
+   return [highSurrogate, lowSurrogate];
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+// GetUnicodeAstralCodePointFromSurrogatePair(0xD83D, 0xDE00); // => 0x1F600
+
+ns.GetUnicodeAstralCodePointFromSurrogatePair = function (highSurrogate, lowSurrogate)
+   {
+   return (highSurrogate - 0xD800) * 0x400 + lowSurrogate - 0xDC00 + 0x10000;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.GetStringFromTimestamp = function (utsTime)
    {
    var date = new Date(utsTime);

@@ -186,6 +186,10 @@ function Agent (sheet_, previousInstallMemory)
 
    var writeOutputFirstTime_ = function (badge, args)
       {
+      if (!Lang.IsMeaningful(badge))
+         {
+         badge = Lang.GetClockFromDate(new Date());
+         }
       sheet_.insertRowsBefore(irNewMessage_, 1);
       var rvRange = writeOutputNormal_(badge, args);
       sheet_.getRange(rvRange.getRow() + 1, 1, 1, 49)
@@ -210,7 +214,7 @@ function Agent (sheet_, previousInstallMemory)
          }
       var range = sheet_.getRange(irNewMessage_, 1, 1, 49);
       var notes = Lang.MakeArray(49, null);
-      notes[0] = new Date().toISOString() + '\n\n' + Lang.GetStackTrace(4) + '\n\n' + Object.keys(args).map(function (kArg){return args[kArg]}).join('\n\n');
+      notes[0] = new Date().toLocaleString() + '\n\n' + Lang.GetStackTrace(4) + '\n\n' + Object.keys(args).map(function (kArg){return args[kArg]}).join('\n\n');
       range.setValues([values]).setNotes([notes]);
       // for some reason this never works to shrink autosized rows
       //sheet_.setRowHeights(irNewMessage_, sheet_.getMaxRows() - irNewMessage_, 21);
@@ -286,7 +290,6 @@ function Agent (sheet_, previousInstallMemory)
 
    this.Save = function ()
       {
-      console.log('saving agent ' + self_.GetName());
       sheet_.getRange('A1').setNote(
             '  READONLY ' + JSON.stringify(readonlyNames_)
             // +'\n'
@@ -813,7 +816,7 @@ function Agent (sheet_, previousInstallMemory)
 
             case 'NAME':
                var name = Lang.stringCast(eArguments[0]);
-               sheet_.setName(name + sheet_.getSheetId());
+               sheet_.setName(name + ' (' + self_.GetAgentId() + ')');
                break;
 
             case 'FREEZE':
@@ -1002,6 +1005,15 @@ function Agent (sheet_, previousInstallMemory)
                               .requireValueInList(
                                     GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort()
                                     )
+                              .setHelpText(eArguments[0])
+                              .build()
+                        );
+                  }
+               if (Lang.IsValueContainedInSetP('IS_URL'), eArgumentSet)
+                  {
+                  selectedRange.setDataValidation(
+                        SpreadsheetApp.newDataValidation()
+                              .requireTextIsUrl()
                               .setHelpText(eArguments[0])
                               .build()
                         );
