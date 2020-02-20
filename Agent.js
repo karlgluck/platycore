@@ -1009,7 +1009,7 @@ function Agent (sheet_, previousInstallMemory)
                               .build()
                         );
                   }
-               if (Lang.IsValueContainedInSetP('IS_URL'), eArgumentSet)
+               if (Lang.IsValueContainedInSetP('IS_URL', eArgumentSet))
                   {
                   selectedRange.setDataValidation(
                         SpreadsheetApp.newDataValidation()
