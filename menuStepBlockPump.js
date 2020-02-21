@@ -1,5 +1,0 @@
-
-function menuStepBlockPump()
-   {
-   doBlockPump(true);
-   }

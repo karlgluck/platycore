@@ -14,15 +14,15 @@ function onOpen()
          .addItem('Uninstall', 'menuUninstallAgent')
          .addToUi();
 
-   ui.createMenu('Pump')
-         .addItem('Run Once...', 'menuStepBlockPump')
-         .addSeparator()
-         .addItem('Start', 'menuRunSentinel')
-         .addItem('Stop', 'menuStopSentinel')
-         .addToUi();
-
    ui.createMenu('Platycore')
-         .addItem('Collect Garbage', 'menuCollectGarbage')
+         .addItem('Run once...', 'menuStepBlockPump')
+         .addSeparator()
+         .addItem('Update file triggers...', 'menuUpdateDriveFileTriggers')
+         .addSeparator()
+         .addItem('Start automation', 'menuRunSentinel')
+         .addItem('Stop automation', 'menuStopSentinel')
+         //.addSeparator()
+         //.addItem('Collect Garbage', 'menuCollectGarbage')
          .addToUi();
    
    }
@@ -35,11 +35,14 @@ function platycoreVerifyPermissions()
       {
       return;
       }
+   var userProperties = PropertiesService.getUserProperties();
+   hasPlatycoreVerifiedPermissions = 'true' === userProperties.getProperty('hasPlatycoreVerifiedPermissions');
    try
       {
-      console.log('A1=' + SpreadsheetApp.getActiveSheet().getRange(1,1).getValue());
-      console.log('GmailApp.getInboxUnreadCount() = ' + GmailApp.getInboxUnreadCount());
+      console.log('[platycoreVerifyPermissions] A1=' + SpreadsheetApp.getActiveSheet().getRange(1,1).getValue());
+      console.log('[platycoreVerifyPermissions] GmailApp.getInboxUnreadCount() = ' + GmailApp.getInboxUnreadCount());
       hasPlatycoreVerifiedPermissions = true;
+      userProperties.setProperty('hasPlatycoreVerifiedPermissions', 'true');
       }
    catch (e)
       {

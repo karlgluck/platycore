@@ -19,20 +19,6 @@ var updateDriveFileTriggers = function ()
          sheet.insertRowsAfter(sheet.getMaxRows(), qcMissingCols);
          }
       })(2 - sheet.getMaxColumns());
-   
-   (function (qrDataRows, qcAgentCheckboxes)
-      {
-      if (qrDataRows > 0)
-         {
-         sheet.getRange(2, 1, qrDataRows, 1).setNumberFormat('M/d/yyyy H:mm:ss');
-         sheet.setRowHeights(2, qrDataRows, 21);
-         if (qcAgentCheckboxes > 0)
-            {
-            sheet.setColumnWidths(3, qcAgentCheckboxes, 21);
-            sheet.getRange(2, 3, qrDataRows, qcAgentCheckboxes).insertCheckboxes();
-            }
-         }
-      })(sheet.getMaxRows() - 1, sheet.getMaxColumns() - 2);
 
 
    sheet.setFrozenRows(1);
@@ -76,6 +62,24 @@ var updateDriveFileTriggers = function ()
          sheet.getRange(2, 3, irLastRow - 1, newAgents.length).insertCheckboxes();
          }
       }
+   
+   //
+   // Update formatting
+   //
+
+   (function (qrDataRows, qcAgentCheckboxes)
+      {
+      if (qrDataRows > 0)
+         {
+         sheet.getRange(2, 1, qrDataRows, 1).setNumberFormat('M/d/yyyy H:mm:ss');
+         sheet.setRowHeights(2, qrDataRows, 21);
+         if (qcAgentCheckboxes > 0)
+            {
+            sheet.setColumnWidths(3, qcAgentCheckboxes, 21);
+            sheet.getRange(2, 3, qrDataRows, qcAgentCheckboxes).insertCheckboxes();
+            }
+         }
+      })(sheet.getMaxRows() - 1, sheet.getMaxColumns() - 2);
 
    //
    // Set the GO flags for agents whose input channels changed
@@ -83,27 +87,34 @@ var updateDriveFileTriggers = function ()
 
    var channelsTable = GAS.GetTableFromSheetP(sheet);
    var relationships = Lang.MakeRelationshipsUsingTable(channelsTable);
-   var lastUpdatedRange = sheet.getRange(2, 1 + channelsTable[0].indexOf('last_updated'), relationships.length, 1);
-   var lastUpdatedValues = lastUpdatedRange.getValues();
-   relationships.forEach(function (eRelationship, iRelationship)
+   if (relationships.length > 0)
       {
-      var lastUpdatedDate = DriveApp.getFileById(eRelationship.drive_file_url.match(/[-\w]{25,}/)).getLastUpdated();
-      var utsLastUpdated = lastUpdatedDate.getTime();
-      var utsLastTriggered = new Date(eRelationship.last_updated).getTime();
-      if (utsLastUpdated != utsLastTriggered)
+      var lastUpdatedRange = sheet.getRange(2, 1 + channelsTable[0].indexOf('last_updated'), relationships.length, 1);
+      var lastUpdatedValues = lastUpdatedRange.getValues();
+      relationships.forEach(function (eRelationship, iRelationship)
          {
-         lastUpdatedValues[iRelationship][0] = lastUpdatedDate;
-         eRelationship.agents.forEach(function (eAgentId)
+         var id = eRelationship.drive_file_url.match(/[-\w]{25,}/);
+         if (!Lang.IsArray(id)) return;
+         var file = DriveApp.getFileById(id[0]);
+         if (!Lang.IsObject(file)) return;
+         var lastUpdatedDate = file.getLastUpdated();
+         var utsLastUpdated = lastUpdatedDate.getTime();
+         var utsLastTriggered = new Date(eRelationship.last_updated).getTime();
+         if (utsLastUpdated != utsLastTriggered)
             {
-            var goRange = spreadsheet.getRangeByName(eAgentId + '_GO');
-            if (Lang.IsObject(goRange))
+            lastUpdatedValues[iRelationship][0] = lastUpdatedDate;
+            eRelationship.agents.forEach(function (eAgentId)
                {
-               console.log(eRelationship.drive_file_url + ' triggered ' + eAgentId);
-               goRange.setValue(true);
-               }
-            });
-         }
-      });
-   lastUpdatedRange.setValues(lastUpdatedValues);
+               var goRange = spreadsheet.getRangeByName(eAgentId + '_GO');
+               if (Lang.IsObject(goRange))
+                  {
+                  console.log(eRelationship.drive_file_url + ' triggered ' + eAgentId);
+                  goRange.setValue(true);
+                  }
+               });
+            }
+         });
+      lastUpdatedRange.setValues(lastUpdatedValues);
+      }
 
    };
