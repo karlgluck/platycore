@@ -103,17 +103,20 @@ ns.GetSheetFromUrl = function (url)
       return null;
       }
    var match = url.match(/#gid=(\d+)/);
+   var rvSheet = Lang.IsArray(match) ? ns.GetSheetFromSheetId(spreadsheet, Lang.intCast(match[1])) : null;
+   return rvSheet;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.GetSheetFromSheetId = function (spreadsheet, sheetId)
+   {
    var sheets = spreadsheet.getSheets();
-   var rvSheet = null;
-   if (Lang.IsArray(match))
+   var rvSheet = sheets.find(function (eSheet)
       {
-      var sheetId = Lang.intCast(match[1]);
-      rvSheet = sheets.find(function (eSheet, iSheet)
-         {
-         return sheetId == eSheet.getSheetId();
-         })
-      }
-   return rvSheet || sheets[0];
+      return sheetId == eSheet.getSheetId();
+      });
+   return rvSheet;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------

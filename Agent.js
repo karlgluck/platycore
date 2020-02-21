@@ -1,6 +1,33 @@
 
 function Agent (sheet_)
    {
+
+   //
+   // Interpret the sheet_ parameter as either:
+   //    - The Agent ID, e.g.: "A1126527086"
+   //    - The Google Sheet ID, e.g.: 1126527086
+   //    - A Sheet object
+
+   if (Lang.IsString(sheet_))
+      {
+      if (sheet_.charAt(0) === 'A')
+         {
+         sheet_ = Lang.intCast(sheet_.slice(1));
+         }
+      }
+
+   if (Lang.IsNumber(sheet_))
+      {
+      sheet_ = GAS.GetSheetFromSheetId(sheet_);
+      }
+
+   if (!Lang.IsObject(sheet_))
+      {
+      this.CouldBeAgentP = function () { return false; }
+      this.Preboot = function () { return false; }
+      return;
+      }
+   
    var self_ = this;
    var kAgentId_ = 'A'+sheet_.getSheetId();
    var isThisOn_ = false;
@@ -239,7 +266,7 @@ function Agent (sheet_)
    this.LogWithBadge = function (badge, message)
       {
       console.log.apply(console, arguments);
-      writeOutput_(badge, Array(arguments).slice(1)).setFontColor('#b7b7b7').setBackground('black');
+      writeOutput_(badge, [Array(arguments).slice(1)]).setFontColor('#b7b7b7').setBackground('black');
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -681,6 +708,10 @@ function Agent (sheet_)
       {
       if (!Lang.IsArray(instructions)) throw "!Lang.IsArray(instructions)";
 
+      var rvExecutionDetails = {
+            didAbort: false
+            };
+
       var selectedRange = null;
       var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT']);
       var previousAgentValueFromPropertyName = null;
@@ -713,7 +744,8 @@ function Agent (sheet_)
             case 'INTERACTIVE_ONLY':
                if (!Lang.IsObject(SpreadsheetApp.getActive()))
                   {
-                  return;
+                  rvExecutionDetails.didAbort = true;
+                  nInstructionCount = 0;
                   }
                break;
 
@@ -743,6 +775,7 @@ function Agent (sheet_)
                catch (e)
                   {
                   self_.Error('Unable to INSTALL:' + String(e), e.stack);
+                  rvExecutionDetails.didAbort = true;
                   nInstructionCount = 0;
                   }
                break;
@@ -757,9 +790,10 @@ function Agent (sheet_)
                var agent = new Agent(sheet);
                if (agent.Preboot())
                   {
-                  agent.ExecuteRoutine(instructions.slice(iInstruction+1))
+                  rvExecutionDetails.subroutine = agent.ExecuteRoutine(instructions.slice(iInstruction+1))
+                  rvExecutionDetails.didAbort = rvExecutionDetails.subroutine.didAbort;
                   }
-               iInstruction = nInstructionCount;
+               nInstructionCount = iInstruction;
                break;
 
             case 'WRITE_REINSTALL_NOTE':
@@ -970,7 +1004,7 @@ function Agent (sheet_)
                break;
                
             case 'CODE':
-               // TODO: make sure every newline literal from the args has a space after it
+               console.log('TODO: make sure every newline literal from the args has a space after it when writing CODE instruction');
                var value = '  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------';
                selectedRange.setNote(value);
                break;
@@ -1035,7 +1069,7 @@ function Agent (sheet_)
             } // switch agent instruction
          } // for each agent instruction
 
-         return self_; // if we rebooted, this might change
+         return rvExecutionDetails;
       };
 
 
@@ -1063,6 +1097,19 @@ function Agent (sheet_)
 // output is logged.
 //
 
+   this.CouldBeAgentP = function ()
+      {
+      var rv = isThisPrebooted_;
+      if (!rv)
+         {
+         var range = sheet_.getRange('A1');
+         rv = range.isChecked() && Lang.IsMeaningful(range.getNote());
+         }
+      return rv;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.Preboot = function ()
       {
       var range = sheet_.getRange('A1');
@@ -1080,8 +1127,8 @@ function Agent (sheet_)
          {
          try
             {
-            self_.ExecuteRoutineFromText(note);
-            isThisPrebooted_ = true;
+            var execution = self_.ExecuteRoutineFromText(note);
+            isThisPrebooted_ = !execution.didAbort;
             }
          catch (e)
             {

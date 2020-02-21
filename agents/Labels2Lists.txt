@@ -223,7 +223,7 @@ Object.keys(outputsFromLabelName).forEach(function (eLabelName)
    });
 if (0 < threads.length)
    {
-   agent.Log('Processed ' + threads.length + ' emails');
+   agent.Log('There were ' + threads.length + ' email(s)');
    }
 if (en)
    {
