@@ -111,11 +111,17 @@ ns.GetSheetFromUrl = function (url)
 
 ns.GetSheetFromSheetId = function (spreadsheet, sheetId)
    {
+   var rvSheet = null;
    var sheets = spreadsheet.getSheets();
-   var rvSheet = sheets.find(function (eSheet)
+   for (var iSheet = 0, nSheetCount = sheets.length; iSheet < nSheetCount; ++iSheet)
       {
-      return sheetId == eSheet.getSheetId();
-      });
+      var eSheet = sheets[iSheet];
+      if (sheetId == eSheet.getSheetId())
+         {
+         rvSheet = eSheet;
+         nSheetCount = 0;
+         }
+      }
    return rvSheet;
    };
 

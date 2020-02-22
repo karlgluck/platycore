@@ -1,13 +1,44 @@
+
+function onOpen()
+   {
+   var ui = SpreadsheetApp.getUi();
+
+   // 🧮 🗜️ 🖥️ 👾  🤖  ⚗️
+
+   ui.createMenu('Platycore')
+         .addItem('👾 New Agent...', 'menuNewAgent')
+         .addSeparator()
+         .addItem('🗑️ Uninstall Agent', 'menuUninstallAgent')
+         .addToUi();
+
+   ui.createMenu('▶️ Run')
+         .addItem('📄 Note...', 'menuRunSelectedNote')
+         .addItem('👾 Agent...', 'menuStepAgent')
+         .addItem('▶️ Main Loop...', 'menuStepBlockPump')
+         .addSeparator()
+         .addItem('🔁 Start automation', 'menuRunSentinel')
+         .addItem('⏸️ Stop automation', 'menuStopSentinel')
+         .addToUi();
+
+   ui.createMenu('\u2800🐞 Debug')
+         .addItem('✨ Clear Output', 'menuClearAgentOutput')
+         .addItem('🔄 Update Drive file triggers...', 'menuUpdateDriveFileTriggers')
+         //.addSeparator()
+         //.addItem('Collect Garbage', 'menuCollectGarbage')
+         .addToUi();
+   }
+   
+//------------------------------------------------------------------------------------------------------------------------------------
+
 function menuUpdateDriveFileTriggers()
    {
-   updateDriveFileTriggers();
+   Platycore.UpdateDriveFileTriggers();
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 function menuClearAgentOutput ()
    {
-   platycoreVerifyPermissions();
    var sheet = SpreadsheetApp.getActiveSheet();
    var qrFrozenRows = sheet.getFrozenRows();
    var mrMaxRows = sheet.getMaxRows();
@@ -21,8 +52,6 @@ function menuClearAgentOutput ()
 
 function menuNewAgent()
    {
-   platycoreVerifyPermissions();
-
    var html = HtmlService.createHtmlOutputFromFile('newAgentSidebar.html')
       .setTitle('New Agent')
       .setWidth(300);
@@ -31,28 +60,8 @@ function menuNewAgent()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function menuReinstallAgent()
-   {
-   try
-      {
-      var agent = new Agent(SpreadsheetApp.getActiveSheet());
-      var kAgentId = agent.GetAgentId();
-      agent.Uninstall();
-      newAgent(urlAgentInstructions, kAgentId);
-      }
-   catch (e)
-      {
-      SpreadsheetApp.getActiveSpreadsheet().toast('Reinstall failed: ' + e + ' ' + e.stack);
-      console.log('Reinstall failed: ' + e + ' ' + e.stack, e.stack);
-      throw e;
-      }
-   }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
 function menuRunSelectedNote ()
    {
-   platycoreVerifyPermissions();
    try
       {
       var cellRange = SpreadsheetApp.getCurrentCell();
@@ -94,7 +103,6 @@ function menuRunSelectedNote ()
 
 function menuRunSentinel ()
    {
-   platycoreVerifyPermissions();
    try
       {
       GAS.DeleteTriggerByName('triggerBlockPump');
@@ -111,7 +119,6 @@ function menuRunSentinel ()
 
 function menuShowAgentSidebar()
    {
-   platycoreVerifyPermissions();
 
    var html = HtmlService.createHtmlOutputFromFile('agentSidebar.html')
       .setTitle('Agent Sidebar')
@@ -123,7 +130,6 @@ function menuShowAgentSidebar()
 
 function menuStepAgent()
    {
-   platycoreVerifyPermissions();
    try
       {
       var agent = new Agent(SpreadsheetApp.getActiveSheet());
@@ -156,15 +162,14 @@ function menuStepAgent()
 
 function menuStepBlockPump()
    {
-   platycoreVerifyPermissions();
-   doBlockPump(true);
+   Platycore.UpdateDriveFileTriggers();
+   Platycore.StepBlockPump();
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 function menuStopSentinel ()
    {
-   platycoreVerifyPermissions();
    GAS.DeleteTriggerByName('triggerBlockPump');
    SpreadsheetApp.getActiveSpreadsheet().toast('There are ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
    }
@@ -173,11 +178,15 @@ function menuStopSentinel ()
 
 function menuUninstallAgent()
    {
-   platycoreVerifyPermissions();
    try
       {
       var agent = new Agent(SpreadsheetApp.getActiveSheet());
-      agent.Uninstall();
+      var ui = SpreadsheetApp.getUi();
+      var button = ui.alert('Uninstall Agent', 'Are you sure you want to delete agent ' + agent.GetAgentId() + '(' + agent.GetName() + ')?', ui.ButtonSet.YES_NO);
+      if (ui.Button.YES === button)
+         {
+         agent.Uninstall();
+         }
       }
    catch (e)
       {
