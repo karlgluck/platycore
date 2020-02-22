@@ -632,6 +632,26 @@ ns.GetUrlsFromString = function  (text)
       return urls;
    };
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.lcontains = function (list, searchItem)
+   {
+   return list.indexOf(searchItem) >= 0;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.lcontains = function (list, searchItem)
+   {
+   return list.indexOf(searchItem) >= 0;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+// ns.intersect3 = function (list, searchItem)
+//    {
+//    return list.indexOf(searchItem) < 0;
+//    };
 
 return ns;
 })(Lang || {});

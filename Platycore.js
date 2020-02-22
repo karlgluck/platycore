@@ -72,14 +72,14 @@ ns.UpdateDriveFileTriggers = function ()
 
    var sheetAgentIds = icLastColumn > 2 ? sheet.getRange(1,3, 1, icLastColumn - 2).getDisplayValues()[0] : [];
    var existingAgentIds = sheets.map(eSheet => new Agent(eSheet)).filter(eAgent => eAgent.CouldBeAgentP()).map(eAgent => eAgent.GetAgentId());
-   var deadAgents = sheetAgentIds.filter(e => !existingAgentIds.includes(e));
+   var deadAgents = sheetAgentIds.filter(e => !Lang.lcontains(existingAgentIds, e));
    if (deadAgents.length > 0)
       {
       deadAgents.map(eAgentId => sheetAgentIds.indexOf(eAgentId) + 3)
             .reverse()
             .forEach(eicColumn => sheet.deleteColumn(eicColumn));
       }
-   var newAgents = existingAgentIds.filter(e => !sheetAgentIds.includes(e));
+   var newAgents = existingAgentIds.filter(e => !Lang.lcontains(sheetAgentIds, e));
    if (newAgents.length > 0)
       {
       sheet.insertColumnsAfter(2, newAgents.length);

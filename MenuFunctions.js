@@ -5,13 +5,13 @@ function onOpen()
 
    // 🧮 🗜️ 🖥️ 👾  🤖  ⚗️
 
-   ui.createMenu('Platycore')
+   ui.createMenu('\u2800' + Lang.GetMoonPhaseFromDate(new Date()) + ' Platycore\u2800')
          .addItem('👾 New Agent...', 'menuNewAgent')
          .addSeparator()
          .addItem('🗑️ Uninstall Agent', 'menuUninstallAgent')
          .addToUi();
 
-   ui.createMenu('▶️ Run')
+   ui.createMenu('\u2800▶️ Run\u2800')
          .addItem('📄 Note...', 'menuRunSelectedNote')
          .addItem('👾 Agent...', 'menuStepAgent')
          .addItem('▶️ Main Loop...', 'menuStepBlockPump')
@@ -20,12 +20,11 @@ function onOpen()
          .addItem('⏸️ Stop automation', 'menuStopSentinel')
          .addToUi();
 
-   ui.createMenu('\u2800🐞 Debug')
+   ui.createMenu('\u2800🐞 Debug\u2800')
          .addItem('✨ Clear Output', 'menuClearAgentOutput')
          .addItem('🔄 Update Drive file triggers...', 'menuUpdateDriveFileTriggers')
-         //.addSeparator()
-         //.addItem('Collect Garbage', 'menuCollectGarbage')
          .addToUi();
+
    }
    
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -192,15 +191,6 @@ function menuUninstallAgent()
       {
       SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
       }
-   }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-function menuCollectGarbage()
-   {
-
-   updateDriveFileTriggers();
-
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
