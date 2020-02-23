@@ -145,23 +145,26 @@ sheet.getRange(irFirstRow, ciInputLabelColumn,  nRowCount, 1).setDataValidation(
 agent.Log('Applied ' + labels.length + ' label(s)');
 ------------------------
 
+/*
+UPDATE ==>
+IF_EN_AND_EITHER_GO_OR_WAKE
+START
+
+STOP
+*/
 
 
 ==================================================================
 Scripts
 
---- MAIN ---
-This is tricky. I use the same block of cells for the field named SCRIPT, which holds the value MAIN, which refers to the note so-named (MAIN), which happens to also be placed on this same block of cells. Normally, the SCRIPT field would be separate and would hold a reference to one of several other NOTEs.
+--- UPDATE ---
 
-   SELECT  "N6:R6"
-     TEXT  "SCRIPT"
-   HALIGN  "right"
-   SELECT  "S6:U6"
-    FIELD  "SCRIPT"
-     TEXT  "MAIN"
+   SELECT  "Q6:U6"
+    FIELD  "UPDATE"
+     TEXT  "UPDATE"
    HALIGN  "center"
     PANEL  "5"
-     NOTE  "MAIN"
+     NOTE  "UPDATE"
      CODE  "---"
 ------------------------
 var en = agent.ReadToggle('EN');

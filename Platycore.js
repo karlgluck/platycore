@@ -1,6 +1,7 @@
 var Platycore = (function (ns) {
 
 ns.Version = '2008.5';
+ns.IsInteractive = true;
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -14,6 +15,7 @@ var configFromSettingName = {
       'Verbose': { cast: Lang.boolCast, defaultValue: true },
       'BlockRuntimeLimit': { cast: Lang.intCast, defaultValue: 60000 },
       'PumpRuntimeLimit': { cast: Lang.intCast, defaultValue: 300000 },
+      'MaximumAgentLogRows': { cast: Lang.intCast, defaultValue: 99 },
       };
 Object.keys(configFromSettingName).forEach(function (eSettingName) {
    var config = configFromSettingName[eSettingName];
@@ -154,7 +156,7 @@ ns.UpdateDriveFileTriggers = function ()
 //------------------------------------------------------------------------------------------------------------------------------------
 //
 
-ns.StepBlockPump = function ()
+ns.MainLoop = function ()
    {
 
    var spreadsheet_ = SpreadsheetApp.getActiveSpreadsheet();
@@ -165,7 +167,7 @@ ns.StepBlockPump = function ()
    var iSheet_ = -1;
    var utsLastSync = Lang.GetTimestampNow();
 
-   ns.doBlockPump = function ()
+   ns.MainLoop = function ()
       {
 
       //
@@ -208,8 +210,7 @@ ns.StepBlockPump = function ()
 
          if (isEnabled && (isGo || isWake))
             {
-            qSheetsLeftToSearch = 0;
-            agent = new Agent(sheet);            
+            qSheetsLeftToSearch = 0;          
             try
                {
                if (agent.TurnOn())
@@ -247,14 +248,14 @@ ns.StepBlockPump = function ()
 
       };
 
-   return ns.doBlockPump();
+   return ns.MainLoop();
    };
 
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 
-ns.CreateAgent = function (urlAgentInstructions, kPreviousAgentId)
+ns.CreateAgent = function (urlAgentInstructions)
    {
 
    var spreadsheet = SpreadsheetApp.getActive();
@@ -269,7 +270,6 @@ ns.CreateAgent = function (urlAgentInstructions, kPreviousAgentId)
    sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
    sheet.getRange('A1').insertCheckboxes().check().setNote(
       '  INTERACTIVE_ONLY'
-      + (Lang.IsMeaningful(kPreviousAgentId) ? '\n  UPGRADE "' + kPreviousAgentId + '"' : '')
       + '\n  INSTALL "' + urlAgentInstructions + '"'
       );
    sheet.activate();

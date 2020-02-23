@@ -407,6 +407,7 @@ function Agent (sheet_)
                {
                self_.WriteField('LOCK', Lang.GetTimestampNow());
                self_.WriteToggle('ON', true);
+               GAS.LimitAndTrimSheetRows(sheet_,  irNewMessage_ + Platycore.MaximumAgentLogRows);
                isThisOn_ = true;
                }
             else
@@ -472,15 +473,15 @@ function Agent (sheet_)
          {
          throw "must be turned on, otherwise the program might not have exclusive control of the agent"
          }
-   
-      var script = self_.ReadField('SCRIPT');
-      if (Lang.IsUndefined(script))
+
+      var update = self_.ReadField('UPDATE');
+      if (Lang.IsUndefined(update))
          {
-         self_.Warn('This agent does not do anything when activated because there is no SCRIPT field');
+         self_.Warn('This agent does not do anything when activated because there is no UPDATE field');
          return;
          }
 
-      var rv = this.ExecuteRoutineByName(script);
+      var rv = self_.ExecuteRoutineByName(update);
       return rv;
       };
 
@@ -494,7 +495,7 @@ function Agent (sheet_)
       {
       if (!isThisOn_)
          {
-         throw "!isThisOn_"
+         throw "!isThisOn_";
          }
 
       var routine = self_.ReadNote(noteName);
@@ -742,7 +743,7 @@ function Agent (sheet_)
                break;
 
             case 'INTERACTIVE_ONLY':
-               if (!Lang.IsObject(SpreadsheetApp.getActive()))
+               if (!Platycore.IsInteractive)
                   {
                   rvExecutionDetails.didAbort = true;
                   nInstructionCount = 0;
@@ -870,9 +871,9 @@ function Agent (sheet_)
                sheet_.insertRowsBefore(irNewMessage_, qrRows);
                mrMaxRows += qrRows;
                irNewMessage_ = qrRows + 1;
-               var riFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
-               sheet_.deleteRows(riFirstRowToDelete, mrMaxRows - riFirstRowToDelete + 1);
-               mrMaxRows = riFirstRowToDelete - 1;
+               var irFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
+               sheet_.deleteRows(irFirstRowToDelete, mrMaxRows - irFirstRowToDelete + 1);
+               mrMaxRows = irFirstRowToDelete - 1;
 
                sheet_.getRange(qrRows, 1, 1, mrMaxColumns).setBorder(false, false, true, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
                sheet_.getRange(1, 1, qrRows, 1).mergeVertically().setBackground('#b7b7b7').setFontColor('#000000');

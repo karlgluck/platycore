@@ -42,7 +42,7 @@
          {
          document.getElementById('fromTextButton').style.visibility = 'none';
          var text = document.getElementById('fromTextInstructions').innerText.replace(/\s/, ' ');
-         google.script.run.newAgentFromText(text);
+         google.script.run.commandSidebarExecute(text);
          return false;
          }
 
@@ -50,7 +50,7 @@
   </head>
   <body>
   <div contenteditable="true" id="fromTextInstructions"></div>
-  <a id="fromTextButton" href="#" onclick="return onUserDidClickFromTextButton()">Create Agent</button>
+  <a id="fromTextButton" href="#" onclick="return onUserDidClickFromTextButton()">Execute Code</button>
   </body>
 </html>
 

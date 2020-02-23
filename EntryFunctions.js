@@ -1,60 +1,84 @@
 
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function commandSidebarExecute(text)
+   {
+   var agent = new Agent(SpreadsheetApp.getActiveSheet());
+   agent.ExecuteRoutineFromText(text);
+   //Platycore.CreateAgent('data:application/x-gzip;base64,' + Lang.GetBase64GzipFromString(text));
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function triggerMainLoop ()
+   {
+   Platycore.IsInteractive = false;
+   // TODO: run multiple times while there is stuff to do
+   Platycore.UpdateDriveFileTriggers();
+   Platycore.MainLoop();
+   }
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 function onOpen()
    {
    var ui = SpreadsheetApp.getUi();
 
-   // 🧮 🗜️ 🖥️ 👾  🤖  ⚗️
+   // 🧮 🗜️ 🖥️ 👾  🤖  ⚗️ 🧚
 
    ui.createMenu('\u2800' + Lang.GetMoonPhaseFromDate(new Date()) + ' Platycore\u2800')
-         .addItem('👾 New Agent...', 'menuNewAgent')
+         .addItem('🧚 Install agent...', 'menuInstallAgent')
          .addSeparator()
-         .addItem('🗑️ Uninstall Agent', 'menuUninstallAgent')
+         .addItem('💨 Uninstall this agent', 'menuUninstallAgent')
          .addToUi();
 
    ui.createMenu('\u2800▶️ Run\u2800')
          .addItem('📄 Note...', 'menuRunSelectedNote')
-         .addItem('👾 Agent...', 'menuStepAgent')
-         .addItem('▶️ Main Loop...', 'menuStepBlockPump')
+         .addItem('🧚 Agent...', 'menuStepAgent')
+         .addItem('▶️ Main Loop...', 'menuMainLoop')
          .addSeparator()
-         .addItem('🔁 Start automation', 'menuRunSentinel')
-         .addItem('⏸️ Stop automation', 'menuStopSentinel')
+         .addItem('🔁 Start automation', 'menuStartRunningMainLoop')
+         .addItem('⏸️ Stop automation', 'menuStopRunningMainLoop')
          .addToUi();
 
    ui.createMenu('\u2800🐞 Debug\u2800')
-         .addItem('✨ Clear Output', 'menuClearAgentOutput')
+         .addItem('✨ Clear output', 'menuClearAgentOutput')
          .addItem('🔄 Update Drive file triggers...', 'menuUpdateDriveFileTriggers')
          .addToUi();
 
    }
-   
-//------------------------------------------------------------------------------------------------------------------------------------
-
-function menuUpdateDriveFileTriggers()
-   {
-   Platycore.UpdateDriveFileTriggers();
-   }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function menuClearAgentOutput ()
+function menuInstallAgent()
    {
-   var sheet = SpreadsheetApp.getActiveSheet();
-   var qrFrozenRows = sheet.getFrozenRows();
-   var mrMaxRows = sheet.getMaxRows();
-   var irFirstUnfrozenRow = qrFrozenRows + 1;
-   var irFirstRowToDelete = irFirstUnfrozenRow + 1;
-   sheet.insertRowsBefore(irFirstUnfrozenRow, 1);
-   sheet.deleteRows(irFirstRowToDelete, mrMaxRows - irFirstRowToDelete + 2);
-   }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-function menuNewAgent()
-   {
-   var html = HtmlService.createHtmlOutputFromFile('newAgentSidebar.html')
-      .setTitle('New Agent')
+   var html = HtmlService.createHtmlOutputFromFile('CommandSidebar.html')
+      .setTitle('Platycore')
       .setWidth(300);
    SpreadsheetApp.getUi().showSidebar(html);
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuUninstallAgent()
+   {
+   try
+      {
+      var agent = new Agent(SpreadsheetApp.getActiveSheet());
+      var ui = SpreadsheetApp.getUi();
+      var button = ui.alert('Uninstall Agent', 'Are you sure you want to delete agent ' + agent.GetAgentId() + '(' + agent.GetName() + ')?', ui.ButtonSet.YES_NO);
+      if (ui.Button.YES === button)
+         {
+         agent.Uninstall();
+         }
+      }
+   catch (e)
+      {
+      SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
+      }
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -100,29 +124,18 @@ function menuRunSelectedNote ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function menuRunSentinel ()
+function menuStartRunningMainLoop ()
    {
    try
       {
-      GAS.DeleteTriggerByName('triggerBlockPump');
-      ScriptApp.newTrigger('triggerBlockPump').timeBased().everyMinutes(5).create();
+      GAS.DeleteTriggerByName('triggerMainLoop');
+      ScriptApp.newTrigger('triggerMainLoop').timeBased().everyMinutes(5).create();
       SpreadsheetApp.getActiveSpreadsheet().toast('There are now ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
       }
    catch (e)
       {
       SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
       }
-   }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-function menuShowAgentSidebar()
-   {
-
-   var html = HtmlService.createHtmlOutputFromFile('agentSidebar.html')
-      .setTitle('Agent Sidebar')
-      .setWidth(300);
-   SpreadsheetApp.getUi().showSidebar(html);
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -156,41 +169,46 @@ function menuStepAgent()
       SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
       }
    }
-
+ 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function menuStepBlockPump()
+function menuMainLoop()
    {
    Platycore.UpdateDriveFileTriggers();
-   Platycore.StepBlockPump();
+   Platycore.MainLoop();
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function menuStopSentinel ()
+function menuStopRunningMainLoop ()
    {
-   GAS.DeleteTriggerByName('triggerBlockPump');
+   GAS.DeleteTriggerByName('triggerMainLoop');
    SpreadsheetApp.getActiveSpreadsheet().toast('There are ' + (ScriptApp.getProjectTriggers().length) + ' active trigger(s)');
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function menuUninstallAgent()
+function menuClearAgentOutput ()
    {
-   try
-      {
-      var agent = new Agent(SpreadsheetApp.getActiveSheet());
-      var ui = SpreadsheetApp.getUi();
-      var button = ui.alert('Uninstall Agent', 'Are you sure you want to delete agent ' + agent.GetAgentId() + '(' + agent.GetName() + ')?', ui.ButtonSet.YES_NO);
-      if (ui.Button.YES === button)
-         {
-         agent.Uninstall();
-         }
-      }
-   catch (e)
-      {
-      SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
-      }
+   var sheet = SpreadsheetApp.getActiveSheet();
+   var qrFrozenRows = sheet.getFrozenRows();
+   var mrMaxRows = sheet.getMaxRows();
+   var irFirstUnfrozenRow = qrFrozenRows + 1;
+   var irFirstRowToDelete = irFirstUnfrozenRow + 1;
+   sheet.insertRowsBefore(irFirstUnfrozenRow, 1);
+   sheet.deleteRows(irFirstRowToDelete, mrMaxRows - irFirstRowToDelete + 2);
+   }
+   
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuUpdateDriveFileTriggers()
+   {
+   Platycore.UpdateDriveFileTriggers();
    }
 
-//------------------------------------------------------------------------------------------------------------------------------------
+
+
+function DEBUGGY ()
+   {
+   GAS.ApplyRetentionPolicyToSheet({utsOldestDateToKeep: new Date().getTime() - (30 * 24 * 60 * 60 * 1000)}, SpreadsheetApp.getActiveSheet());
+   }

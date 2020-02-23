@@ -226,6 +226,72 @@ ns.TrimSheetRows = function (sheet)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.ApplyRetentionPolicyToSheet = function (policy, sheet)
+   {
+
+   var irFirstRowToDelete = sheet.getLastRow() + 1;
+   if (Lang.IsNumber(policy.qrRowCountLimit))
+      {
+      irFirstRowToDelete = Math.min(irFirstRowToDelete, policy.qrRowCountLimit);
+      }
+   irFirstRowToDelete = Math.max(irFirstRowToDelete, sheet.getFrozenRows() + 2);
+   var irMaxRows = sheet.getMaxRows();
+   var qrExtraRows = irMaxRows - irFirstRowToDelete + 1;
+   if (qrExtraRows > 0)
+      {
+      sheet.deleteRows(irFirstRowToDelete, qrExtraRows);
+      }
+
+   if (Lang.IsNumber(policy.utsOldestDateToKeep))
+      {
+      console.log('deleting everything older than ' + new Date(policy.utsOldestDateToKeep));
+      if (!Lang.IsString(policy.kDateColumnHeading))
+         {
+         policy.kDateColumnHeading = 'date';
+         }
+      var qrFrozenRows = sheet.getFrozenRows();
+      var headers = sheet.getRange(qrFrozenRows, 1, sheet.getLastColumn(), 1).getValues()[0];
+      var ciDateColumn = 1 + headers.indexOf(policy.kDateColumnHeading);
+      var dateColumnRange = sheet.getRange(qrFrozenRows + 1, ciDateColumn, sheet.getLastRow() - qrFrozenRows, 1);
+      var dates = dateColumnRange.getValues();
+      var iLastDateToDelete = -1;
+      for (var iDate = dates.length - 1; iDate >= 0; --iDate)
+         {
+         if (iLastDateToDelete < 0)
+            {
+            if (Lang.dateCast(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
+               {
+               iLastDateToDelete = iDate;
+               }
+            }
+         
+         if (iLastDateToDelete >= 0)
+            {
+            if (Lang.dateCast(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
+               {
+               if (iDate === 0)
+                  {
+                  sheet.deleteRows(qrFrozenRows + 1 + (iDate), iLastDateToDelete - (iDate) + 1);
+                  iLastDateToDelete = -1;
+                  }
+               }
+            else
+               {
+               sheet.deleteRows(qrFrozenRows + 1 + (iDate+1), iLastDateToDelete - (iDate+1) + 1);
+               iLastDateToDelete = -1;
+               }
+            }
+         }
+      }
+   };
+
+
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+
+
 // ns.GetEditableConditionalFormatRules = function ()
 //    {
 //    return sheet_.getConditionalFormatRules().map(function (eRule)
