@@ -145,14 +145,6 @@ sheet.getRange(irFirstRow, ciInputLabelColumn,  nRowCount, 1).setDataValidation(
 agent.Log('Applied ' + labels.length + ' label(s)');
 ------------------------
 
-/*
-UPDATE ==>
-IF_EN_AND_EITHER_GO_OR_WAKE
-START
-
-STOP
-*/
-
 
 ==================================================================
 Scripts
