@@ -196,51 +196,15 @@ ns.MainLoop = function ()
          iSheet_ = (iSheet_ + 1 ) % nSheetCount_;
          var sheet = sheets_[iSheet_];
          var agent = new AgentConnection(sheet);
-
-         var isEnabled = false;
-         var isGo = false;
-         var isWake = false;
          
          if (agent.IsConnected())
             {
-            isEnabled = (function (en) { return Lang.IsUndefined(en) || Lang.boolCast(en) })(agent.ReadToggle('EN'));
-            isGo = (function (go) { return !Lang.IsUndefined(go) && Lang.boolCast(go) })(agent.ReadToggle('GO'));
-            isWake = (function (wake) { return Lang.IsNumber(wake) && utsIterationStarted > wake })(agent.ReadField('WAKE'));
-            }
-
-         if (isEnabled && (isGo || isWake))
-            {
             qSheetsLeftToSearch = 0;
-            agent.ExecuteRoutineFromText(
-               ' '
-               );
-            try
+            /*var executionDetails = */agent.ExecuteRoutineFromA1Note();
+            var dtRuntime = Lang.GetTimestampNow() - utsIterationStarted;
+            if (dtRuntime > Platycore.BlockRuntimeLimit)
                {
-               if (agent.TurnOn())
-                  {
-                  try{
-                     agent.Log('turned on at ' + Lang.GetWallTimeFromTimestamp(Lang.GetTimestampNow()));
-                     agent.Step();
-                     }
-                  catch (e)
-                     {
-                     agent.Error('Step', e, e.stack);
-                     }
-                  finally
-                     {
-                     var dtRuntime = Lang.GetTimestampNow() - utsIterationStarted;
-                     agent.Log('turned off after ' + Lang.stopwatchStringFromDuration(dtRuntime) + ' at ' + Lang.GetWallTimeFromTimestamp(Lang.GetTimestampNow()));
-                     if (dtRuntime > Platycore.BlockRuntimeLimit)
-                        {
-                        agent.Error('agent is running for too long!');
-                        }
-                     agent.TurnOff();
-                     }
-                  }
-               } // try - running the agent through a cycle
-            catch (e)
-               {
-               agent.Error('TurnOn/TurnOff', e, e.stack);
+               agent.Error('agent is running for too long!');
                }
             }
 
@@ -254,46 +218,6 @@ ns.MainLoop = function ()
    return ns.MainLoop();
    };
 
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-
-ns.CreateAgent = function (urlAgentInstructions)
-   {
-
-   var spreadsheet = SpreadsheetApp.getActive();
-
-   sheet = spreadsheet.insertSheet(spreadsheet.getActiveSheet().getIndex());
-   sheet.getRange('A1').insertCheckboxes().check().setNote(
-      '  ABORT_UNLESS_INTERACTIVE'
-      + '\n  INSTALL "' + urlAgentInstructions + '"'
-      );
-   sheet.activate();
-
-   try
-      {
-      var agent = new AgentConnection(sheet);
-      agent.Preboot();
-      }
-   catch (e)
-      {
-      console.error(e, e.stack);
-      spreadsheet.toast(e + ' ' + e.stack);
-      try
-         {
-         agent.Error('exception during agent initialization', e, e.stack);
-         }
-      catch (e2)
-         {
-         console.error(e2, e2.stack);
-         }
-      return;
-      }
-
-   return agent;
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
 
 
 //------------------------------------------------------------------------------------------------------------------------------------

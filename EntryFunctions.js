@@ -5,10 +5,10 @@
 
 function commandSidebarExecute(text)
    {
-   var agent = new AgentConnection();
-   if (agent.ConnectUsingActiveSheet())
+   var agentConnection = new AgentConnection();
+   if (agentConnection.ConnectUsingActiveSheet())
       {
-      agent.ExecuteRoutineFromText(text);
+      agentConnection.ExecuteRoutineFromText(text);
       }
    else
       {
@@ -54,6 +54,8 @@ function onOpen()
 
    ui.createMenu('\u2800🐞 Debug\u2800')
          .addItem('✨ Clear output', 'menuClearAgentOutput')
+         .addItem('🔓 Unlock Document (LockService)', 'menuUnlockDocumentLockService')
+         .addSeparator()
          .addItem('🔄 Update Drive file triggers...', 'menuUpdateDriveFileTriggers')
          .addToUi();
 
@@ -86,7 +88,7 @@ function menuUninstallAgent()
    if (agentConnection.ConnectUsingActiveSheet())
       {
       var ui = SpreadsheetApp.getUi();
-      var button = ui.alert('Uninstall Agent', 'Are you sure you want to delete agent ' + agent.GetName() + '(' + agent.GetAgentId() + ')?', ui.ButtonSet.YES_NO);
+      var button = ui.alert('Uninstall Agent', 'Are you sure you want to delete agent ' + agentConnection.GetName() + '(' + agentConnection.GetAgentId() + ')?', ui.ButtonSet.YES_NO);
       if (ui.Button.YES === button)
          {
          agentConnection.Uninstall();
@@ -141,14 +143,11 @@ function menuStepAgent()
    {
    try
       {
-      var agent = new AgentConnection(SpreadsheetApp.getActiveSheet());
-      if (agent.IsConnected())
+      var agentConnection = new AgentConnection(SpreadsheetApp.getActiveSheet());
+      if (agentConnection.IsConnected())
          {
-         if (agent.TurnOn())
-            {
-            agent.Step();
-            }
-         agent.TurnOff();
+         var executionDetails = agent.ExecuteRoutineFromA1Note();
+         agent.Log('Finished', executionDetails);
          }
       }
    catch (e)
@@ -193,9 +192,9 @@ function menuUpdateDriveFileTriggers()
    Platycore.UpdateDriveFileTriggers();
    }
 
+//------------------------------------------------------------------------------------------------------------------------------------
 
-
-function DEBUGGY ()
+function menuUnlockDocumentLockService()
    {
-   GAS.ApplyRetentionPolicyToSheet({utsOldestDateToKeep: new Date().getTime() - (30 * 24 * 60 * 60 * 1000)}, SpreadsheetApp.getActiveSheet());
+   LockService.getDocumentLock().releaseLock();
    }

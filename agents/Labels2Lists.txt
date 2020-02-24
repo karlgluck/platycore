@@ -3,38 +3,44 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 ==================================================================
 Common Initialization
 
-       NAME  "Labels to Lists"
+      TITLE  "Labels to Lists"
     RESERVE  7
 
 --- EN ---
 
    SELECT  "C2"
-   TOGGLE  "EN"
+     NAME  "EN"
+   TOGGLE
+  READONLY "OFF"
    SELECT  "D2"
      TEXT  "EN"
 
 --- ON ---
 
    SELECT  "C3"
-   TOGGLE  "ON"
-        +  "TRUE"
-  READONLY "ON"
+     NAME  "ON"
+   TOGGLE  "TRUE"
+ READONLY  "ON"
    SELECT  "D3"
      TEXT  "ON"
 
 --- GO ---
 
    SELECT  "C4"
-   TOGGLE  "GO"
+     NAME  "GO"
+   TOGGLE
+ READONLY  "OFF"
    SELECT  "D4"
      TEXT  "GO"
 
 --- WAKE ---
 
    SELECT  "H2:L2"
-    FIELD  "WAKE"
-   RESTORE "FIELD"
+     NAME  "WAKE"
+    FIELD
+ READONLY  "OFF"
      EVAL  "agent.WriteField('WAKE', Lang.GetTimestampNow() + 15000)"
+   RESTORE "FIELD"
     PANEL  5
    SELECT  "F2:G2"
      TEXT  "WAKE"
@@ -45,7 +51,9 @@ Common Initialization
 --- LOCK ---
 
    SELECT  "H5:L5"
-    FIELD  "LOCK"
+     NAME  "LOCK"
+    FIELD
+ READONLY  "OFF"
      EVAL  "agent.WriteField('LOCK', Lang.GetTimestampNow())"
     PANEL  5
    SELECT  "F5:G5"
@@ -63,14 +71,17 @@ Agent-specific
      TEXT "Sheet:"
    HALIGN "right"
    SELECT "S2:AH2"
-    FIELD "SHEET"
+     NAME "SHEET"
+    FIELD
+ READONLY "OFF"
   RESTORE "FIELD"
     PANEL "5"
 
 --- Processed ---
    SELECT "C6:D6"
      TEXT 0
-    FIELD "PROCESSED"
+     NAME "PROCESSED"
+    FIELD
  READONLY "ON"
   RESTORE "FIELD"
    HALIGN "center"
@@ -86,7 +97,9 @@ Agent-specific
    HALIGN "right"
    SELECT "S4:AC4"
      TEXT "<Input Label>"
-    FIELD "INPUT_LABEL"
+     NAME 
+    FIELD
+ READONLY "OFF"
   RESTORE "FIELD"
  VALIDATE "Enter the name of a label from your Gmail account"
         + "IS_GMAIL_LABEL"
@@ -151,8 +164,12 @@ Scripts
 
 --- UPDATE ---
 
+   SELECT  "A1"
+     NOTE  ""
+
    SELECT  "Q6:U6"
-    FIELD  "UPDATE"
+     NAME  "UPDATE"
+    FIELD
      TEXT  "UPDATE"
    HALIGN  "center"
     PANEL  "5"

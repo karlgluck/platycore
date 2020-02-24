@@ -6,7 +6,6 @@ function AgentConnection ()
 
    var kAgentId_ = null;
    var isThisOn_ = false;
-   var isThisPrebooted_ = false;
    var spreadsheet_ = null;
    var irNewMessage_ = 2;
    var readonlyNames_ = [];
@@ -46,7 +45,6 @@ function AgentConnection ()
 
       kAgentId_ = null;
       isThisOn_ = false;
-      isThisPrebooted_ = false;
       spreadsheet_ = null;
       irNewMessage_ = 2;
       readonlyNames_ = [];
@@ -126,6 +124,7 @@ function AgentConnection ()
 
    var setToggleReadonly_ = function (range, isReadonly, value)
       {
+      self_.Log('setToggleReadonly('+isReadonly+','+value+')');
       if (isReadonly)
          {
          range.setFontColor('#666666').setFormula(value ? '=TRUE' : '=FALSE'); // readonly
@@ -184,7 +183,8 @@ function AgentConnection ()
       var textStyleBuilder = range.getTextStyle().copy();
       if (isReadonly)
          {
-         textStyleBuilder.setForegroundColor('#666666');
+         textStyleBuilder.setForegroundColor('#666666')
+                         .setUnderline(false);
          }
       else
          {
@@ -391,17 +391,6 @@ function AgentConnection ()
 **********     ******   ********         *   ******   *   *********   *****   *****         ******************************************
 *************************************************************************************************************************************/
 
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   this.Save = function ()
-      {
-      sheet_.getRange('A1').setNote(
-            '  SET_READONLY ' + JSON.stringify(readonlyNames_)
-            // +'\n'
-            );
-      };
-
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.Uninstall = function ()
@@ -428,10 +417,6 @@ function AgentConnection ()
 
    this.TurnOn = function ()
       {
-      if (!isThisPrebooted_)
-         {
-         throw "not prebooted";
-         }
       if (isThisOn_)
          {
          return true;
@@ -521,7 +506,6 @@ function AgentConnection ()
 
       if (Lang.IsObject(sheet_))
          {
-         self_.Save();
          var lock = LockService.getDocumentLock();
          if (lock.tryLock(Platycore.DocumentTryLockWaitTime))
             {
@@ -563,6 +547,15 @@ function AgentConnection ()
       return rv;
       };
 
+//------------------------------------------------------------------------------------------------------------------------------------
+//
+// Execute the routine that defines this agent in A1
+//
+
+   this.ExecuteRoutineFromA1Note = function ()
+      {
+      return this.ExecuteRoutineFromText(sheet_.getRange(1,1).getNote());
+      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -798,6 +791,7 @@ function AgentConnection ()
       var installationUrl = null;
       var selectionTypeInstructionsSet = Lang.MakeSetFromObjectsP(['TOGGLE', 'FIELD', 'TEXT']);
       var selectionTypeInstruction = null;
+      var isSelectionReadonly = false;
       
       for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
          {
@@ -819,6 +813,7 @@ function AgentConnection ()
             {
             selectionTypeInstruction = null;
             hasMergedCurrentSelection = false;
+            isSelectionReadonly = false;
             }
          else if (Lang.IsValueContainedInSetP(eInstruction, selectionTypeInstructionsSet))
             {
@@ -835,6 +830,18 @@ function AgentConnection ()
 
             case 'ABORT_UNLESS_INTERACTIVE':
                if (!Platycore.IsInteractive)
+                  {
+                  rvExecutionDetails.didAbort = true;
+                  nInstructionCount = 0;
+                  }
+               break;
+            
+            case 'ABORT_UNLESS_TRIGGERED':
+               var isEnabled = (function (en) { return Lang.IsUndefined(en) || Lang.boolCast(en) })(self_.ReadToggle('EN'));
+               var isGo = (function (go) { return !Lang.IsUndefined(go) && Lang.boolCast(go) })(self_.ReadToggle('GO'));
+               var isWake = (function (wake) { return Lang.IsNumber(wake) && utsIterationStarted > wake })(self_.ReadField('WAKE'));
+               var isTriggered = isEnabled && (isGo || isWake);
+               if (!isTriggered)
                   {
                   rvExecutionDetails.didAbort = true;
                   nInstructionCount = 0;
@@ -916,21 +923,9 @@ function AgentConnection ()
                   }
                break;
 
-            case 'SELECT':
-               selectedRange = sheet_.getRange(eArguments[0]);
-               if (eArguments.length >= 2 && Lang.IsValueContainedInSetP(eArguments[1], selectionTypeInstructionsSet))
-                  {
-                  selectionTypeInstruction = eArguments[1];
-                  }
-               break;
-
-            case 'NAME':
-               var name = Lang.stringCast(eArguments[0]);
-               sheet_.setName(Lang.MakeNameUnique('🧚 ' + name, n => null === spreadsheet_.getSheetByName(n)));
-               break;
-
-            case 'FREEZE':
-               sheet_.setFrozenRows(Lang.intCast(eArguments[0]));
+            case 'TITLE':
+               var title = Lang.stringCast(eArguments[0]);
+               sheet_.setName(Lang.MakeNameUnique('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
                break;
 
             case 'RESERVE':
@@ -949,10 +944,9 @@ function AgentConnection ()
                sheet_.setColumnWidths(1, sheet_.getMaxColumns(), 21); // square the cells
 
                var qcExtraColumns = mrMaxColumns - 49;
-               var icLastColumn = sheet_.getLastColumn();
                if (qcExtraColumns < 0)
                   {
-                  sheet_.insertColumnsAfter(Math.max(1, icLastColumn), -qcExtraColumns);
+                  sheet_.insertColumnsAfter(Math.max(1, sheet_.getMaxColumns()), -qcExtraColumns);
                   }
                else if (qcExtraColumns > 0)
                   {
@@ -976,6 +970,10 @@ function AgentConnection ()
                //spreadsheet_.setNamedRange(getRangeNameFromPropertyName('LOG'), sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns()));
                break;
 
+            case 'ON':
+               self_.TurnOn();
+               break;
+
             case 'OFF':
                self_.TurnOff();
                break;
@@ -995,6 +993,41 @@ function AgentConnection ()
             case 'EVAL':
                var code = eArguments.join('\n');
                self_.EvalCode(code, 'EVAL@'+iInstruction);                  
+               break;
+
+            case 'SELECT':
+               selectedRange = sheet_.getRange(eArguments[0]);
+               if (eArguments.length >= 2 && Lang.IsValueContainedInSetP(eArguments[1], selectionTypeInstructionsSet))
+                  {
+                  selectionTypeInstruction = eArguments[1];
+                  }
+               break;
+
+            case 'NAME':
+               var kName = Lang.stringCast(eArguments[0]);
+               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
+               break;
+
+            case 'TOGGLE':
+               selectedRange.insertCheckboxes();
+               var value = Lang.IsValueContainedInSetP('TRUE', eArgumentSet);
+               self_.Log('+toggle: ' + kName);
+               break;
+
+            case 'FIELD':
+               self_.Log('+field: ' + kName, value);
+               break;
+            
+            case 'NOTE':
+               var value = ' ';
+               self_.Log('+note: ' + kName, value);
+               self_.WriteNote(kName, value);
+               break;
+               
+            case 'CODE':
+               console.log('TODO: make sure every newline literal from the args has a space after it when writing CODE instruction');
+               var value = '  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------';
+               selectedRange.setNote(value);
                break;
             
             case 'FORMULA':
@@ -1017,38 +1050,16 @@ function AgentConnection ()
                break;
 
             case 'READONLY':
-               isSelectionReadonly = Lang.IsStringAffirmative(eArguments[0]);
-               switch (selectionTypeInstruction)
+               (function (isReadonly)
                   {
-                  case 'TOGGLE': setToggleReadonly_(selectedRange, isSelectionReadonly, true === selectedRange.isChecked()); break;
-                  case 'FIELD': setFieldReadonly_(selectedRange, isSelectionReadonly); break;
-                  }
-               var name = self_.FindNameUsingRangeP(selectedRange);
-               if (Lang.IsString(name))
-                  {
-                  var shouldAdd = eArguments.length < 1 || Lang.IsStringAffirmative(eArguments[0]);
-                  (shouldAdd ? readonlyNames_.push : readonlyNames_.remove)(name);
-                  }
-               else
-                  {
-                  self_.Warn('READONLY skipped because the currently selected range is not named');
-                  }
-               break;
-
-            case 'TOGGLE':
-               var kName = eArguments[0];
-               selectedRange.insertCheckboxes();
-               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
-               var value = Lang.IsValueContainedInSetP('TRUE', eArgumentSet);
-               setToggleReadonly_(selectedRange, isSelectionReadonly, value);
-               self_.Log('+toggle: ' + kName);
-               break;
-
-            case 'FIELD':
-               var kName = eArguments[0];
-               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
-               setFieldReadonly_(selectedRange, isSelectionReadonly);
-               self_.Log('+field: ' + kName, value);
+                  switch (selectionTypeInstruction)
+                     {
+                     case 'TOGGLE': setToggleReadonly_(selectedRange, isReadonly, true === selectedRange.isChecked()); break;
+                     case 'FIELD': setFieldReadonly_(selectedRange, isReadonly); break;
+                     case 'TEXT': break;
+                     default: self_.Warn('READONLY used before the selection was given a type. Place this command after SELECT and one of the following instructions: ' + Object.keys(selectionTypeInstructionsSet).join(','));
+                     }
+                  })(Lang.IsStringAffirmative(eArguments[0]));
                break;
 
             case 'RESTORE':
@@ -1065,20 +1076,6 @@ function AgentConnection ()
                   {
                   (writeMethodFromTypeName[eArguments[0]])(kName, previousValue);
                   }
-               break;
-            
-            case 'NOTE':
-               var kName = eArguments[0];
-               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
-               var value = ' ';
-               self_.Log('+note: ' + kName, value);
-               self_.WriteNote(kName, value);
-               break;
-               
-            case 'CODE':
-               console.log('TODO: make sure every newline literal from the args has a space after it when writing CODE instruction');
-               var value = '  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------';
-               selectedRange.setNote(value);
                break;
             
             case 'PANEL':
@@ -1155,40 +1152,6 @@ function AgentConnection ()
 **********     ********      *********   *****   **********      *********   *********************************************************
 *************************************************************************************************************************************/
 
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   this.Preboot = function ()
-      {
-      var range = sheet_.getRange('A1');
-
-      var note = null;
-      if (range.isPartOfMerge())
-         {
-         irNewMessage_ = 1 + range.getMergedRanges()[0].getNumRows();
-         }
-      if (true === range.isChecked())
-         {
-         note = range.getNote();
-         }
-      if (Lang.IsMeaningful(note))
-         {
-         try
-            {
-            var execution = self_.ExecuteRoutineFromText(note);
-            isThisPrebooted_ = !execution.didAbort;
-            }
-         catch (e)
-            {
-            if (Platycore.Verbose)
-               {
-               console.warn("Exception while running preboot script for " + kAgentId_, e, e.stack);
-               }
-            }
-         }
-
-      return isThisPrebooted_;
-      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // If an argument was provided to the constructor, try
