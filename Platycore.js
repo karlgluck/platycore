@@ -73,7 +73,7 @@ ns.UpdateDriveFileTriggers = function ()
    var sheets = spreadsheet.getSheets();
 
    var sheetAgentIds = icLastColumn > 2 ? sheet.getRange(1,3, 1, icLastColumn - 2).getDisplayValues()[0] : [];
-   var existingAgentIds = sheets.map(eSheet => new Agent(eSheet)).filter(eAgent => eAgent.CouldBeAgentP()).map(eAgent => eAgent.GetAgentId());
+   var existingAgentIds = sheets.map(eSheet => new AgentConnection(eSheet)).filter(eAgent => eAgent.IsConnected()).map(eAgent => eAgent.GetAgentId());
    var deadAgents = sheetAgentIds.filter(e => !Lang.lcontains(existingAgentIds, e));
    if (deadAgents.length > 0)
       {
@@ -195,13 +195,13 @@ ns.MainLoop = function ()
 
          iSheet_ = (iSheet_ + 1 ) % nSheetCount_;
          var sheet = sheets_[iSheet_];
-         var agent = new Agent(sheet);
+         var agent = new AgentConnection(sheet);
 
          var isEnabled = false;
          var isGo = false;
          var isWake = false;
          
-         if (agent.Preboot())
+         if (agent.IsConnected())
             {
             isEnabled = (function (en) { return Lang.IsUndefined(en) || Lang.boolCast(en) })(agent.ReadToggle('EN'));
             isGo = (function (go) { return !Lang.IsUndefined(go) && Lang.boolCast(go) })(agent.ReadToggle('GO'));
@@ -210,7 +210,10 @@ ns.MainLoop = function ()
 
          if (isEnabled && (isGo || isWake))
             {
-            qSheetsLeftToSearch = 0;          
+            qSheetsLeftToSearch = 0;
+            agent.ExecuteRoutineFromText(
+               ' '
+               );
             try
                {
                if (agent.TurnOn())
@@ -260,23 +263,16 @@ ns.CreateAgent = function (urlAgentInstructions)
 
    var spreadsheet = SpreadsheetApp.getActive();
 
-   var sheetName = 'New Agent';
-
-   var sheet = spreadsheet.getSheetByName(sheetName);
-   if (!!sheet)
-      {
-      spreadsheet.deleteSheet(sheet);
-      }
-   sheet = spreadsheet.insertSheet(sheetName, spreadsheet.getActiveSheet().getIndex());
+   sheet = spreadsheet.insertSheet(spreadsheet.getActiveSheet().getIndex());
    sheet.getRange('A1').insertCheckboxes().check().setNote(
-      '  INTERACTIVE_ONLY'
+      '  ABORT_UNLESS_INTERACTIVE'
       + '\n  INSTALL "' + urlAgentInstructions + '"'
       );
    sheet.activate();
 
    try
       {
-      var agent = new Agent(sheet);
+      var agent = new AgentConnection(sheet);
       agent.Preboot();
       }
    catch (e)

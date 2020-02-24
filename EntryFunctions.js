@@ -5,9 +5,15 @@
 
 function commandSidebarExecute(text)
    {
-   var agent = new Agent(SpreadsheetApp.getActiveSheet());
-   agent.ExecuteRoutineFromText(text);
-   //Platycore.CreateAgent('data:application/x-gzip;base64,' + Lang.GetBase64GzipFromString(text));
+   var agent = new AgentConnection();
+   if (agent.ConnectUsingActiveSheet())
+      {
+      agent.ExecuteRoutineFromText(text);
+      }
+   else
+      {
+      SpreadsheetApp.toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
+      }
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -30,7 +36,7 @@ function onOpen()
    // 🧮 🗜️ 🖥️ 👾  🤖  ⚗️ 🧚
 
    ui.createMenu('\u2800' + Lang.GetMoonPhaseFromDate(new Date()) + ' Platycore\u2800')
-         .addItem('🧚 Install agent...', 'menuInstallAgent')
+         .addItem('🧚 Add empty agent...', 'menuAddEmptyAgent')
          .addSeparator()
          .addItem('💨 Uninstall this agent', 'menuUninstallAgent')
          .addToUi();
@@ -39,6 +45,8 @@ function onOpen()
          .addItem('📄 Note...', 'menuRunSelectedNote')
          .addItem('🧚 Agent...', 'menuStepAgent')
          .addItem('▶️ Main Loop...', 'menuMainLoop')
+         .addSeparator()
+         .addItem('📋 Open command sidebar', 'menuOpenCommandSidebar')
          .addSeparator()
          .addItem('🔁 Start automation', 'menuStartRunningMainLoop')
          .addItem('⏸️ Stop automation', 'menuStopRunningMainLoop')
@@ -53,7 +61,16 @@ function onOpen()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function menuInstallAgent()
+function menuAddEmptyAgent()
+   {
+   var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+   sheet.getRange('A1').insertCheckboxes().check().setNote('Add agent instructions to this note\n  INFO "This agent is empty"');
+   sheet.activate();
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuOpenCommandSidebar()
    {
    var html = HtmlService.createHtmlOutputFromFile('CommandSidebar.html')
       .setTitle('Platycore')
@@ -65,19 +82,19 @@ function menuInstallAgent()
 
 function menuUninstallAgent()
    {
-   try
+   var agentConnection = new AgentConnection();
+   if (agentConnection.ConnectUsingActiveSheet())
       {
-      var agent = new Agent(SpreadsheetApp.getActiveSheet());
       var ui = SpreadsheetApp.getUi();
-      var button = ui.alert('Uninstall Agent', 'Are you sure you want to delete agent ' + agent.GetAgentId() + '(' + agent.GetName() + ')?', ui.ButtonSet.YES_NO);
+      var button = ui.alert('Uninstall Agent', 'Are you sure you want to delete agent ' + agent.GetName() + '(' + agent.GetAgentId() + ')?', ui.ButtonSet.YES_NO);
       if (ui.Button.YES === button)
          {
-         agent.Uninstall();
+         agentConnection.Uninstall();
          }
       }
-   catch (e)
+   else
       {
-      SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
+      SpreadsheetApp.getActiveSpreadsheet().toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
       }
    }
 
@@ -85,40 +102,20 @@ function menuUninstallAgent()
 
 function menuRunSelectedNote ()
    {
-   try
+   var cellRange = SpreadsheetApp.getCurrentCell();
+   var agentConnection = new AgentConnection(cellRange.getSheet());
+   if (agentConnection.ConnectUsingActiveSheet())
       {
-      var cellRange = SpreadsheetApp.getCurrentCell();
-      var agent = new Agent(cellRange.getSheet());
-      try
+      agentConnection.Info('Running ' + cellRange.getA1Notation() + ' ' + String(cellRange.getValue()));
+      var execution = agentConnection.ExecuteRoutineFromText(cellRange.getNote());
+      if (execution.didAbort)
          {
-         if (agent.Preboot() && agent.TurnOn())
-            {
-            var noteName = agent.FindNameUsingRangeP(cellRange);
-            if (null !== noteName)
-               {
-               agent.ExecuteRoutineByName(noteName);
-               }
-            else
-               {
-               var routine = cellRange.getNote();
-               var cellRangeA1Notation = cellRange.getA1Notation();
-               agent.Warn(cellRangeA1Notation + ' is not a named NOTE known to the Agent; executing directly:', routine);
-               agent.ExecuteRoutineFromText(routine);
-               }
-            }
-         }
-      catch (e)
-         {
-         agent.Error('Run selected note', e, e.stack);
-         }
-      finally
-         {
-         agent.TurnOff();
+         agentConnection.Error('didAbort');
          }
       }
-   catch (e)
+   else
       {
-      SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
+      SpreadsheetApp.getActiveSpreadsheet().toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
       }
    }
 
@@ -144,24 +141,14 @@ function menuStepAgent()
    {
    try
       {
-      var agent = new Agent(SpreadsheetApp.getActiveSheet());
-      if (agent.Preboot())
+      var agent = new AgentConnection(SpreadsheetApp.getActiveSheet());
+      if (agent.IsConnected())
          {
-         try
+         if (agent.TurnOn())
             {
-            if (agent.TurnOn())
-               {
-               agent.Step();
-               }
+            agent.Step();
             }
-         catch (e)
-            {
-            agent.Error('Step', e, e.stack);
-            }
-         finally
-            {
-            agent.TurnOff();
-            }
+         agent.TurnOff();
          }
       }
    catch (e)

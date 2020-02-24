@@ -2,6 +2,20 @@ var Lang = (function (ns) {
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.MakeNameUnique = function (name, isUniqueCallback)
+   {
+   var rvUniqueName = name;
+   var counter = 0;
+   while (!isUniqueCallback(rvUniqueName) && ++counter < 9999)
+      {
+      rvUniqueName = name + ' (' + counter + ')';
+      }
+   if (counter >= 9999) throw "isUniqueCallback() never returns true";
+   return rvUniqueName;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.ClampStringLengthP = function (text, length)
    {
    text = String(text);
@@ -55,21 +69,21 @@ ns.IsDate = function (v)
 ns.IsNumber = function (v)
    {
    return !isNaN(parseFloat(v)) && !isNaN(v - 0)
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.stopwatchStringFromDuration = function (dtDuration)
    {
    return ns.stopwatchStringFromDurationInSeconds(dtDuration / 1000);
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.stopwatchStringFromDurationInMillis = function (dtMilliseconds)
    {
    return ns.stopwatchStringFromDurationInSeconds(dtMilliseconds / 1000);
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/6312993/javascript-seconds-to-time-string-with-format-hhmmss
@@ -107,7 +121,7 @@ ns.stopwatchStringFromDurationInSeconds = function (dtSeconds)
       {
       return prefix+minutes+':'+seconds;
       }
-   }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // "Meaningfulness" is the idea that the variable
