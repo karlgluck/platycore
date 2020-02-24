@@ -165,15 +165,6 @@ Scripts
 --- UPDATE ---
 
    SELECT  "A1"
-     NOTE  ""
-
-   SELECT  "Q6:U6"
-     NAME  "UPDATE"
-    FIELD
-     TEXT  "UPDATE"
-   HALIGN  "center"
-    PANEL  "5"
-     NOTE  "UPDATE"
      CODE  "---"
 ------------------------
 var en = agent.ReadToggle('EN');
@@ -246,4 +237,4 @@ else
    agent.Snooze(15 * 60 * 1000);
    }
 ------------------------
-      OFF
+      TURN_OFF

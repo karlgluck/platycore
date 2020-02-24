@@ -21,7 +21,7 @@ function commandSidebarExecute(text)
 function triggerMainLoop ()
    {
    Platycore.IsInteractive = false;
-   // TODO: run multiple times while there is stuff to do
+   // TODO: run multiple times while there is stuff to do and we have time
    Platycore.UpdateDriveFileTriggers();
    Platycore.MainLoop();
    }
@@ -72,16 +72,6 @@ function menuAddEmptyAgent()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function menuOpenCommandSidebar()
-   {
-   var html = HtmlService.createHtmlOutputFromFile('CommandSidebar.html')
-      .setTitle('Platycore')
-      .setWidth(300);
-   SpreadsheetApp.getUi().showSidebar(html);
-   }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
 function menuUninstallAgent()
    {
    var agentConnection = new AgentConnection();
@@ -102,23 +92,54 @@ function menuUninstallAgent()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-function menuRunSelectedNote ()
+var menuRunRange_ = function (range)
    {
-   var cellRange = SpreadsheetApp.getCurrentCell();
-   var agentConnection = new AgentConnection(cellRange.getSheet());
-   if (agentConnection.ConnectUsingActiveSheet())
+   var agentConnection = new AgentConnection();
+   if (agentConnection.ConnectUsingSheet(range.getSheet()))
       {
-      agentConnection.Info('Running ' + cellRange.getA1Notation() + ' ' + String(cellRange.getValue()));
-      var execution = agentConnection.ExecuteRoutineFromText(cellRange.getNote());
+      agentConnection.Info('Running ' + range.getA1Notation() + ' ' + String(range.getValue()));
+      var execution = agentConnection.ExecuteRoutineFromText(range.getNote());
       if (execution.didAbort)
          {
-         agentConnection.Error('didAbort');
+         agentConnection.Error('Execution aborted!');
          }
       }
    else
       {
       SpreadsheetApp.getActiveSpreadsheet().toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
       }
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuRunSelectedNote ()
+   {
+   menuRunRange_(SpreadsheetApp.getCurrentCell());
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuStepAgent()
+   {
+   menuRunRange_(SpreadsheetApp.getSheet().getRange('A1'));
+   }
+ 
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuMainLoop()
+   {
+   Platycore.UpdateDriveFileTriggers();
+   Platycore.MainLoop();
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuOpenCommandSidebar()
+   {
+   var html = HtmlService.createHtmlOutputFromFile('CommandSidebar.html')
+      .setTitle('Platycore')
+      .setWidth(300);
+   SpreadsheetApp.getUi().showSidebar(html);
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -135,33 +156,6 @@ function menuStartRunningMainLoop ()
       {
       SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
       }
-   }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-function menuStepAgent()
-   {
-   try
-      {
-      var agentConnection = new AgentConnection(SpreadsheetApp.getActiveSheet());
-      if (agentConnection.IsConnected())
-         {
-         var executionDetails = agent.ExecuteRoutineFromA1Note();
-         agent.Log('Finished', executionDetails);
-         }
-      }
-   catch (e)
-      {
-      SpreadsheetApp.getActiveSpreadsheet().toast(e + ' ' + e.stack);
-      }
-   }
- 
-//------------------------------------------------------------------------------------------------------------------------------------
-
-function menuMainLoop()
-   {
-   Platycore.UpdateDriveFileTriggers();
-   Platycore.MainLoop();
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------

@@ -970,11 +970,16 @@ function AgentConnection ()
                //spreadsheet_.setNamedRange(getRangeNameFromPropertyName('LOG'), sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns()));
                break;
 
-            case 'ON':
-               self_.TurnOn();
+            case 'TURN_ON':
+               if (!self_.TurnOn())
+                  {
+                  //self_.InteractiveError('Unable to turn on');
+                  rvExecutionDetails.didAbort = true;
+                  nInstructionCount = 0;
+                  }
                break;
 
-            case 'OFF':
+            case 'TURN_OFF':
                self_.TurnOff();
                break;
 
@@ -1019,14 +1024,14 @@ function AgentConnection ()
                break;
             
             case 'NOTE':
-               var value = ' ';
+               var value = eArguments.join('\n');
+               selectedRange.setNote(value);
                self_.Log('+note: ' + kName, value);
-               self_.WriteNote(kName, value);
                break;
-               
+
             case 'CODE':
                console.log('TODO: make sure every newline literal from the args has a space after it when writing CODE instruction');
-               var value = '  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------';
+               var value = '  TURN_ON\n  EVAL "---"\n--------\n  TURN_OFF\n' + eArguments.join('\n ') + '\n--------';
                selectedRange.setNote(value);
                break;
             
