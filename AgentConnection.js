@@ -16,20 +16,20 @@ function AgentConnection ()
    this.Connect = function (identifier)
       {
       var rvConnected = false;
-      if (Lang.IsUrl(identifier))
+      if (Lang.IsUrlP(identifier))
          {
          rvConnected = self_.ConnectUsingUrl(identifier);
          }
-      else if (Lang.IsString(identifier))
+      else if (Lang.IsStringP(identifier))
          {
          rvConnected = self_.ConnectUsingAgentId(identifier)
                || self_.ConnectUsingSheetName(identifier);
          }
-      else if (Lang.IsNumber(identifier))
+      else if (Lang.IsNumberP(identifier))
          {
          rvConnected = self_.ConnectUsingSheetId(identifier);
          }
-      else if (Lang.IsObject(identifier))
+      else if (Lang.IsObjectP(identifier))
          {
          rvConnected = self_.ConnectUsingSheet(identifier);
          }
@@ -43,7 +43,7 @@ function AgentConnection ()
       var rvConnected = false;
       if (agentId.match(/^A\d+$/))
          {
-         rvConnected = self_.ConnectUsingSheetId(Lang.intCast(sheet.slice(1)));
+         rvConnected = self_.ConnectUsingSheetId(Lang.MakeIntFromAnyP(sheet.slice(1)));
          }
       return rvConnected;
       };
@@ -89,7 +89,7 @@ function AgentConnection ()
       readonlyNames_ = [];
       sheet_ = null;
 
-      if (Lang.IsObject(sheet))
+      if (Lang.IsObjectP(sheet))
          {
          sheet_ = sheet;
          kAgentId_ = 'A'+sheet.getSheetId();
@@ -100,7 +100,7 @@ function AgentConnection ()
             {
             irNewMessage_ = 1 + range.getMergedRanges()[0].getNumRows();
             }
-         rvIsConnected = true === range.isChecked() && Lang.IsMeaningful(range.getNote());
+         rvIsConnected = true === range.isChecked() && Lang.IsMeaningfulP(range.getNote());
          }
 
       if (!rvIsConnected)
@@ -178,7 +178,7 @@ function AgentConnection ()
    this.ReadToggle = function (name, ignoreCache)
       {
       var range = getRangeFromPropertyName(name);
-      return Lang.IsObject(range) ? range.isChecked() : undefined;
+      return Lang.IsObjectP(range) ? range.isChecked() : undefined;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -186,9 +186,9 @@ function AgentConnection ()
    this.WriteToggle = function (name, value)
       {
       var range = getRangeFromPropertyName(name);
-      if (Lang.IsObject(range))
+      if (Lang.IsObjectP(range))
          {
-         value = Lang.boolCast(value);
+         value = Lang.MakeBoolFromAnyP(value);
          if (range.getFormula().length > 0)
             {
             range.setFormula(value ? '=TRUE' : '=FALSE');
@@ -238,7 +238,7 @@ function AgentConnection ()
    this.ReadField = function (name, ignoreCache)
       {
       var range = getRangeFromPropertyName(name);
-      return Lang.IsObject(range) ? range.getValue() : undefined;
+      return Lang.IsObjectP(range) ? range.getValue() : undefined;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ function AgentConnection ()
    this.WriteField = function (name, value)
       {
       var range = getRangeFromPropertyName(name);
-      if (Lang.IsObject(range))
+      if (Lang.IsObjectP(range))
          {
          range.setValue(value);
          }
@@ -271,7 +271,7 @@ function AgentConnection ()
    this.ReadNote = function (name, ignoreCache)
       {
       var range = getRangeFromPropertyName(name);
-      return Lang.IsObject(range) ? range.getNote() : undefined;
+      return Lang.IsObjectP(range) ? range.getNote() : undefined;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -279,9 +279,9 @@ function AgentConnection ()
    this.WriteNote = function (name, value)
       {
       var range = getRangeFromPropertyName(name);
-      if (Lang.IsObject(range))
+      if (Lang.IsObjectP(range))
          {
-         range.setNote(Lang.stringCast(value));
+         range.setNote(Lang.MakeStringFromAnyP(value));
          }
       else 
          {
@@ -330,9 +330,9 @@ function AgentConnection ()
 
    var writeOutputFirstTime_ = function (badge, args)
       {
-      if (!Lang.IsMeaningful(badge))
+      if (Lang.IsNotMeaningfulP(badge))
          {
-         badge = Lang.GetClockFromDate(new Date());
+         badge = Lang.GetClockFromDateP(new Date());
          }
       sheet_.insertRowsBefore(irNewMessage_, 1);
       var rvRange = writeOutputNormal_(badge, args);
@@ -358,7 +358,7 @@ function AgentConnection ()
          }
       var range = sheet_.getRange(irNewMessage_, 1, 1, 49);
       var notes = Lang.MakeArray(49, null);
-      notes[0] = new Date().toLocaleString() + '\n\n' + Lang.GetStackTrace(4) + '\n\n' + Object.keys(args).map(function (kArg){return args[kArg]}).join('\n\n');
+      notes[0] = new Date().toLocaleString() + '\n\n' + Lang.GetStackTraceP(4) + '\n\n' + Object.keys(args).map(function (kArg){return args[kArg]}).join('\n\n');
       range.setValues([values]).setNotes([notes]);
       // for some reason this never works to shrink autosized rows
       //sheet_.setRowHeights(irNewMessage_, sheet_.getMaxRows() - irNewMessage_, 21);
@@ -439,7 +439,7 @@ function AgentConnection ()
          {
          var range = eRange.getRange();
          var noteValue = range.getNote();
-         valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningful(noteValue) ? noteValue : range.getValue();
+         valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningfulP(noteValue) ? noteValue : range.getValue();
          eRange.remove();
          });
 
@@ -457,13 +457,13 @@ function AgentConnection ()
          }
       var isAlreadyRunning = self_.ReadToggle('ON', true);
       var lockValue = self_.ReadField('LOCK', true);
-      var hasLockField = !Lang.IsUndefined(lockValue);
+      var hasLockField = Lang.IsNotUndefinedP(lockValue);
       if (hasLockField)
          {
-         lockValue = Lang.intCast(lockValue);
+         lockValue = Lang.MakeIntFromAnyP(lockValue);
          var lockValueWithSentinel = (lockValue - (lockValue % 1000)) + (((lockValue % 1000) + 1) % 1000);
          self_.WriteField('LOCK', lockValueWithSentinel);
-         var canOverrideLock = Platycore.PumpRuntimeLimit < (Lang.GetTimestampNow() - lockValue);
+         var canOverrideLock = Platycore.PumpRuntimeLimit < (Lang.GetTimestampNowP() - lockValue);
          }
       else
          {
@@ -489,7 +489,7 @@ function AgentConnection ()
          {
          try
             {
-               isAlreadyRunning = Lang.boolCast(self_.ReadToggle('ON', true));
+               isAlreadyRunning = Lang.MakeBoolFromAnyP(self_.ReadToggle('ON', true));
                if (hasLockField)
                   {
                   canTurnOn = self_.ReadField('LOCK', true) === lockValueWithSentinel
@@ -502,7 +502,7 @@ function AgentConnection ()
 
             if (canTurnOn)
                {
-               self_.WriteField('LOCK', Lang.GetTimestampNow());
+               self_.WriteField('LOCK', Lang.GetTimestampNowP());
                self_.WriteToggle('ON', true);
                GAS.LimitAndTrimSheetRows(sheet_,  irNewMessage_ + Platycore.MaximumAgentLogRows);
                isThisOn_ = true;
@@ -538,7 +538,7 @@ function AgentConnection ()
 
       isThisOn_ = false;
 
-      if (Lang.IsObject(sheet_))
+      if (Lang.IsObjectP(sheet_))
          {
          var lock = LockService.getDocumentLock();
          if (lock.tryLock(Platycore.DocumentTryLockWaitTime))
@@ -571,7 +571,7 @@ function AgentConnection ()
          }
 
       var update = self_.ReadField('UPDATE');
-      if (Lang.IsUndefined(update))
+      if (Lang.IsUndefinedP(update))
          {
          self_.Warn('This agent does not do anything when activated because there is no UPDATE field');
          return;
@@ -604,7 +604,7 @@ function AgentConnection ()
          }
 
       var routine = self_.ReadNote(noteName);
-      if (Lang.IsUndefined(routine))
+      if (Lang.IsUndefinedP(routine))
          {
          self_.Error('There is no note with the given name: ' + noteName);
          return null;
@@ -643,14 +643,14 @@ function AgentConnection ()
             self_.Error((sourceLabel || '[eval]')
                   + '(~' + lineNumber + '): ' + (e.message || e.toString()) + '\n\n'
                   + codeLines
-                        .map(function (e, i) { return Lang.GetStringWithLeadingZeroesFromNumber(i, 4) + ': ' + e; })
+                        .map(function (e, i) { return Lang.MakeStringWithLeadingZeroesUsingNumberP(i, 4) + ': ' + e; })
                         .slice(
                         Math.max(lineNumber-2,0),
                         Math.min(codeLines.length-1,lineNumber+3)
                         )
                         .join('\n')
                   + '\n\n'
-                  + (Lang.IsUndefined(e.stack) ? '     no stack trace' : e.stack)
+                  + (Lang.IsUndefinedP(e.stack) ? '     no stack trace' : e.stack)
                   );
             }
          })(self_);
@@ -679,13 +679,13 @@ function AgentConnection ()
 
    this.Snooze = function (dtMilliseconds)
       {
-      var utsNow = Lang.GetTimestampNow();
+      var utsNow = Lang.GetTimestampNowP();
       dtMilliseconds = Math.max(15000, dtMilliseconds);
       var maybePreviousWakeTime = self_.ReadField('WAKE');
       var utsNewWakeTime = utsNow + dtMilliseconds;
-      if (Lang.IsNumber(maybePreviousWakeTime))
+      if (Lang.IsNumberP(maybePreviousWakeTime))
          {
-         maybePreviousWakeTime = Lang.intCast(maybePreviousWakeTime);
+         maybePreviousWakeTime = Lang.MakeIntFromAnyP(maybePreviousWakeTime);
          if (maybePreviousWakeTime < utsNow && maybePreviousWakeTime > (utsNow - dtMilliseconds))
             {
             utsNewWakeTime = maybePreviousWakeTime + dtMilliseconds;
@@ -693,8 +693,8 @@ function AgentConnection ()
          }
       self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
       self_.LogWithBadge(
-            Lang.GetMoonPhaseFromDate(new Date(utsNewWakeTime)),
-            'snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNow()) + ' from now at ' + Lang.GetWallTimeFromTimestamp(utsNewWakeTime)
+            Lang.GetMoonPhaseFromDateP(new Date(utsNewWakeTime)),
+            'snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNowP()) + ' from now at ' + Lang.MakeWallTimeStringUsingTimestampP(utsNewWakeTime)
             );
       };
 
@@ -702,7 +702,7 @@ function AgentConnection ()
 
    this.SnoozeForever = function ()
       {
-      self_.Log(Lang.GetMoonPhaseFromDate(Lang.GetTimestampNow()) + 'Snoozing, no alarm... ');
+      self_.Log(Lang.GetMoonPhaseFromDateP(Lang.GetTimestampNowP()) + 'Snoozing, no alarm... ');
       self_.WriteField('WAKE', 'SNOOZE');
       };
 
@@ -753,12 +753,12 @@ function AgentConnection ()
             .split(/\n/)
             .filter(function (eLine)   // strip every line that doesn't start with whitespace
                {
-               return eLine.trim().length > 0 && Lang.boolCast(whitespaceRegex.exec(eLine))
+               return eLine.trim().length > 0 && Lang.MakeBoolFromAnyP(whitespaceRegex.exec(eLine))
                })
             .map(function (eLine)      // take the first token and the rest of the line as 2 elements
                {
                var match = associativeSplitRegex.exec(eLine);
-               if (Lang.IsArray(match))
+               if (Lang.IsArrayP(match))
                   {
                   return match.slice(1);
                   }
@@ -812,17 +812,17 @@ function AgentConnection ()
 
    this.ExecuteRoutineUsingInstructions = function (instructions)
       {
-      if (!Lang.IsArray(instructions)) throw "!Lang.IsArray(instructions)";
+      if (Lang.IsNotArrayP(instructions)) throw "Lang.IsNotArrayP(instructions)";
 
       var rvExecutionDetails = {
             didAbort: false
             };
 
       var selectedRange = null;
-      var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT', 'NOTE', 'VALUE']);
+      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT', 'NOTE', 'VALUE']);
       var hasMergedCurrentSelection = false;
       var lastInstallUrl = null;
-      var selectionTypeInstructionsSet = Lang.MakeSetFromObjectsP(['TOGGLE', 'FIELD', 'TEXT', 'NOTE']);
+      var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['TOGGLE', 'FIELD', 'TEXT', 'NOTE']);
       var selectionTypeInstruction = null;
       var sheetFromAlias = {};
       var kSelectedRangePropertyName = null;
@@ -834,9 +834,9 @@ function AgentConnection ()
          {
          var eInstruction = instructions[iInstruction - 1];
          var eArguments   = instructions[iInstruction - 0];
-         var eArgumentSet = Lang.MakeSetFromObjectsP(eArguments);
+         var eArgumentSet = Lang.MakeSetUsingObjectsP(eArguments);
 
-         if (!hasMergedCurrentSelection && Lang.IsValueContainedInSetP(eInstruction, mergingInstructionsSet))
+         if (!hasMergedCurrentSelection && Lang.IsContainedInSetP(eInstruction, mergingInstructionsSet))
             {
             switch (((selectedRange.getWidth() > 1) ? 1 : 0) + ((selectedRange.getHeight() > 1) ? 2 : 0))
                {
@@ -846,7 +846,7 @@ function AgentConnection ()
                }
             hasMergedCurrentSelection = true;
             }
-         if (Lang.IsValueContainedInSetP(eInstruction, selectionTypeInstructionsSet))
+         if (Lang.IsContainedInSetP(eInstruction, selectionTypeInstructionsSet))
             {
             selectionTypeInstruction = eInstruction;
             }
@@ -867,7 +867,7 @@ function AgentConnection ()
                      }
                   }
                }
-            if (!Lang.IsUndefined(rv))
+            if (Lang.IsNotUndefinedP(rv))
                {
                rv = castFunction(rv);
                }
@@ -889,9 +889,9 @@ function AgentConnection ()
                break;
             
             case 'ABORT_UNLESS_TRIGGERED':
-               var isEnabled = (function (en) { return Lang.IsUndefined(en) || Lang.boolCast(en) })(self_.ReadToggle('EN'));
-               var isGo = (function (go) { return !Lang.IsUndefined(go) && Lang.boolCast(go) })(self_.ReadToggle('GO'));
-               var isWake = (function (wake) { return Lang.IsNumber(wake) && utsIterationStarted > wake })(self_.ReadField('WAKE'));
+               var isEnabled = (function (en) { return Lang.IsUndefinedP(en) || Lang.MakeBoolFromAnyP(en) })(self_.ReadToggle('EN'));
+               var isGo = (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolFromAnyP(go) })(self_.ReadToggle('GO'));
+               var isWake = (function (wake) { return Lang.IsNumberP(wake) && utsIterationStarted > wake })(self_.ReadField('WAKE'));
                var isTriggered = isEnabled && (isGo || isWake);
                if (!isTriggered)
                   {
@@ -902,7 +902,7 @@ function AgentConnection ()
 
             case 'INSTALL':
                isThisOn_ = true;
-               lastInstallUrl = popArgument(Lang.stringCast);
+               lastInstallUrl = popArgument(Lang.MakeStringFromAnyP);
                try
                   {
                   instructions = instructions.concat(getRoutineFromText(getRoutineTextFromUrl(lastInstallUrl)));
@@ -925,7 +925,7 @@ function AgentConnection ()
                   rvExecutionDetails.didAbort = true;
                   nInstructionCount = 0;
                   }
-               sheetFromAlias[popArgument(Lang.stringCast)] = sheet;
+               sheetFromAlias[popArgument(Lang.MakeStringFromAnyP)] = sheet;
                break;
 
             case 'CONNECT':
@@ -946,7 +946,7 @@ function AgentConnection ()
                      rvExecutionDetails.didAbort = true;
                      nInstructionCount = 0;
                      }
-                  })(popArgument(Lang.stringCast));
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'ALIAS':
@@ -954,13 +954,13 @@ function AgentConnection ()
                   {
                   currentAgentAlias = kAlias;
                   sheetFromAlias[kAlias] = sheet_;
-                  })(popArgument(Lang.stringCast));
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
             
             case 'EXPORT':
                (function ()
                   {
-                  if (!Lang.IsString(currentAgentAlias))
+                  if (Lang.IsNotStringP(currentAgentAlias))
                      {
                      self_.Error("Cannot EXPORT until the current agent connection is named with ALIAS");
                      return;
@@ -971,7 +971,7 @@ function AgentConnection ()
                      {
                      var range = eRange.getRange();
                      var noteValue = range.getNote();
-                     valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningful(noteValue) ? noteValue : range.getValue();
+                     valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningfulP(noteValue) ? noteValue : range.getValue();
                      eRange.remove();
                      });
                   importedValueFromPropertyNameFromAlias[currentAgentAlias] = valueFromPropertyName;
@@ -998,8 +998,8 @@ function AgentConnection ()
                break;
 
             case 'TITLE':
-               var title = Lang.stringCast(eArguments[0]);
-               sheet_.setName(Lang.MakeNameUnique('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
+               var title = Lang.MakeStringFromAnyP(eArguments[0]);
+               sheet_.setName(Lang.MakeNameUniqueP('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
                break;
 
             case 'RESERVE':
@@ -1028,7 +1028,7 @@ function AgentConnection ()
                   }
                mrMaxColumns = 49;
 
-               var qrRows = Lang.intCast(eArguments[0]);
+               var qrRows = Lang.MakeIntFromAnyP(eArguments[0]);
                var irHeaders = qrRows;
                sheet_.insertRowsBefore(irNewMessage_, qrRows);
                mrMaxRows += qrRows;
@@ -1089,17 +1089,17 @@ function AgentConnection ()
                      selectedRange = sheet_.getRange(rangeIdentifier);
                      kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
                      }
-                  })(popArgument(Lang.stringCast));
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'NAME':
-               kSelectedRangePropertyName = Lang.stringCast(eArguments[0]);
+               kSelectedRangePropertyName = Lang.MakeStringFromAnyP(eArguments[0]);
                spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kSelectedRangePropertyName), selectedRange);
                break;
 
             case 'TOGGLE':
                selectedRange.insertCheckboxes();
-               if (Lang.IsValueContainedInSetP('TRUE', eArgumentSet))
+               if (Lang.IsContainedInSetP('TRUE', eArgumentSet))
                   {
                   selectedRange.check();
                   }
@@ -1156,7 +1156,7 @@ function AgentConnection ()
                         break;
                      default: self_.Warn('READONLY used before the selection was given a type. Place this command after SELECT and one of the following instructions: ' + Object.keys(selectionTypeInstructionsSet).join(','));
                      }
-                  })(Lang.IsStringAffirmative(eArguments[0]));
+                  })(Lang.IsAffirmativeStringP(eArguments[0]));
                break;
 
             case 'LOAD':
@@ -1169,16 +1169,16 @@ function AgentConnection ()
                      STACK: ((name, value) => stackValues.push(value))
                   };
                   var previousValue = null;
-                  if (!Lang.IsString(propertyName))
+                  if (Lang.IsNotStringP(propertyName))
                      {
                      self_.Error('LOAD: missing propertyName');
                      }
                   else if (importedValueFromPropertyNameFromAlias.hasOwnProperty(kAlias))
                      {
                      var importedValueFromPropertyName = importedValueFromPropertyNameFromAlias[kAlias];
-                     if (Lang.IsObject(importedValueFromPropertyName)
-                           && Lang.IsObject(importedValueFromPropertyName)
-                           && Lang.IsMeaningful(previousValue = importedValueFromPropertyName[propertyName]))
+                     if (Lang.IsObjectP(importedValueFromPropertyName)
+                           && Lang.IsObjectP(importedValueFromPropertyName)
+                           && Lang.IsMeaningfulP(previousValue = importedValueFromPropertyName[propertyName]))
                         {
                         (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
                         }
@@ -1187,10 +1187,10 @@ function AgentConnection ()
                         self_.Warn('LOAD: no property named "' + propertyName + '" in "' + kAlias + '"; skipping');
                         }
                      }
-                  else if (Lang.IsUndefined(kAlias))
+                  else if (Lang.IsUndefinedP(kAlias))
                      {
                      var range = getRangeFromPropertyName(propertyName);
-                     if (Lang.IsObject(range))
+                     if (Lang.IsObjectP(range))
                         {
                         previousValue = range.getValue();
                         (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
@@ -1207,7 +1207,7 @@ function AgentConnection ()
                         self_.Warn('LOAD: "' + kAlias + '" is not available');
                         }
                      }
-                  })(popArgument(Lang.stringCast), popArgument(Lang.stringCast));
+                  })(popArgument(Lang.MakeStringFromAnyP), popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'PUSH':
@@ -1215,7 +1215,7 @@ function AgentConnection ()
                break;
 
             case 'VALUE':
-               switch (Lang.stringCast(eArguments[0]))
+               switch (Lang.MakeStringFromAnyP(eArguments[0]))
                   {
                   case 'LAST_INSTALL_URL':
                      selectedRange.setValue(lastInstallUrl);
@@ -1234,7 +1234,7 @@ function AgentConnection ()
                break;
 
             case 'VALIDATE':
-               if (Lang.IsValueContainedInSetP('IS_GMAIL_LABEL', eArgumentSet))
+               if (Lang.IsContainedInSetP('IS_GMAIL_LABEL', eArgumentSet))
                   {
                   selectedRange.setDataValidation(
                         SpreadsheetApp.newDataValidation()
@@ -1245,7 +1245,7 @@ function AgentConnection ()
                               .build()
                         );
                   }
-               if (Lang.IsValueContainedInSetP('IS_URL', eArgumentSet))
+               if (Lang.IsContainedInSetP('IS_URL', eArgumentSet))
                   {
                   selectedRange.setDataValidation(
                         SpreadsheetApp.newDataValidation()

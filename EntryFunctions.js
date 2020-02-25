@@ -36,7 +36,7 @@ function onOpen()
 
    // 🧮 🗜️ 🖥️ 👾  🤖  ⚗️ 🧚
 
-   ui.createMenu('\u2800' + Lang.GetMoonPhaseFromDate(new Date()) + ' Platycore\u2800')
+   ui.createMenu('\u2800' + Lang.GetMoonPhaseFromDateP(new Date()) + ' Platycore\u2800')
          .addItem('🧚 Add empty agent...', 'menuAddEmptyAgent')
          .addSeparator()
          .addItem('💨 Uninstall this agent', 'menuUninstallAgent')
