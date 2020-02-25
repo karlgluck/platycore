@@ -11,18 +11,18 @@ ns.IsInteractive = true;
 
 var scriptProperties = PropertiesService.getScriptProperties();
 var configFromSettingName = {
-      'DocumentTryLockWaitTime': { cast: Lang.MakeIntFromAnyP, defaultValue: 15000 },
-      'IsVerbose': { cast: Lang.MakeBoolFromAnyP, defaultValue: true },
-      'BlockRuntimeLimit': { cast: Lang.MakeIntFromAnyP, defaultValue: 60000 },
-      'PumpRuntimeLimit': { cast: Lang.MakeIntFromAnyP, defaultValue: 300000 },
-      'MaximumAgentLogRows': { cast: Lang.MakeIntFromAnyP, defaultValue: 99 },
+      'DocumentTryLockWaitTime': { cast: Lang.MakeIntUsingAnyP, defaultValue: 15000 },
+      'IsVerbose': { cast: Lang.MakeBoolUsingAnyP, defaultValue: true },
+      'BlockRuntimeLimit': { cast: Lang.MakeIntUsingAnyP, defaultValue: 60000 },
+      'PumpRuntimeLimit': { cast: Lang.MakeIntUsingAnyP, defaultValue: 300000 },
+      'MaximumAgentLogRows': { cast: Lang.MakeIntUsingAnyP, defaultValue: 99 },
       };
 Object.keys(configFromSettingName).forEach(function (eSettingName) {
    var config = configFromSettingName[eSettingName];
    var value = scriptProperties.getProperty(eSettingName);
    if (Lang.IsNotMeaningfulP(value))
       {
-      value = Lang.MakeStringFromAnyP(config.defaultValue);
+      value = Lang.MakeStringUsingAnyP(config.defaultValue);
       scriptProperties.setProperty(eSettingName, value);
       }
    ns[eSettingName] = config.cast(value);

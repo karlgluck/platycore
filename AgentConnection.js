@@ -43,7 +43,7 @@ function AgentConnection ()
       var rvConnected = false;
       if (agentId.match(/^A\d+$/))
          {
-         rvConnected = self_.ConnectUsingSheetId(Lang.MakeIntFromAnyP(sheet.slice(1)));
+         rvConnected = self_.ConnectUsingSheetId(Lang.MakeIntUsingAnyP(sheet.slice(1)));
          }
       return rvConnected;
       };
@@ -188,7 +188,7 @@ function AgentConnection ()
       var range = getRangeFromPropertyName(name);
       if (Lang.IsObjectP(range))
          {
-         value = Lang.MakeBoolFromAnyP(value);
+         value = Lang.MakeBoolUsingAnyP(value);
          if (range.getFormula().length > 0)
             {
             range.setFormula(value ? '=TRUE' : '=FALSE');
@@ -281,7 +281,7 @@ function AgentConnection ()
       var range = getRangeFromPropertyName(name);
       if (Lang.IsObjectP(range))
          {
-         range.setNote(Lang.MakeStringFromAnyP(value));
+         range.setNote(Lang.MakeStringUsingAnyP(value));
          }
       else 
          {
@@ -475,7 +475,7 @@ function AgentConnection ()
       var hasLockField = Lang.IsNotUndefinedP(lockValue);
       if (hasLockField)
          {
-         lockValue = Lang.MakeIntFromAnyP(lockValue);
+         lockValue = Lang.MakeIntUsingAnyP(lockValue);
          var lockValueWithSentinel = (lockValue - (lockValue % 1000)) + (((lockValue % 1000) + 1) % 1000);
          self_.WriteField('LOCK', lockValueWithSentinel);
          var canOverrideLock = Platycore.PumpRuntimeLimit < (Lang.GetTimestampNowP() - lockValue);
@@ -504,7 +504,7 @@ function AgentConnection ()
          {
          try
             {
-               isAlreadyRunning = Lang.MakeBoolFromAnyP(self_.ReadToggle('ON', true));
+               isAlreadyRunning = Lang.MakeBoolUsingAnyP(self_.ReadToggle('ON', true));
                if (hasLockField)
                   {
                   canTurnOn = self_.ReadField('LOCK', true) === lockValueWithSentinel
@@ -700,7 +700,7 @@ function AgentConnection ()
       var utsNewWakeTime = utsNow + dtMilliseconds;
       if (Lang.IsNumberP(maybePreviousWakeTime))
          {
-         maybePreviousWakeTime = Lang.MakeIntFromAnyP(maybePreviousWakeTime);
+         maybePreviousWakeTime = Lang.MakeIntUsingAnyP(maybePreviousWakeTime);
          if (maybePreviousWakeTime < utsNow && maybePreviousWakeTime > (utsNow - dtMilliseconds))
             {
             utsNewWakeTime = maybePreviousWakeTime + dtMilliseconds;
@@ -768,7 +768,7 @@ function AgentConnection ()
             .split(/\n/)
             .filter(function (eLine)   // strip every line that doesn't start with whitespace
                {
-               return eLine.trim().length > 0 && Lang.MakeBoolFromAnyP(whitespaceRegex.exec(eLine))
+               return eLine.trim().length > 0 && Lang.MakeBoolUsingAnyP(whitespaceRegex.exec(eLine))
                })
             .map(function (eLine)      // take the first token and the rest of the line as 2 elements
                {
@@ -904,8 +904,8 @@ function AgentConnection ()
                break;
             
             case 'ABORT_UNLESS_TRIGGERED':
-               var isEnabled = (function (en) { return Lang.IsUndefinedP(en) || Lang.MakeBoolFromAnyP(en) })(self_.ReadToggle('EN'));
-               var isGo = (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolFromAnyP(go) })(self_.ReadToggle('GO'));
+               var isEnabled = (function (en) { return Lang.IsUndefinedP(en) || Lang.MakeBoolUsingAnyP(en) })(self_.ReadToggle('EN'));
+               var isGo = (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolUsingAnyP(go) })(self_.ReadToggle('GO'));
                var isWake = (function (wake) { return Lang.IsNumberP(wake) && utsIterationStarted > wake })(self_.ReadField('WAKE'));
                var isTriggered = isEnabled && (isGo || isWake);
                if (!isTriggered)
@@ -917,7 +917,7 @@ function AgentConnection ()
 
             case 'INSTALL':
                isThisOn_ = true;
-               lastInstallUrl = popArgument(Lang.MakeStringFromAnyP);
+               lastInstallUrl = popArgument(Lang.MakeStringUsingAnyP);
                try
                   {
                   instructions = instructions.concat(getRoutineFromText(getRoutineTextFromUrl(lastInstallUrl)));
@@ -943,7 +943,7 @@ function AgentConnection ()
                      nInstructionCount = 0;
                      }
                   sheetFromAlias[kAlias] = sheet;
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'CONNECT':
@@ -964,7 +964,7 @@ function AgentConnection ()
                      rvExecutionDetails.didAbort = true;
                      nInstructionCount = 0;
                      }
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'ALIAS':
@@ -972,7 +972,7 @@ function AgentConnection ()
                   {
                   currentAgentAlias = kAlias;
                   sheetFromAlias[kAlias] = sheet_;
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
             
             case 'EXPORT':
@@ -1015,14 +1015,14 @@ function AgentConnection ()
                         self_.Error('Unknown STYLE type: ' + styleType);
                         break;
                      }
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'TITLE':
                (function (title)
                   {
                   sheet_.setName(Lang.MakeNameUniqueP('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'RESERVE':
@@ -1064,7 +1064,7 @@ function AgentConnection ()
                   sheet_.getRange(1, 1, qrRows, 1).mergeVertically().setBackground('#b7b7b7').setFontColor('#000000');
                   var logRange = sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns());
                   logRange.setWrap(false).setWrapStrategy(SpreadsheetApp.WrapStrategy.OVERFLOW);
-                  })(popArgument(Lang.MakeIntFromAnyP));
+                  })(popArgument(Lang.MakeIntUsingAnyP));
                break;
 
             case 'TURN_ON':
@@ -1112,7 +1112,7 @@ function AgentConnection ()
                      selectedRange = sheet_.getRange(rangeIdentifier);
                      kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
                      }
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'NAME':
@@ -1120,7 +1120,7 @@ function AgentConnection ()
                   {
                   kSelectedRangePropertyName = kName;
                   spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kSelectedRangePropertyName), selectedRange);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'TOGGLE':
@@ -1148,21 +1148,21 @@ function AgentConnection ()
                   {
                   var value = '  TURN_ON\n  EVAL "---"\n--------\n' + code + '\n--------\n  TURN_OFF';
                   selectedRange.setNote(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
             
             case 'FORMULA':
                (function (value)
                   {
                   selectedRange.setFormula(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
             
             case 'TEXT':
                (function (value)
                   {
                   selectedRange.setValue(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'FORMAT':
@@ -1174,7 +1174,7 @@ function AgentConnection ()
                      case 'CHECKBOX': selectedRange.setNumberFormat('"☑";"☐"'); break;
                      default: selectedRange.setNumberFormat(format); break;
                      }
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'READONLY':
@@ -1242,14 +1242,14 @@ function AgentConnection ()
                         self_.Warn('LOAD: "' + kAlias + '" is not available');
                         }
                      }
-                  })(popArgument(Lang.MakeStringFromAnyP), popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP), popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'PUSH':
                (function (value)
                   {
                   stackValues.push(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'VALUE':
@@ -1269,13 +1269,13 @@ function AgentConnection ()
                         self_.Error('Unknown VALUE requested: ' + value);
                         break;
                      }
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'VALIDATE':
                (function (validationType)
                   {
-                  switch (Lang.MakeStringFromAnyP(validationType))
+                  switch (Lang.MakeStringUsingAnyP(validationType))
                      {
                      case 'IS_GMAIL_LABEL':
                         selectedRange.setDataValidation(
@@ -1301,7 +1301,7 @@ function AgentConnection ()
                         self_.Error('Unknown VALIDATE requested: ' + validationType);
                         break;
                      }
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
 
                break;
             
@@ -1309,49 +1309,49 @@ function AgentConnection ()
                (function (value)
                   {
                   self_.InteractiveInfo(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'TOAST':
                (function (value)
                   {
                   spreadsheet_.toast(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'BG':
                (function (value)
                   {
                   selectedRange.setBackground(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'FG':
                (function (value)
                   {
                   selectedRange.setFontColor(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'FONT':
                (function (value)
                   {
                   selectedRange.setFontFamily(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'HALIGN':
                (function (value)
                   {
                   selectedRange.setHorizontalAlignment(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'VALIGN':
                (function (value)
                   {
                   selectedRange.setVerticalAlignment(value);
-                  })(popArgument(Lang.MakeStringFromAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             } // switch agent instruction

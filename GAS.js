@@ -103,7 +103,7 @@ ns.GetSheetFromUrl = function (url)
       return null;
       }
    var match = url.match(/#gid=(\d+)/);
-   var rvSheet = Lang.IsArrayP(match) ? ns.GetSheetFromSheetId(spreadsheet, Lang.MakeIntFromAnyP(match[1])) : null;
+   var rvSheet = Lang.IsArrayP(match) ? ns.GetSheetFromSheetId(spreadsheet, Lang.MakeIntUsingAnyP(match[1])) : null;
    return rvSheet;
    };
 
@@ -259,7 +259,7 @@ ns.ApplyRetentionPolicyToSheet = function (policy, sheet)
          {
          if (iLastDateToDelete < 0)
             {
-            if (Lang.MakeDateFromAnyP(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
+            if (Lang.MakeDateUsingAnyP(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
                {
                iLastDateToDelete = iDate;
                }
@@ -267,7 +267,7 @@ ns.ApplyRetentionPolicyToSheet = function (policy, sheet)
          
          if (iLastDateToDelete >= 0)
             {
-            if (Lang.MakeDateFromAnyP(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
+            if (Lang.MakeDateUsingAnyP(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
                {
                if (iDate === 0)
                   {

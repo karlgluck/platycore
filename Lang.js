@@ -28,7 +28,7 @@ ns.ClampStringLengthP = function (text, length)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetRainbowColorFromAnyP = function (v)
+ns.GetRainbowColorUsingAnyP = function (v)
    {
    var colors = ['#ff0000','#ff9900','#ffff00','#00ff00','#00ffff','#4a86e8','#9900ff'];
    return colors[((v >>> 0) % colors.length)];
@@ -36,7 +36,7 @@ ns.GetRainbowColorFromAnyP = function (v)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetDarkRainbowColorFromAnyP = function (v)
+ns.GetDarkRainbowColorUsingAnyP = function (v)
    {
    var colors = ['#5b0f00', '#783f04', '#7f6000', '#274e13', '#0c343d', '#1c4587', '#073763', '#20124d', '#4c1130'];
    return colors[((v >>> 0) % colors.length)];
@@ -172,7 +172,7 @@ ns.IsNotUndefinedP = function (v)
 
 ns.IsUrlP = function (any)
    {
-   return !!Lang.MakeStringFromAnyP(any).match(/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi);
+   return !!Lang.MakeStringUsingAnyP(any).match(/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -505,7 +505,7 @@ ns.MakeRelationshipsUsingTable = function (table)
          propertyNames.forEach(function (e, i) { obj[e] = row[i] });
          obj[kRelationshipSource] = row[iMainColumn];
          obj[kRelationshipTargets] = relationshipTargetNames
-                     .map(function (e, i) { return ns.MakeBoolFromAnyP(row[iMainColumn+1+i]) ? e : undefined })
+                     .map(function (e, i) { return ns.MakeBoolUsingAnyP(row[iMainColumn+1+i]) ? e : undefined })
                      .filter(ns.IsNotUndefinedP);
          rvRelationships.push(obj);
          }
@@ -662,35 +662,35 @@ ns.IsNotContainedInArrayP = function (searchItem, list)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-ns.MakeIntFromAnyP = function (any)
+ns.MakeIntUsingAnyP = function (any)
    {
    return parseInt(any) || 0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeBoolFromAnyP = function (any)
+ns.MakeBoolUsingAnyP = function (any)
    {
    return !!any;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeFloatFromAnyP = function (any)
+ns.MakeFloatUsingAnyP = function (any)
    {
    return parseFloat(any) || 0.0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeStringFromAnyP = function (any)
+ns.MakeStringUsingAnyP = function (any)
    {
    return String(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeArrayFromAnyP = function (any)
+ns.MakeArrayUsingAnyP = function (any)
    {
    if (ns.IsArrayP(any))
       {
@@ -704,7 +704,7 @@ ns.MakeArrayFromAnyP = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeDateFromAnyP = function (any)
+ns.MakeDateUsingAnyP = function (any)
    {
    var rvDate = new Date(any);
    if (!isNaN(rvDate.getTime()))

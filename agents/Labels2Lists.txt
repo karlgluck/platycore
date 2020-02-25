@@ -233,7 +233,7 @@ if (0 < threads.length)
    }
 if (en)
    {
-   agent.WriteField('PROCESSED', Lang.MakeIntFromAnyP(agent.ReadField('PROCESSED')) + threads.length);
+   agent.WriteField('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadField('PROCESSED')) + threads.length);
    }
 else
    {
