@@ -932,15 +932,18 @@ function AgentConnection ()
                break;
 
             case 'NEW_AGENT':
-               var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
-               sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "NEW_AGENT"');
-               if (!self_.ConnectUsingSheet(sheet))
+               (function (kAlias)
                   {
-                  self_.Error('NEW_AGENT: Failed to connect to agent');
-                  rvExecutionDetails.didAbort = true;
-                  nInstructionCount = 0;
-                  }
-               sheetFromAlias[popArgument(Lang.MakeStringFromAnyP)] = sheet;
+                  var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+                  sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "NEW_AGENT"');
+                  if (!self_.ConnectUsingSheet(sheet))
+                     {
+                     self_.Error('NEW_AGENT: failed to connect');
+                     rvExecutionDetails.didAbort = true;
+                     nInstructionCount = 0;
+                     }
+                  sheetFromAlias[kAlias] = sheet;
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'CONNECT':
@@ -1113,8 +1116,11 @@ function AgentConnection ()
                break;
 
             case 'NAME':
-               kSelectedRangePropertyName = Lang.MakeStringFromAnyP(eArguments[0]);
-               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kSelectedRangePropertyName), selectedRange);
+               (function (kName)
+                  {
+                  kSelectedRangePropertyName = kName;
+                  spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kSelectedRangePropertyName), selectedRange);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'TOGGLE':
@@ -1138,28 +1144,37 @@ function AgentConnection ()
                break;
 
             case 'CODE':
-               console.log('TODO: make sure every newline literal from the args has a space after it when writing CODE instruction');
-               var value = '  TURN_ON\n  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------\n  TURN_OFF';
-               selectedRange.setNote(value);
+               (function (code)
+                  {
+                  var value = '  TURN_ON\n  EVAL "---"\n--------\n' + code + '\n--------\n  TURN_OFF';
+                  selectedRange.setNote(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
             
             case 'FORMULA':
-               var formula = eArguments[0];
-               selectedRange.setFormula(formula);
+               (function (value)
+                  {
+                  selectedRange.setFormula(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
             
             case 'TEXT':
-               var text = eArguments[0];
-               selectedRange.setValue(text);
+               (function (value)
+                  {
+                  selectedRange.setValue(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'FORMAT':
-               switch (eArguments[0])
+               (function (format)
                   {
-                  case 'DATETIME': selectedRange.setNumberFormat('M/d/yyyy H:mm:ss'); break;
-                  case 'CHECKBOX': selectedRange.setNumberFormat('"☑";"☐"'); break;
-                  default: selectedRange.setNumberFormat(eArguments[0]); break;
-                  }
+                  switch (format)
+                     {
+                     case 'DATETIME': selectedRange.setNumberFormat('M/d/yyyy H:mm:ss'); break;
+                     case 'CHECKBOX': selectedRange.setNumberFormat('"☑";"☐"'); break;
+                     default: selectedRange.setNumberFormat(format); break;
+                     }
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'READONLY':
@@ -1176,7 +1191,7 @@ function AgentConnection ()
                         break;
                      default: self_.Warn('READONLY used before the selection was given a type. Place this command after SELECT and one of the following instructions: ' + Object.keys(selectionTypeInstructionsSet).join(','));
                      }
-                  })(Lang.IsAffirmativeStringP(eArguments[0]));
+                  })(popArgument(Lang.IsAffirmativeStringP));
                break;
 
             case 'LOAD':
@@ -1231,77 +1246,112 @@ function AgentConnection ()
                break;
 
             case 'PUSH':
-               stackValues.push(eArguments[0]);
+               (function (value)
+                  {
+                  stackValues.push(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'VALUE':
-               switch (Lang.MakeStringFromAnyP(eArguments[0]))
+               (function (value)
                   {
-                  case 'LAST_INSTALL_URL':
-                     selectedRange.setValue(lastInstallUrl);
-                     break;
+                  switch (value)
+                     {
+                     case 'LAST_INSTALL_URL':
+                        selectedRange.setValue(lastInstallUrl);
+                        break;
 
-                  default:
-                     self_.Error('Unknown VALUE requested: ' + eArguments[0]);
-                     break;
-                  }
-               break;
-            
-            case 'PANEL':
-               var color = Lang.GetDarkRainbowColorFromAnyP(eArguments[0]);
-               selectedRange.setBackground(color)
-                    .setBorder(true, true, true, true, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+                     case 'NOW':
+                        selectedRange.setValue(new Date());
+                        break;
+
+                     default:
+                        self_.Error('Unknown VALUE requested: ' + value);
+                        break;
+                     }
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'VALIDATE':
-               if (Lang.IsContainedInSetP('IS_GMAIL_LABEL', eArgumentSet))
+               (function (validationType)
                   {
-                  selectedRange.setDataValidation(
-                        SpreadsheetApp.newDataValidation()
-                              .requireValueInList(
-                                    GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort()
-                                    )
-                              .setHelpText(eArguments[0])
-                              .build()
-                        );
-                  }
-               if (Lang.IsContainedInSetP('IS_URL', eArgumentSet))
-                  {
-                  selectedRange.setDataValidation(
-                        SpreadsheetApp.newDataValidation()
-                              .requireTextIsUrl()
-                              .setHelpText(eArguments[0])
-                              .build()
-                        );
-                  }
+                  switch (Lang.MakeStringFromAnyP(validationType))
+                     {
+                     case 'IS_GMAIL_LABEL':
+                        selectedRange.setDataValidation(
+                              SpreadsheetApp.newDataValidation()
+                                    .requireValueInList(
+                                          GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort()
+                                          )
+                                    .setHelpText(validationType)
+                                    .build()
+                              );
+                        break;
+
+                     case 'IS_URL':
+                        selectedRange.setDataValidation(
+                              SpreadsheetApp.newDataValidation()
+                                    .requireTextIsUrl()
+                                    .setHelpText(eArguments[0])
+                                    .build()
+                              );
+                        break;
+
+                     default:
+                        self_.Error('Unknown VALIDATE requested: ' + validationType);
+                        break;
+                     }
+                  })(popArgument(Lang.MakeStringFromAnyP));
+
                break;
             
             case 'REM':
-               console.log('REM ' + eArguments.join('\n'));
+               (function (value)
+                  {
+                  self_.InteractiveInfo(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'TOAST':
-               spreadsheet.toast(eArguments.join('\n'));
+               (function (value)
+                  {
+                  spreadsheet_.toast(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'BG':
-               selectedRange.setBackground(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setBackground(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'FG':
-               selectedRange.setFontColor(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setFontColor(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'FONT':
-               selectedRange.setFontFamily(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setFontFamily(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'HALIGN':
-               selectedRange.setHorizontalAlignment(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setHorizontalAlignment(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'VALIGN':
-               selectedRange.setVerticalAlignment(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setVerticalAlignment(value);
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             } // switch agent instruction
