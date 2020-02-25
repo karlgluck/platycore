@@ -90,7 +90,7 @@ Agent-specific
    HALIGN "right"
    SELECT "S4:AC4"
      TEXT "<Input Label>"
-     NAME "INPUT"
+     NAME 
     FIELD
  READONLY "OFF"
   RESTORE "FIELD"
@@ -120,8 +120,6 @@ Manual Actions
    SELECT "AJ6:AR6"
      NAME "REINSTALL_URL"
     VALUE "LAST_INSTALL_URL"
-    FIELD
- READONLY "OFF"
 
 --- [Make Sheet] ---
 
