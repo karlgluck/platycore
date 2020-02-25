@@ -90,7 +90,7 @@ Agent-specific
    HALIGN "right"
    SELECT "S4:AC4"
      TEXT "<Input Label>"
-     NAME 
+     NAME "INPUT"
     FIELD
  READONLY "OFF"
   RESTORE "FIELD"
@@ -108,17 +108,18 @@ Manual Actions
     STYLE "BUTTON"
      NOTE "---"
 ------------------------
- ABORT_UNLESS_INTERACTIVE
-        ALIAS  "OLD_AGENT"
-       EXPORT
-    UNINSTALL
-    NEW_AGENT
-       IMPORT  "OLD_AGENT"
-         LOAD  "REINSTALL_URL"
-      INSTALL
+   ABORT_UNLESS_INTERACTIVE
+   ALIAS  "OLD_AGENT"
+   EXPORT
+   UNINSTALL
+   NEW_AGENT
+   IMPORT  "OLD_AGENT"
+   LOAD  "REINSTALL_URL"
+   INSTALL
 ------------------------
    SELECT "AJ6:AR6"
      NAME "REINSTALL_URL"
+    FIELD
     VALUE "LAST_INSTALL_URL"
 
 --- [Make Sheet] ---
