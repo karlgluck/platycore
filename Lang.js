@@ -184,28 +184,28 @@ ns.IsNotUrlP = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsObjectP = function (v)
+ns.IsObjectP = function (any)
    {
-   return 'object' === typeof v && null !== v;
+   return 'object' === typeof any && null !== any;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsNotObjectP = function (v)
+ns.IsNotObjectP = function (any)
    {
    return !ns.IsObjectP(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsArrayP = function (v)
+ns.IsArrayP = function (any)
    {
-   return Array.isArray(v);
+   return Array.isArray(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsNotArrayP = function (v)
+ns.IsNotArrayP = function (any)
    {
    return !ns.IsArrayP(any);
    };
@@ -213,14 +213,14 @@ ns.IsNotArrayP = function (v)
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
 
-ns.IsFunctionP = function (v)
+ns.IsFunctionP = function (any)
    {
-   return v && {}.toString.call(v) === '[object Function]';
+   return !!any && {}.toString.call(any) === '[object Function]';
    };
 
 // https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
 
-ns.IsNotFunctionP = function (v)
+ns.IsNotFunctionP = function (any)
    {
    return !ns.IsFunctionP(any);
    };
@@ -228,56 +228,42 @@ ns.IsNotFunctionP = function (v)
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
 
-ns.IsStringP = function (v)
+ns.IsStringP = function (any)
    {
-   return 'string' === typeof v || v instanceof String;
+   return 'string' === typeof any || any instanceof String;
    };
 
 // https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
 
-ns.IsNotStringP = function (v)
+ns.IsNotStringP = function (any)
    {
    return !ns.IsStringP(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsObjectPropertyTruthyP = function (v, propertyName)
+ns.IsObjectPropertyTruthyP = function (any, propertyName)
    {
-   return 'object' === typeof v  && null !== v && !!v[propertyName];
+   return 'object' === typeof any && null !== any && !!any[propertyName];
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsNotObjectPropertyTruthyP = function (v, propertyName)
+ns.IsNotObjectPropertyTruthyP = function (any, propertyName)
    {
-   return !ns.IsObjectPropertyTruthyP(any);
+   return !ns.IsObjectPropertyTruthyP(any, propertyName);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsArrayInObjectPropertyP = function (v, propertyName)
+ns.IsAffirmativeStringP = function (any)
    {
-   return 'object' === typeof v  && null !== v && Array.isArray(v[propertyName]);
+   return ['yes','ok','on','true'].some((function (lowercaseString) { return e => lowercaseString === e })(String(any).trim().toLowerCase()));
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsNotArrayInObjectPropertyP = function (v, propertyName)
-   {
-   return !ns.IsArrayInObjectPropertyP(any);
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.IsAffirmativeStringP = function (s)
-   {
-   return ['yes','ok','on','true'].some((function (lowercaseString) { return e => lowercaseString === e })(String(s).trim().toLowerCase()));
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.IsNotAffirmativeStringP = function (s)
+ns.IsNotAffirmativeStringP = function (any)
    {
    return !ns.IsAffirmativeStringP(any);
    };

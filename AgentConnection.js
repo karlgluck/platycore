@@ -397,6 +397,11 @@ function AgentConnection ()
       writeOutput_('', arguments).setFontColor('white').setBackground('black');
       };
 
+   this.InteractiveInfo = function ()
+      {
+      if (Platycore.IsInteractive) self_.Info.apply(self_, arguments);
+      };
+
 //------------------------------------------------------------------------------------------------------------------------------------
 //
 // Writes a warning to the output log for this sheet
@@ -408,6 +413,11 @@ function AgentConnection ()
       writeOutput_('⚠️', arguments).setFontColor('yellow').setBackground('#38340a');
       };
 
+   this.InteractiveWarn = function ()
+      {
+      if (Platycore.IsInteractive) self_.Warn.apply(self_, arguments);
+      };
+
 //------------------------------------------------------------------------------------------------------------------------------------
 //
 // Writes an error message to the output log for this sheet
@@ -417,6 +427,11 @@ function AgentConnection ()
       {
       console.error.apply(console, arguments);
       writeOutput_('❌', arguments).setFontColor('red').setBackground('#3d0404');
+      };
+
+   this.InteractiveError = function ()
+      {
+      if (Platycore.IsInteractive) self_.Error.apply(self_, arguments);
       };
 
 /*************************************************************************************************************************************
@@ -983,71 +998,76 @@ function AgentConnection ()
                break;
 
             case 'STYLE':
-               switch (eArguments[0])
+               (function (styleType)
                   {
-                  case 'BUTTON': 
-                     selectedRange.setFontColor('#000');
-                     selectedRange.setBackground('#ffff00');
-                     selectedRange.setHorizontalAlignment('center');
-                     break;
+                  switch (styleType)
+                     {
+                     case 'BUTTON': 
+                        selectedRange.setFontColor('#000');
+                        selectedRange.setBackground('#ffff00');
+                        selectedRange.setHorizontalAlignment('center');
+                        break;
 
-                  default:
-                     self_.Error('Unknown STYLE type: ' + eArguments[0]);
-                     break;
-                  }
+                     default:
+                        self_.Error('Unknown STYLE type: ' + styleType);
+                        break;
+                     }
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'TITLE':
-               var title = Lang.MakeStringFromAnyP(eArguments[0]);
-               sheet_.setName(Lang.MakeNameUniqueP('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
+               (function (title)
+                  {
+                  sheet_.setName(Lang.MakeNameUniqueP('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
+                  })(popArgument(Lang.MakeStringFromAnyP));
                break;
 
             case 'RESERVE':
-               
-               var mrMaxRows = sheet_.getMaxRows();
-               var mrMaxColumns = sheet_.getMaxColumns();
-               sheet_.getRange(1, 1, mrMaxRows, mrMaxColumns)
-                     .setFontColor('#b7b7b7')
-                     .setBackground('black')
-                     .setFontFamily('IBM Plex Mono')
-                     .setVerticalAlignment('top')
-                     .setWrap(false)
-                     .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-
-               sheet_.setRowHeights(1, mrMaxRows, 21);
-               sheet_.setColumnWidths(1, sheet_.getMaxColumns(), 21); // square the cells
-
-               var qcExtraColumns = mrMaxColumns - 49;
-               if (qcExtraColumns < 0)
+               (function (qrRows)
                   {
-                  sheet_.insertColumnsAfter(Math.max(1, sheet_.getMaxColumns()), -qcExtraColumns);
-                  }
-               else if (qcExtraColumns > 0)
-                  {
-                  sheet_.deleteColumns(mrMaxColumns - qcExtraColumns + 1, qcExtraColumns);
-                  }
-               mrMaxColumns = 49;
+                  var mrMaxRows = sheet_.getMaxRows();
+                  var mrMaxColumns = sheet_.getMaxColumns();
+                  sheet_.getRange(1, 1, mrMaxRows, mrMaxColumns)
+                        .setFontColor('#b7b7b7')
+                        .setBackground('black')
+                        .setFontFamily('IBM Plex Mono')
+                        .setVerticalAlignment('top')
+                        .setWrap(false)
+                        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
 
-               var qrRows = Lang.MakeIntFromAnyP(eArguments[0]);
-               var irHeaders = qrRows;
-               sheet_.insertRowsBefore(irNewMessage_, qrRows);
-               mrMaxRows += qrRows;
-               irNewMessage_ = qrRows + 1;
-               var irFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
-               sheet_.deleteRows(irFirstRowToDelete, mrMaxRows - irFirstRowToDelete + 1);
-               mrMaxRows = irFirstRowToDelete - 1;
+                  sheet_.setRowHeights(1, mrMaxRows, 21);
+                  sheet_.setColumnWidths(1, sheet_.getMaxColumns(), 21); // square the cells
 
-               sheet_.getRange(qrRows, 1, 1, mrMaxColumns).setBorder(false, false, true, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
-               sheet_.getRange(1, 1, qrRows, 1).mergeVertically().setBackground('#b7b7b7').setFontColor('#000000');
-               var logRange = sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns());
-               logRange.setWrap(false).setWrapStrategy(SpreadsheetApp.WrapStrategy.OVERFLOW);
-               //spreadsheet_.setNamedRange(getRangeNameFromPropertyName('LOG'), sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns()));
+                  var qcExtraColumns = mrMaxColumns - 49;
+                  if (qcExtraColumns < 0)
+                     {
+                     sheet_.insertColumnsAfter(Math.max(1, sheet_.getMaxColumns()), -qcExtraColumns);
+                     }
+                  else if (qcExtraColumns > 0)
+                     {
+                     sheet_.deleteColumns(mrMaxColumns - qcExtraColumns + 1, qcExtraColumns);
+                     }
+                  mrMaxColumns = 49;
+
+                  var irHeaders = qrRows;
+                  sheet_.insertRowsBefore(irNewMessage_, qrRows);
+                  mrMaxRows += qrRows;
+                  irNewMessage_ = qrRows + 1;
+                  var irFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
+                  sheet_.deleteRows(irFirstRowToDelete, mrMaxRows - irFirstRowToDelete + 1);
+                  mrMaxRows = irFirstRowToDelete - 1;
+
+                  sheet_.getRange(qrRows, 1, 1, mrMaxColumns).setBorder(false, false, true, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
+                  sheet_.getRange(1, 1, qrRows, 1).mergeVertically().setBackground('#b7b7b7').setFontColor('#000000');
+                  var logRange = sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns());
+                  logRange.setWrap(false).setWrapStrategy(SpreadsheetApp.WrapStrategy.OVERFLOW);
+                  })(popArgument(Lang.MakeIntFromAnyP));
                break;
 
             case 'TURN_ON':
                if (!self_.TurnOn())
                   {
-                  //self_.InteractiveError('Unable to turn on');
+                  self_.InteractiveError('Unable to turn on');
                   rvExecutionDetails.didAbort = true;
                   nInstructionCount = 0;
                   }
