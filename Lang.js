@@ -2,7 +2,7 @@ var Lang = (function (ns) {
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeNameUnique = function (name, isUniqueCallback)
+ns.MakeNameUniqueP = function (name, isUniqueCallback)
    {
    var rvUniqueName = name;
    var counter = 0;
@@ -28,7 +28,7 @@ ns.ClampStringLengthP = function (text, length)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetRainbowColorFromAnyP = function (v)
+ns.GetRainbowColorUsingAnyP = function (v)
    {
    var colors = ['#ff0000','#ff9900','#ffff00','#00ff00','#00ffff','#4a86e8','#9900ff'];
    return colors[((v >>> 0) % colors.length)];
@@ -36,7 +36,7 @@ ns.GetRainbowColorFromAnyP = function (v)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetDarkRainbowColorFromAnyP = function (v)
+ns.GetDarkRainbowColorUsingAnyP = function (v)
    {
    var colors = ['#5b0f00', '#783f04', '#7f6000', '#274e13', '#0c343d', '#1c4587', '#073763', '#20124d', '#4c1130'];
    return colors[((v >>> 0) % colors.length)];
@@ -44,21 +44,21 @@ ns.GetDarkRainbowColorFromAnyP = function (v)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetStringFromBase64Gzip = function (stringToDecode)
+ns.GetStringFromBase64GzipP = function (stringToDecode)
    {
    return Utilities.ungzip(Utilities.newBlob(Utilities.base64DecodeWebSafe(stringToDecode), 'application/x-gzip')).getDataAsString();
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetBase64GzipFromString = function (stringToEncode)
+ns.GetBase64GzipFromStringP = function (stringToEncode)
    {
    return Utilities.base64EncodeWebSafe(Utilities.gzip(Utilities.newBlob(stringToEncode), 'text.zip').getBytes());
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsDate = function (v)
+ns.IsDateP = function (v)
    {
    return v instanceof Date && !isNaN(v.getTime());
    };
@@ -66,7 +66,7 @@ ns.IsDate = function (v)
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/1303646/check-whether-variable-is-number-or-string-in-javascript/20373925
 
-ns.IsNumber = function (v)
+ns.IsNumberP = function (v)
    {
    return !isNaN(parseFloat(v)) && !isNaN(v - 0)
    };
@@ -128,67 +128,159 @@ ns.stopwatchStringFromDurationInSeconds = function (dtSeconds)
 // is not only valid, but also that it contains
 // some sort of information.
 
-ns.IsMeaningful = function (any)
+ns.IsMeaningfulP = function (any)
    {
-   return !ns.IsUndefined(any) && null !== any && (!ns.IsString(any) || any.trim().length > 0);
+   return !ns.IsUndefinedP(any) && null !== any && (!ns.IsStringP(any) || any.trim().length > 0);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.TestMeaningfulValue = function (any)
+ns.IsNotMeaningfulP = function (any)
    {
-   return ns.IsMeaningful(any) ? any : undefined;
+   return !ns.IsMeaningfulP(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsMeaningfulString = function (any)
+ns.IsMeaningfulStringP = function (any)
    {
-   return ns.IsString(any) && any.trim().length > 0;
+   return ns.IsStringP(any) && any.trim().length > 0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.Average = function (numbers)
+ns.IsNotMeaningfulStringP = function (any)
    {
-   return Array.isArray(numbers) ? numbers.reduce(function (prev, current) { return prev + current}, 0) / numbers.length : undefined;
+   return !ns.IsMeaningfulStringP(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsUndefined = function (v)
+ns.IsUndefinedP = function (v)
    {
    return 'undefined' === typeof v;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsNotUndefined = function (v)
+ns.IsNotUndefinedP = function (v)
    {
-   return 'undefined' !== typeof v;
+   return !ns.IsUndefinedP(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsUrl = function (any)
+ns.IsUrlP = function (any)
    {
-   var exp = /(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi;
-   return !!Lang.stringCast(any).match(exp);
+   return !!Lang.MakeStringUsingAnyP(any).match(/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsObject = function (v)
+ns.IsNotUrlP = function (any)
    {
-   return 'object' === typeof v && null !== v;
+   return !ns.IsUrlP(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsArray = function (v)
+ns.IsObjectP = function (any)
    {
-   return Array.isArray(v);
+   return 'object' === typeof any && null !== any;
    };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsNotObjectP = function (any)
+   {
+   return !ns.IsObjectP(any);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsArrayP = function (any)
+   {
+   return Array.isArray(any);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsNotArrayP = function (any)
+   {
+   return !ns.IsArrayP(any);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+// https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
+
+ns.IsFunctionP = function (any)
+   {
+   return !!any && {}.toString.call(any) === '[object Function]';
+   };
+
+// https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
+
+ns.IsNotFunctionP = function (any)
+   {
+   return !ns.IsFunctionP(any);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+// https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
+
+ns.IsStringP = function (any)
+   {
+   return 'string' === typeof any || any instanceof String;
+   };
+
+// https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
+
+ns.IsNotStringP = function (any)
+   {
+   return !ns.IsStringP(any);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsObjectPropertyTruthyP = function (any, propertyName)
+   {
+   return 'object' === typeof any && null !== any && !!any[propertyName];
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsNotObjectPropertyTruthyP = function (any, propertyName)
+   {
+   return !ns.IsObjectPropertyTruthyP(any, propertyName);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsAffirmativeStringP = function (any)
+   {
+   return ['yes','ok','on','true'].some((function (lowercaseString) { return e => lowercaseString === e })(String(any).trim().toLowerCase()));
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsNotAffirmativeStringP = function (any)
+   {
+   return !ns.IsAffirmativeStringP(any);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.AverageP = function (numbers)
+   {
+   return Array.isArray(numbers) ? numbers.reduce(function (prev, current) { return prev + current}, 0) / numbers.length : undefined;
+   };
+
+// //------------------------------------------------------------------------------------------------------------------------------------
+
+// ns.IsAffirmativeStringP = function (s)
+//    {
+//    return !ns.IsAffirmativeStringP();
+//    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -198,45 +290,15 @@ ns.MakeArray = function (nLength, defaultValue)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-// https://stackoverflow.com/questions/5999998/check-if-a-variable-is-of-function-type
 
-ns.IsFunction = function (v)
-   {
-   return v && {}.toString.call(v) === '[object Function]';
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-// https://stackoverflow.com/questions/4059147/check-if-a-variable-is-a-string-in-javascript
-
-ns.IsString = function (v)
-   {
-   return 'string' === typeof v || v instanceof String;
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.IsObjectPropertyTruthy = function (v, propertyName)
-   {
-   return 'object' === typeof v  && null !== v && !!v[propertyName];
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.IsArrayInObjectPropertyP = function (v, propertyName)
-   {
-   return 'object' === typeof v  && null !== v && Array.isArray(v[propertyName]);
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.GetTimestampNow = function ()
+ns.GetTimestampNowP = function ()
    {
    return new Date().getTime();
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeLazyConstantMethod = function (self, name, valueCallback)
+ns.MakeLazyConstantMethodP = function (self, name, valueCallback)
    {
    self[name] = function ()
       {
@@ -248,7 +310,7 @@ ns.MakeLazyConstantMethod = function (self, name, valueCallback)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetStackTrace = function (qLevelsUp)
+ns.GetStackTraceP = function (qLevelsUp)
    {
    try{
       undefined.hasOwnProperty(null)
@@ -262,7 +324,7 @@ ns.GetStackTrace = function (qLevelsUp)
 //------------------------------------------------------------------------------------------------------------------------------------
 // http://community.facer.io/t/moon-phase-formula-updated/35691/5
 
-ns.GetMoonPhaseFromDate = function  (date)
+ns.GetMoonPhaseFromDateP = function  (date)
    {
    var moonPhases = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
    var utc = date.getTime();
@@ -281,15 +343,7 @@ ns.GetMoonPhaseFromDate = function  (date)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsStringAffirmative = function (s)
-   {
-   var lowercaseString = String(s).trim().toLowerCase();
-   return ['yes','ok','on','true'].some(function (e) { return lowercaseString === e });
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.GetClockFromDate = function (date)
+ns.GetClockFromDateP = function (date)
    {
    var qShortHand = date.getHours() % 12
    var qMinutes = date.getMinutes();
@@ -302,9 +356,9 @@ ns.GetClockFromDate = function (date)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://dmitripavlutin.com/what-every-javascript-developer-should-know-about-unicode/#21-characters-and-code-points
-// GetUnicodeSurrogatePairFromAstralCodePoint(0x1F600); // => [0xD83D, 0xDE00]
+// GetUnicodeSurrogatePairFromAstralCodePointP(0x1F600); // => [0xD83D, 0xDE00]
 
-ns.GetUnicodeSurrogatePairFromAstralCodePoint = function (astralCodePoint)
+ns.GetUnicodeSurrogatePairFromAstralCodePointP = function (astralCodePoint)
    {
    var highSurrogate = Math.floor((astralCodePoint - 0x10000) / 0x400) + 0xD800;
    var lowSurrogate = (astralCodePoint - 0x10000) % 0x400 + 0xDC00;
@@ -312,16 +366,16 @@ ns.GetUnicodeSurrogatePairFromAstralCodePoint = function (astralCodePoint)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-// GetUnicodeAstralCodePointFromSurrogatePair(0xD83D, 0xDE00); // => 0x1F600
+// GetUnicodeAstralCodePointFromSurrogatePairP(0xD83D, 0xDE00); // => 0x1F600
 
-ns.GetUnicodeAstralCodePointFromSurrogatePair = function (highSurrogate, lowSurrogate)
+ns.GetUnicodeAstralCodePointFromSurrogatePairP = function (highSurrogate, lowSurrogate)
    {
    return (highSurrogate - 0xD800) * 0x400 + lowSurrogate - 0xDC00 + 0x10000;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetStringFromTimestamp = function (utsTime)
+ns.GetStringFromTimestampP = function (utsTime)
    {
    var date = new Date(utsTime);
    if (date instanceof Date && !isNaN(date.getTime()))
@@ -336,9 +390,9 @@ ns.GetStringFromTimestamp = function (utsTime)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetStringFromDate = function (date)
+ns.GetStringFromDateP = function (date)
    {
-   return ns.IsDate(date) ? date.toUTCString() + ' (=' + String(utsTime) + ')' : '<invalid date>';
+   return ns.IsDateP(date) ? date.toUTCString() + ' (=' + String(utsTime) + ')' : '<invalid date>';
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -359,7 +413,7 @@ ns.GetLoopingIndexFromPercentP = function (nCount, pPercent)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetObjectsFromTableP = function (table)
+ns.MakeObjectsUsingTableP = function (table)
    {
    if (table.length === 0)
       {
@@ -381,9 +435,9 @@ ns.GetObjectsFromTableP = function (table)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-  ns.GetTableFromObjectsP = function (objects, headers)
+  ns.MakeTableFromObjectsP = function (objects, headers)
      {
-     if (!ns.IsArray(headers))
+     if (!ns.IsArrayP(headers))
         {
         headers = objects.length < 1 ? [] : objects[0];
         }
@@ -442,7 +496,7 @@ ns.MakeRelationshipsUsingTable = function (table)
 
    var rvRelationships = [];
 
-   if (ns.IsString(kRelationshipSource) && ns.IsString(kRelationshipTargets))
+   if (ns.IsStringP(kRelationshipSource) && ns.IsStringP(kRelationshipTargets))
       {
       for (var iRow = 1, nRows = table.length; iRow < nRows; ++iRow)
          {
@@ -451,8 +505,8 @@ ns.MakeRelationshipsUsingTable = function (table)
          propertyNames.forEach(function (e, i) { obj[e] = row[i] });
          obj[kRelationshipSource] = row[iMainColumn];
          obj[kRelationshipTargets] = relationshipTargetNames
-                     .map(function (e, i) { return ns.boolCast(row[iMainColumn+1+i]) ? e : undefined })
-                     .filter(ns.IsNotUndefined);
+                     .map(function (e, i) { return ns.MakeBoolUsingAnyP(row[iMainColumn+1+i]) ? e : undefined })
+                     .filter(ns.IsNotUndefinedP);
          rvRelationships.push(obj);
          }
       }
@@ -485,7 +539,7 @@ ns.MakeIndexFromContentDictionaryUsingArrayP = function (array)
 //
 //  ==> rv: {1: [{q: 1, t:'apple'}, {q: 1, t:'banana'}], 4: [{q: 2, t:'pear'}]}
 
-ns.GetObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key)
+ns.MakeObjectArrayFromKeyDictionaryUsingObjectsP = function (objects, key)
    {
    if (objects.length === 0) return {};
 
@@ -509,7 +563,7 @@ ns.GetObjectArrayFromKeyDictionaryFromObjectsP = function (objects, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetDictionaryFromObjectsP = function (objects, key)
+ns.MakeDictionaryUsingObjectsP = function (objects, key)
    {
    if (objects.length === 0) return {};
 
@@ -525,7 +579,7 @@ ns.GetDictionaryFromObjectsP = function (objects, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetDictionaryFromTableP = function (table, key)
+ns.MakeDictionaryUsingTableP = function (table, key)
    {
    if (table.length === 0) return {};
   
@@ -561,7 +615,7 @@ ns.TransposeTableP = function (rows)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeSetFromObjectsP = function (objects)
+ns.MakeSetUsingObjectsP = function (objects)
    {
    var rvSet = {};
    for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
@@ -573,57 +627,72 @@ ns.MakeSetFromObjectsP = function (objects)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetStringWithLeadingZeroesFromNumber = function  (value, length)
+ns.MakeStringWithLeadingZeroesUsingNumberP = function  (value, length)
    {
    return '0000000000000000'.substr(0, length-Math.floor(Math.log(Math.max(1,parseInt(value))) / Math.log(10)) - 1) + String(value);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsValueContainedInSetP = function (value, set)
+ns.IsContainedInSetP = function (value, set)
    {
    return set.hasOwnProperty(value);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsValueMissingFromSetP = function (value, set)
+ns.IsNotContainedInSetP = function (value, set)
    {
    return !set.hasOwnProperty(value);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-ns.intCast = function (any)
+
+ns.IsContainedInArrayP = function (searchItem, list)
+   {
+   return list.indexOf(searchItem) >= 0;
+   };
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsNotContainedInArrayP = function (searchItem, list)
+   {
+   return list.indexOf(searchItem) < 0;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+ns.MakeIntUsingAnyP = function (any)
    {
    return parseInt(any) || 0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.boolCast = function (any)
+ns.MakeBoolUsingAnyP = function (any)
    {
    return !!any;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.floatCast = function (any)
+ns.MakeFloatUsingAnyP = function (any)
    {
    return parseFloat(any) || 0.0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.stringCast = function (any)
+ns.MakeStringUsingAnyP = function (any)
    {
    return String(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.arrayCast = function (any)
+ns.MakeArrayUsingAnyP = function (any)
    {
-   if (ns.IsArray(any))
+   if (ns.IsArrayP(any))
       {
       return any;
       }
@@ -635,7 +704,7 @@ ns.arrayCast = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.dateCast = function (any)
+ns.MakeDateUsingAnyP = function (any)
    {
    var rvDate = new Date(any);
    if (!isNaN(rvDate.getTime()))
@@ -647,14 +716,14 @@ ns.dateCast = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetWallTimeFromTimestamp = function  (utsTimestamp)
+ns.MakeWallTimeStringUsingTimestampP = function  (utsTimestamp)
    {
    return new Date(utsTimestamp-new Date().getTimezoneOffset()*60000).toUTCString().slice(-12, -4);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetUrlsFromString = function  (text)
+ns.FindUrlsInString = function  (text)
    {
       var urls = [];
       var re = /(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g;
@@ -664,20 +733,6 @@ ns.GetUrlsFromString = function  (text)
          text = text.split(match[0]).join('');
          }
       return urls;
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.lcontains = function (list, searchItem)
-   {
-   return list.indexOf(searchItem) >= 0;
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.lcontains = function (list, searchItem)
-   {
-   return list.indexOf(searchItem) >= 0;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------

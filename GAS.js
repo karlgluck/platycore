@@ -34,7 +34,7 @@ ns.IsTriggeredFunctionP = function (functionName)
 // 
 //
 
-ns.GetA1AddressFromCoordinatesP = function  (irRow, icColumn)
+ns.MakeA1AddressFromCoordinatesP = function  (irRow, icColumn)
    {
    var iLetter, rvColumnLetters = '$';
    while (icColumn > 0)
@@ -90,12 +90,19 @@ ns.GetUrlFromSheet = function (sheet)
 ns.IsValidRangeNameP = function (name)
    {
    // https://support.google.com/docs/answer/63175
-   return !name.match(/[^A-Za-z0-9_]|^true|^false|^.{250}.|^$/);
+   return Lang.IsString(name) && !name.match(/[^A-Za-z0-9_]|^true|^false|^.{250}.|^$/);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetSheetFromUrl = function (url)
+ns.IsNotValidRangeNameP = function (name)
+   {
+   return !ns.IsValidRangeNameP(name);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.OpenSheetUsingUrl = function (url)
    {
    var spreadsheet = SpreadsheetApp.openByUrl(url);
    if (!spreadsheet)
@@ -103,13 +110,13 @@ ns.GetSheetFromUrl = function (url)
       return null;
       }
    var match = url.match(/#gid=(\d+)/);
-   var rvSheet = Lang.IsArray(match) ? ns.GetSheetFromSheetId(spreadsheet, Lang.intCast(match[1])) : null;
+   var rvSheet = Lang.IsArrayP(match) ? ns.OpenSheetUsingSheetId(spreadsheet, Lang.MakeIntUsingAnyP(match[1])) : null;
    return rvSheet;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetSheetFromSheetId = function (spreadsheet, sheetId)
+ns.OpenSheetUsingSheetId = function (spreadsheet, sheetId)
    {
    var rvSheet = null;
    var sheets = spreadsheet.getSheets();
@@ -127,21 +134,21 @@ ns.GetSheetFromSheetId = function (spreadsheet, sheetId)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetObjectsFromSheetP = function (sheet)
+ns.MakeObjectsUsingSheetP = function (sheet)
    {
-   return Lang.GetObjectsFromTableP(GAS.GetTableFromSheetP(sheet));
+   return Lang.MakeObjectsUsingTableP(GAS.MakeTableUsingSheetP(sheet));
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.DictionaryFromSheetP = function (sheet, key)
+ns.MakeDictionaryUsingSheetP = function (sheet, key)
    {
-   return Lang.GetDictionaryFromTableP(GAS.GetTableFromSheetP(sheet), key);
+   return Lang.MakeDictionaryUsingTableP(GAS.MakeTableUsingSheetP(sheet), key);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetTableFromSheetP = function (sheet)
+ns.MakeTableUsingSheetP = function (sheet)
    {
    var irHeaders = Math.max(1, sheet.getFrozenRows());
    var qRows = sheet.getLastRow() - irHeaders + 1;
@@ -230,7 +237,7 @@ ns.ApplyRetentionPolicyToSheet = function (policy, sheet)
    {
 
    var irFirstRowToDelete = sheet.getLastRow() + 1;
-   if (Lang.IsNumber(policy.qrRowCountLimit))
+   if (Lang.IsNumberP(policy.qrRowCountLimit))
       {
       irFirstRowToDelete = Math.min(irFirstRowToDelete, policy.qrRowCountLimit);
       }
@@ -242,10 +249,10 @@ ns.ApplyRetentionPolicyToSheet = function (policy, sheet)
       sheet.deleteRows(irFirstRowToDelete, qrExtraRows);
       }
 
-   if (Lang.IsNumber(policy.utsOldestDateToKeep))
+   if (Lang.IsNumberP(policy.utsOldestDateToKeep))
       {
       console.log('deleting everything older than ' + new Date(policy.utsOldestDateToKeep));
-      if (!Lang.IsString(policy.kDateColumnHeading))
+      if (Lang.IsNotStringP(policy.kDateColumnHeading))
          {
          policy.kDateColumnHeading = 'date';
          }
@@ -259,7 +266,7 @@ ns.ApplyRetentionPolicyToSheet = function (policy, sheet)
          {
          if (iLastDateToDelete < 0)
             {
-            if (Lang.dateCast(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
+            if (Lang.MakeDateUsingAnyP(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
                {
                iLastDateToDelete = iDate;
                }
@@ -267,7 +274,7 @@ ns.ApplyRetentionPolicyToSheet = function (policy, sheet)
          
          if (iLastDateToDelete >= 0)
             {
-            if (Lang.dateCast(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
+            if (Lang.MakeDateUsingAnyP(dates[iDate]).getTime() < policy.utsOldestDateToKeep)
                {
                if (iDate === 0)
                   {

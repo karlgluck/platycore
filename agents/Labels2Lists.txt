@@ -39,7 +39,7 @@ Common Initialization
      NAME  "WAKE"
     FIELD
  READONLY  "OFF"
-     EVAL  "agent.WriteField('WAKE', Lang.GetTimestampNow() + 15000)"
+     EVAL  "agent.WriteField('WAKE', Lang.GetTimestampNowP() + 15000)"
      LOAD  "WAKE", "OLD_AGENT"
    SELECT  "F2:G2"
      TEXT  "WAKE"
@@ -53,7 +53,7 @@ Common Initialization
      NAME  "LOCK"
     FIELD
  READONLY  "OFF"
-     EVAL  "agent.WriteField('LOCK', Lang.GetTimestampNow())"
+     EVAL  "agent.WriteField('LOCK', Lang.GetTimestampNowP())"
    SELECT  "F5:G5"
      TEXT  "LOCK"
    SELECT  "F6:L6"
@@ -136,12 +136,12 @@ the IMPORT-ed agent and push it to the stack.
 ------------------------
 var sheet = SpreadsheetApp.create("🏭 Labels2Lists", 1, 1).getSheets()[0];
 var headers = GAS.MergeSheetHeaders(sheet, ['input_label', 'object_from_gmail_message_function', 'sheet_url']);
-var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-script/reference/gmail/gmail-message\nfunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Lang.GetUrlsFromString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Lang.GetUrlsFromString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS.GetUrlFromGmailMessage(gmailMessage)\n  };\n}";
+var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-script/reference/gmail/gmail-message\nfunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Lang.FindUrlsInString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Lang.FindUrlsInString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS.GetUrlFromGmailMessage(gmailMessage)\n  };\n}";
 GAS.AddRowsToJournalingSheet(
       [['<Gmail Label>', stringOfGetObjectFromGmailMessage, '<sheet url>']],
       sheet);
 agent.WriteField('SHEET', GAS.GetUrlFromSheet(sheet));
-agent.ExecuteRoutineByName('REFRESH_LABELS');
+agent.ExecuteRoutineUsingNoteName('REFRESH_LABELS');
 ------------------------
 
 
@@ -150,7 +150,7 @@ agent.ExecuteRoutineByName('REFRESH_LABELS');
     STYLE "BUTTON"
      CODE "---"
 ------------------------
-var sheet = GAS.GetSheetFromUrl(agent.ReadField('SHEET'));
+var sheet = GAS.OpenSheetUsingUrl(agent.ReadField('SHEET'));
 var headers = GAS.MergeSheetHeaders(sheet, ['input_label']);
 var ciInputLabelColumn = 1 + headers.indexOf('input_label');
 var labels = GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort();
@@ -175,15 +175,15 @@ if (!en)
    {
    agent.Log('[!EN]: Agent is disabled (to enable, set EN=TRUE)');
    }
-var sheet = GAS.GetSheetFromUrl(agent.ReadField('SHEET'));
-var records = GAS.GetObjectsFromSheetP(sheet);
+var sheet = GAS.OpenSheetUsingUrl(agent.ReadField('SHEET'));
+var records = GAS.MakeObjectsUsingSheetP(sheet);
 records.forEach(function (eRecord)
    {
    eRecord.GetObjectFromGmailMessage = eval(eRecord.object_from_gmail_message_function);
-   eRecord.outputSheet = GAS.GetSheetFromUrl(eRecord.sheet_url);
+   eRecord.outputSheet = GAS.OpenSheetUsingUrl(eRecord.sheet_url);
    });
 var inputLabel = GmailApp.getUserLabelByName(agent.ReadField('INPUT_LABEL'));
-var recordsFromLabelName = Lang.GetObjectArrayFromKeyDictionaryFromObjectsP(records, 'input_label');
+var recordsFromLabelName = Lang.MakeObjectArrayFromKeyDictionaryUsingObjectsP(records, 'input_label');
 var threads = inputLabel.getThreads();
 var outputs = [];
 threads.forEach(function (eThread)
@@ -207,14 +207,14 @@ threads.forEach(function (eThread)
       eThread.removeLabel(inputLabel);
       }
    });
-var outputsFromLabelName = Lang.GetObjectArrayFromKeyDictionaryFromObjectsP(outputs, 'label_name');
+var outputsFromLabelName = Lang.MakeObjectArrayFromKeyDictionaryUsingObjectsP(outputs, 'label_name');
 Object.keys(outputsFromLabelName).forEach(function (eLabelName)
    {
    var eOutputs = outputsFromLabelName[eLabelName];
    var outputSheet = eOutputs[0].record.outputSheet;
    var objects = eOutputs.map(function (e) { return e.object });
    var headers = GAS.MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
-   var table = Lang.GetTableFromObjectsP(objects, headers);
+   var table = Lang.MakeTableFromObjectsP(objects, headers);
    var rows = Lang.GetRowsFromTableP(table);
    if (en)
       {
@@ -233,7 +233,7 @@ if (0 < threads.length)
    }
 if (en)
    {
-   agent.WriteField('PROCESSED', Lang.intCast(agent.ReadField('PROCESSED')) + threads.length);
+   agent.WriteField('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadField('PROCESSED')) + threads.length);
    }
 else
    {

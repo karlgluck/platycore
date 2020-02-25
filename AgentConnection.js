@@ -16,20 +16,20 @@ function AgentConnection ()
    this.Connect = function (identifier)
       {
       var rvConnected = false;
-      if (Lang.IsUrl(identifier))
+      if (Lang.IsUrlP(identifier))
          {
          rvConnected = self_.ConnectUsingUrl(identifier);
          }
-      else if (Lang.IsString(identifier))
+      else if (Lang.IsStringP(identifier))
          {
          rvConnected = self_.ConnectUsingAgentId(identifier)
                || self_.ConnectUsingSheetName(identifier);
          }
-      else if (Lang.IsNumber(identifier))
+      else if (Lang.IsNumberP(identifier))
          {
          rvConnected = self_.ConnectUsingSheetId(identifier);
          }
-      else if (Lang.IsObject(identifier))
+      else if (Lang.IsObjectP(identifier))
          {
          rvConnected = self_.ConnectUsingSheet(identifier);
          }
@@ -43,7 +43,7 @@ function AgentConnection ()
       var rvConnected = false;
       if (agentId.match(/^A\d+$/))
          {
-         rvConnected = self_.ConnectUsingSheetId(Lang.intCast(sheet.slice(1)));
+         rvConnected = self_.ConnectUsingSheetId(Lang.MakeIntUsingAnyP(sheet.slice(1)));
          }
       return rvConnected;
       };
@@ -59,14 +59,14 @@ function AgentConnection ()
 
    this.ConnectUsingUrl = function (sheetUrl)
       {
-      return self_.ConnectUsingSheet(GAS.GetSheetFromUrl(sheetUrl));
+      return self_.ConnectUsingSheet(GAS.OpenSheetUsingUrl(sheetUrl));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.ConnectUsingSheetId = function (sheetId)
       {
-      return self_.ConnectUsingSheet(GAS.GetSheetFromSheetId(sheet));
+      return self_.ConnectUsingSheet(GAS.OpenSheetUsingSheetId(sheet));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -89,7 +89,7 @@ function AgentConnection ()
       readonlyNames_ = [];
       sheet_ = null;
 
-      if (Lang.IsObject(sheet))
+      if (Lang.IsObjectP(sheet))
          {
          sheet_ = sheet;
          kAgentId_ = 'A'+sheet.getSheetId();
@@ -100,7 +100,7 @@ function AgentConnection ()
             {
             irNewMessage_ = 1 + range.getMergedRanges()[0].getNumRows();
             }
-         rvIsConnected = true === range.isChecked() && Lang.IsMeaningful(range.getNote());
+         rvIsConnected = true === range.isChecked() && Lang.IsMeaningfulP(range.getNote());
          }
 
       if (!rvIsConnected)
@@ -178,7 +178,7 @@ function AgentConnection ()
    this.ReadToggle = function (name, ignoreCache)
       {
       var range = getRangeFromPropertyName(name);
-      return Lang.IsObject(range) ? range.isChecked() : undefined;
+      return Lang.IsObjectP(range) ? range.isChecked() : undefined;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -186,9 +186,9 @@ function AgentConnection ()
    this.WriteToggle = function (name, value)
       {
       var range = getRangeFromPropertyName(name);
-      if (Lang.IsObject(range))
+      if (Lang.IsObjectP(range))
          {
-         value = Lang.boolCast(value);
+         value = Lang.MakeBoolUsingAnyP(value);
          if (range.getFormula().length > 0)
             {
             range.setFormula(value ? '=TRUE' : '=FALSE');
@@ -238,7 +238,7 @@ function AgentConnection ()
    this.ReadField = function (name, ignoreCache)
       {
       var range = getRangeFromPropertyName(name);
-      return Lang.IsObject(range) ? range.getValue() : undefined;
+      return Lang.IsObjectP(range) ? range.getValue() : undefined;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -246,7 +246,7 @@ function AgentConnection ()
    this.WriteField = function (name, value)
       {
       var range = getRangeFromPropertyName(name);
-      if (Lang.IsObject(range))
+      if (Lang.IsObjectP(range))
          {
          range.setValue(value);
          }
@@ -271,7 +271,7 @@ function AgentConnection ()
    this.ReadNote = function (name, ignoreCache)
       {
       var range = getRangeFromPropertyName(name);
-      return Lang.IsObject(range) ? range.getNote() : undefined;
+      return Lang.IsObjectP(range) ? range.getNote() : undefined;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -279,9 +279,9 @@ function AgentConnection ()
    this.WriteNote = function (name, value)
       {
       var range = getRangeFromPropertyName(name);
-      if (Lang.IsObject(range))
+      if (Lang.IsObjectP(range))
          {
-         range.setNote(Lang.stringCast(value));
+         range.setNote(Lang.MakeStringUsingAnyP(value));
          }
       else 
          {
@@ -330,9 +330,9 @@ function AgentConnection ()
 
    var writeOutputFirstTime_ = function (badge, args)
       {
-      if (!Lang.IsMeaningful(badge))
+      if (Lang.IsNotMeaningfulP(badge))
          {
-         badge = Lang.GetClockFromDate(new Date());
+         badge = Lang.GetClockFromDateP(new Date());
          }
       sheet_.insertRowsBefore(irNewMessage_, 1);
       var rvRange = writeOutputNormal_(badge, args);
@@ -358,7 +358,7 @@ function AgentConnection ()
          }
       var range = sheet_.getRange(irNewMessage_, 1, 1, 49);
       var notes = Lang.MakeArray(49, null);
-      notes[0] = new Date().toLocaleString() + '\n\n' + Lang.GetStackTrace(4) + '\n\n' + Object.keys(args).map(function (kArg){return args[kArg]}).join('\n\n');
+      notes[0] = new Date().toLocaleString() + '\n\n' + Lang.GetStackTraceP(4) + '\n\n' + Object.keys(args).map(function (kArg){return args[kArg]}).join('\n\n');
       range.setValues([values]).setNotes([notes]);
       // for some reason this never works to shrink autosized rows
       //sheet_.setRowHeights(irNewMessage_, sheet_.getMaxRows() - irNewMessage_, 21);
@@ -397,6 +397,11 @@ function AgentConnection ()
       writeOutput_('', arguments).setFontColor('white').setBackground('black');
       };
 
+   this.InteractiveInfo = function ()
+      {
+      if (Platycore.IsInteractive) self_.Info.apply(self_, arguments);
+      };
+
 //------------------------------------------------------------------------------------------------------------------------------------
 //
 // Writes a warning to the output log for this sheet
@@ -408,6 +413,11 @@ function AgentConnection ()
       writeOutput_('⚠️', arguments).setFontColor('yellow').setBackground('#38340a');
       };
 
+   this.InteractiveWarn = function ()
+      {
+      if (Platycore.IsInteractive) self_.Warn.apply(self_, arguments);
+      };
+
 //------------------------------------------------------------------------------------------------------------------------------------
 //
 // Writes an error message to the output log for this sheet
@@ -417,6 +427,11 @@ function AgentConnection ()
       {
       console.error.apply(console, arguments);
       writeOutput_('❌', arguments).setFontColor('red').setBackground('#3d0404');
+      };
+
+   this.InteractiveError = function ()
+      {
+      if (Platycore.IsInteractive) self_.Error.apply(self_, arguments);
       };
 
 /*************************************************************************************************************************************
@@ -439,7 +454,7 @@ function AgentConnection ()
          {
          var range = eRange.getRange();
          var noteValue = range.getNote();
-         valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningful(noteValue) ? noteValue : range.getValue();
+         valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningfulP(noteValue) ? noteValue : range.getValue();
          eRange.remove();
          });
 
@@ -457,13 +472,13 @@ function AgentConnection ()
          }
       var isAlreadyRunning = self_.ReadToggle('ON', true);
       var lockValue = self_.ReadField('LOCK', true);
-      var hasLockField = !Lang.IsUndefined(lockValue);
+      var hasLockField = Lang.IsNotUndefinedP(lockValue);
       if (hasLockField)
          {
-         lockValue = Lang.intCast(lockValue);
+         lockValue = Lang.MakeIntUsingAnyP(lockValue);
          var lockValueWithSentinel = (lockValue - (lockValue % 1000)) + (((lockValue % 1000) + 1) % 1000);
          self_.WriteField('LOCK', lockValueWithSentinel);
-         var canOverrideLock = Platycore.PumpRuntimeLimit < (Lang.GetTimestampNow() - lockValue);
+         var canOverrideLock = Platycore.PumpRuntimeLimit < (Lang.GetTimestampNowP() - lockValue);
          }
       else
          {
@@ -489,7 +504,7 @@ function AgentConnection ()
          {
          try
             {
-               isAlreadyRunning = Lang.boolCast(self_.ReadToggle('ON', true));
+               isAlreadyRunning = Lang.MakeBoolUsingAnyP(self_.ReadToggle('ON', true));
                if (hasLockField)
                   {
                   canTurnOn = self_.ReadField('LOCK', true) === lockValueWithSentinel
@@ -502,7 +517,7 @@ function AgentConnection ()
 
             if (canTurnOn)
                {
-               self_.WriteField('LOCK', Lang.GetTimestampNow());
+               self_.WriteField('LOCK', Lang.GetTimestampNowP());
                self_.WriteToggle('ON', true);
                GAS.LimitAndTrimSheetRows(sheet_,  irNewMessage_ + Platycore.MaximumAgentLogRows);
                isThisOn_ = true;
@@ -538,7 +553,7 @@ function AgentConnection ()
 
       isThisOn_ = false;
 
-      if (Lang.IsObject(sheet_))
+      if (Lang.IsObjectP(sheet_))
          {
          var lock = LockService.getDocumentLock();
          if (lock.tryLock(Platycore.DocumentTryLockWaitTime))
@@ -571,13 +586,13 @@ function AgentConnection ()
          }
 
       var update = self_.ReadField('UPDATE');
-      if (Lang.IsUndefined(update))
+      if (Lang.IsUndefinedP(update))
          {
          self_.Warn('This agent does not do anything when activated because there is no UPDATE field');
          return;
          }
 
-      var rv = self_.ExecuteRoutineByName(update);
+      var rv = self_.ExecuteRoutineUsingNoteName(update);
       return rv;
       };
 
@@ -586,9 +601,9 @@ function AgentConnection ()
 // Execute the routine that defines this agent in A1
 //
 
-   this.ExecuteRoutineFromA1Note = function ()
+   this.ExecuteRoutineUsingA1Note = function ()
       {
-      return this.ExecuteRoutineFromText(sheet_.getRange(1,1).getNote());
+      return this.ExecuteRoutineUsingText(sheet_.getRange(1,1).getNote());
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -596,7 +611,7 @@ function AgentConnection ()
 // Execute the routine in the note named
 //
 
-   this.ExecuteRoutineByName = function (noteName)
+   this.ExecuteRoutineUsingNoteName = function (noteName)
       {
       if (!isThisOn_)
          {
@@ -604,13 +619,13 @@ function AgentConnection ()
          }
 
       var routine = self_.ReadNote(noteName);
-      if (Lang.IsUndefined(routine))
+      if (Lang.IsUndefinedP(routine))
          {
          self_.Error('There is no note with the given name: ' + noteName);
          return null;
          }
 
-      return this.ExecuteRoutineFromText(routine);
+      return this.ExecuteRoutineUsingText(routine);
       };
 
 
@@ -643,14 +658,14 @@ function AgentConnection ()
             self_.Error((sourceLabel || '[eval]')
                   + '(~' + lineNumber + '): ' + (e.message || e.toString()) + '\n\n'
                   + codeLines
-                        .map(function (e, i) { return Lang.GetStringWithLeadingZeroesFromNumber(i, 4) + ': ' + e; })
+                        .map(function (e, i) { return Lang.MakeStringWithLeadingZeroesUsingNumberP(i, 4) + ': ' + e; })
                         .slice(
                         Math.max(lineNumber-2,0),
                         Math.min(codeLines.length-1,lineNumber+3)
                         )
                         .join('\n')
                   + '\n\n'
-                  + (Lang.IsUndefined(e.stack) ? '     no stack trace' : e.stack)
+                  + (Lang.IsUndefinedP(e.stack) ? '     no stack trace' : e.stack)
                   );
             }
          })(self_);
@@ -679,13 +694,13 @@ function AgentConnection ()
 
    this.Snooze = function (dtMilliseconds)
       {
-      var utsNow = Lang.GetTimestampNow();
+      var utsNow = Lang.GetTimestampNowP();
       dtMilliseconds = Math.max(15000, dtMilliseconds);
       var maybePreviousWakeTime = self_.ReadField('WAKE');
       var utsNewWakeTime = utsNow + dtMilliseconds;
-      if (Lang.IsNumber(maybePreviousWakeTime))
+      if (Lang.IsNumberP(maybePreviousWakeTime))
          {
-         maybePreviousWakeTime = Lang.intCast(maybePreviousWakeTime);
+         maybePreviousWakeTime = Lang.MakeIntUsingAnyP(maybePreviousWakeTime);
          if (maybePreviousWakeTime < utsNow && maybePreviousWakeTime > (utsNow - dtMilliseconds))
             {
             utsNewWakeTime = maybePreviousWakeTime + dtMilliseconds;
@@ -693,8 +708,8 @@ function AgentConnection ()
          }
       self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
       self_.LogWithBadge(
-            Lang.GetMoonPhaseFromDate(new Date(utsNewWakeTime)),
-            'snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNow()) + ' from now at ' + Lang.GetWallTimeFromTimestamp(utsNewWakeTime)
+            Lang.GetMoonPhaseFromDateP(new Date(utsNewWakeTime)),
+            'snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNowP()) + ' from now at ' + Lang.MakeWallTimeStringUsingTimestampP(utsNewWakeTime)
             );
       };
 
@@ -702,7 +717,7 @@ function AgentConnection ()
 
    this.SnoozeForever = function ()
       {
-      self_.Log(Lang.GetMoonPhaseFromDate(Lang.GetTimestampNow()) + 'Snoozing, no alarm... ');
+      self_.Log(Lang.GetMoonPhaseFromDateP(Lang.GetTimestampNowP()) + 'Snoozing, no alarm... ');
       self_.WriteField('WAKE', 'SNOOZE');
       };
 
@@ -730,7 +745,7 @@ function AgentConnection ()
          {
          self_.Info('Fetching ' + Lang.ClampStringLengthP(urlAgentInstructions, 50));
          }
-      return self_.ExecuteRoutineFromText(getRoutineTextFromUrl(urlAgentInstructions));
+      return self_.ExecuteRoutineUsingText(getRoutineTextFromUrl(urlAgentInstructions));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -753,12 +768,12 @@ function AgentConnection ()
             .split(/\n/)
             .filter(function (eLine)   // strip every line that doesn't start with whitespace
                {
-               return eLine.trim().length > 0 && Lang.boolCast(whitespaceRegex.exec(eLine))
+               return eLine.trim().length > 0 && Lang.MakeBoolUsingAnyP(whitespaceRegex.exec(eLine))
                })
             .map(function (eLine)      // take the first token and the rest of the line as 2 elements
                {
                var match = associativeSplitRegex.exec(eLine);
-               if (Lang.IsArray(match))
+               if (Lang.IsArrayP(match))
                   {
                   return match.slice(1);
                   }
@@ -795,10 +810,10 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ExecuteRoutineFromText = function (agentInstructionsText)
+   this.ExecuteRoutineUsingText = function (agentInstructionsText)
       {
       var routine = getRoutineFromText(agentInstructionsText);
-      return self_.ExecuteRoutine(routine);
+      return self_.ExecuteRoutineUsingInstructions(routine);
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -810,19 +825,19 @@ function AgentConnection ()
 // the agent in the same way that Platycore does.
 //
 
-   this.ExecuteRoutine = function (instructions)
+   this.ExecuteRoutineUsingInstructions = function (instructions)
       {
-      if (!Lang.IsArray(instructions)) throw "!Lang.IsArray(instructions)";
+      if (Lang.IsNotArrayP(instructions)) throw "Lang.IsNotArrayP(instructions)";
 
       var rvExecutionDetails = {
             didAbort: false
             };
 
       var selectedRange = null;
-      var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT', 'NOTE', 'VALUE']);
+      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT', 'NOTE', 'VALUE']);
       var hasMergedCurrentSelection = false;
       var lastInstallUrl = null;
-      var selectionTypeInstructionsSet = Lang.MakeSetFromObjectsP(['TOGGLE', 'FIELD', 'TEXT', 'NOTE']);
+      var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['TOGGLE', 'FIELD', 'TEXT', 'NOTE']);
       var selectionTypeInstruction = null;
       var sheetFromAlias = {};
       var kSelectedRangePropertyName = null;
@@ -834,9 +849,9 @@ function AgentConnection ()
          {
          var eInstruction = instructions[iInstruction - 1];
          var eArguments   = instructions[iInstruction - 0];
-         var eArgumentSet = Lang.MakeSetFromObjectsP(eArguments);
+         var eArgumentSet = Lang.MakeSetUsingObjectsP(eArguments);
 
-         if (!hasMergedCurrentSelection && Lang.IsValueContainedInSetP(eInstruction, mergingInstructionsSet))
+         if (!hasMergedCurrentSelection && Lang.IsContainedInSetP(eInstruction, mergingInstructionsSet))
             {
             switch (((selectedRange.getWidth() > 1) ? 1 : 0) + ((selectedRange.getHeight() > 1) ? 2 : 0))
                {
@@ -846,7 +861,7 @@ function AgentConnection ()
                }
             hasMergedCurrentSelection = true;
             }
-         if (Lang.IsValueContainedInSetP(eInstruction, selectionTypeInstructionsSet))
+         if (Lang.IsContainedInSetP(eInstruction, selectionTypeInstructionsSet))
             {
             selectionTypeInstruction = eInstruction;
             }
@@ -867,7 +882,7 @@ function AgentConnection ()
                      }
                   }
                }
-            if (!Lang.IsUndefined(rv))
+            if (Lang.IsNotUndefinedP(rv))
                {
                rv = castFunction(rv);
                }
@@ -889,9 +904,9 @@ function AgentConnection ()
                break;
             
             case 'ABORT_UNLESS_TRIGGERED':
-               var isEnabled = (function (en) { return Lang.IsUndefined(en) || Lang.boolCast(en) })(self_.ReadToggle('EN'));
-               var isGo = (function (go) { return !Lang.IsUndefined(go) && Lang.boolCast(go) })(self_.ReadToggle('GO'));
-               var isWake = (function (wake) { return Lang.IsNumber(wake) && utsIterationStarted > wake })(self_.ReadField('WAKE'));
+               var isEnabled = (function (en) { return Lang.IsUndefinedP(en) || Lang.MakeBoolUsingAnyP(en) })(self_.ReadToggle('EN'));
+               var isGo = (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolUsingAnyP(go) })(self_.ReadToggle('GO'));
+               var isWake = (function (wake) { return Lang.IsNumberP(wake) && utsIterationStarted > wake })(self_.ReadField('WAKE'));
                var isTriggered = isEnabled && (isGo || isWake);
                if (!isTriggered)
                   {
@@ -902,7 +917,7 @@ function AgentConnection ()
 
             case 'INSTALL':
                isThisOn_ = true;
-               lastInstallUrl = popArgument(Lang.stringCast);
+               lastInstallUrl = popArgument(Lang.MakeStringUsingAnyP);
                try
                   {
                   instructions = instructions.concat(getRoutineFromText(getRoutineTextFromUrl(lastInstallUrl)));
@@ -917,15 +932,18 @@ function AgentConnection ()
                break;
 
             case 'NEW_AGENT':
-               var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
-               sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "NEW_AGENT"');
-               if (!self_.ConnectUsingSheet(sheet))
+               (function (kAlias)
                   {
-                  self_.Error('NEW_AGENT: Failed to connect to agent');
-                  rvExecutionDetails.didAbort = true;
-                  nInstructionCount = 0;
-                  }
-               sheetFromAlias[popArgument(Lang.stringCast)] = sheet;
+                  var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+                  sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "NEW_AGENT"');
+                  if (!self_.ConnectUsingSheet(sheet))
+                     {
+                     self_.Error('NEW_AGENT: failed to connect');
+                     rvExecutionDetails.didAbort = true;
+                     nInstructionCount = 0;
+                     }
+                  sheetFromAlias[kAlias] = sheet;
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'CONNECT':
@@ -946,7 +964,7 @@ function AgentConnection ()
                      rvExecutionDetails.didAbort = true;
                      nInstructionCount = 0;
                      }
-                  })(popArgument(Lang.stringCast));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'ALIAS':
@@ -954,13 +972,13 @@ function AgentConnection ()
                   {
                   currentAgentAlias = kAlias;
                   sheetFromAlias[kAlias] = sheet_;
-                  })(popArgument(Lang.stringCast));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
             
             case 'EXPORT':
                (function ()
                   {
-                  if (!Lang.IsString(currentAgentAlias))
+                  if (Lang.IsNotStringP(currentAgentAlias))
                      {
                      self_.Error("Cannot EXPORT until the current agent connection is named with ALIAS");
                      return;
@@ -971,7 +989,7 @@ function AgentConnection ()
                      {
                      var range = eRange.getRange();
                      var noteValue = range.getNote();
-                     valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningful(noteValue) ? noteValue : range.getValue();
+                     valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningfulP(noteValue) ? noteValue : range.getValue();
                      eRange.remove();
                      });
                   importedValueFromPropertyNameFromAlias[currentAgentAlias] = valueFromPropertyName;
@@ -983,71 +1001,76 @@ function AgentConnection ()
                break;
 
             case 'STYLE':
-               switch (eArguments[0])
+               (function (styleType)
                   {
-                  case 'BUTTON': 
-                     selectedRange.setFontColor('#000');
-                     selectedRange.setBackground('#ffff00');
-                     selectedRange.setHorizontalAlignment('center');
-                     break;
+                  switch (styleType)
+                     {
+                     case 'BUTTON': 
+                        selectedRange.setFontColor('#000');
+                        selectedRange.setBackground('#ffff00');
+                        selectedRange.setHorizontalAlignment('center');
+                        break;
 
-                  default:
-                     self_.Error('Unknown STYLE type: ' + eArguments[0]);
-                     break;
-                  }
+                     default:
+                        self_.Error('Unknown STYLE type: ' + styleType);
+                        break;
+                     }
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'TITLE':
-               var title = Lang.stringCast(eArguments[0]);
-               sheet_.setName(Lang.MakeNameUnique('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
+               (function (title)
+                  {
+                  sheet_.setName(Lang.MakeNameUniqueP('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'RESERVE':
-               
-               var mrMaxRows = sheet_.getMaxRows();
-               var mrMaxColumns = sheet_.getMaxColumns();
-               sheet_.getRange(1, 1, mrMaxRows, mrMaxColumns)
-                     .setFontColor('#b7b7b7')
-                     .setBackground('black')
-                     .setFontFamily('IBM Plex Mono')
-                     .setVerticalAlignment('top')
-                     .setWrap(false)
-                     .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
-
-               sheet_.setRowHeights(1, mrMaxRows, 21);
-               sheet_.setColumnWidths(1, sheet_.getMaxColumns(), 21); // square the cells
-
-               var qcExtraColumns = mrMaxColumns - 49;
-               if (qcExtraColumns < 0)
+               (function (qrRows)
                   {
-                  sheet_.insertColumnsAfter(Math.max(1, sheet_.getMaxColumns()), -qcExtraColumns);
-                  }
-               else if (qcExtraColumns > 0)
-                  {
-                  sheet_.deleteColumns(mrMaxColumns - qcExtraColumns + 1, qcExtraColumns);
-                  }
-               mrMaxColumns = 49;
+                  var mrMaxRows = sheet_.getMaxRows();
+                  var mrMaxColumns = sheet_.getMaxColumns();
+                  sheet_.getRange(1, 1, mrMaxRows, mrMaxColumns)
+                        .setFontColor('#b7b7b7')
+                        .setBackground('black')
+                        .setFontFamily('IBM Plex Mono')
+                        .setVerticalAlignment('top')
+                        .setWrap(false)
+                        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
 
-               var qrRows = Lang.intCast(eArguments[0]);
-               var irHeaders = qrRows;
-               sheet_.insertRowsBefore(irNewMessage_, qrRows);
-               mrMaxRows += qrRows;
-               irNewMessage_ = qrRows + 1;
-               var irFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
-               sheet_.deleteRows(irFirstRowToDelete, mrMaxRows - irFirstRowToDelete + 1);
-               mrMaxRows = irFirstRowToDelete - 1;
+                  sheet_.setRowHeights(1, mrMaxRows, 21);
+                  sheet_.setColumnWidths(1, sheet_.getMaxColumns(), 21); // square the cells
 
-               sheet_.getRange(qrRows, 1, 1, mrMaxColumns).setBorder(false, false, true, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
-               sheet_.getRange(1, 1, qrRows, 1).mergeVertically().setBackground('#b7b7b7').setFontColor('#000000');
-               var logRange = sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns());
-               logRange.setWrap(false).setWrapStrategy(SpreadsheetApp.WrapStrategy.OVERFLOW);
-               //spreadsheet_.setNamedRange(getRangeNameFromPropertyName('LOG'), sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns()));
+                  var qcExtraColumns = mrMaxColumns - 49;
+                  if (qcExtraColumns < 0)
+                     {
+                     sheet_.insertColumnsAfter(Math.max(1, sheet_.getMaxColumns()), -qcExtraColumns);
+                     }
+                  else if (qcExtraColumns > 0)
+                     {
+                     sheet_.deleteColumns(mrMaxColumns - qcExtraColumns + 1, qcExtraColumns);
+                     }
+                  mrMaxColumns = 49;
+
+                  var irHeaders = qrRows;
+                  sheet_.insertRowsBefore(irNewMessage_, qrRows);
+                  mrMaxRows += qrRows;
+                  irNewMessage_ = qrRows + 1;
+                  var irFirstRowToDelete = Math.max(irHeaders + 2, sheet_.getLastRow() + 1);
+                  sheet_.deleteRows(irFirstRowToDelete, mrMaxRows - irFirstRowToDelete + 1);
+                  mrMaxRows = irFirstRowToDelete - 1;
+
+                  sheet_.getRange(qrRows, 1, 1, mrMaxColumns).setBorder(false, false, true, false, false, false, '#b7b7b7', SpreadsheetApp.BorderStyle.SOLID_THICK);
+                  sheet_.getRange(1, 1, qrRows, 1).mergeVertically().setBackground('#b7b7b7').setFontColor('#000000');
+                  var logRange = sheet_.getRange(qrRows, 1, mrMaxRows-qrRows+1, sheet_.getMaxColumns());
+                  logRange.setWrap(false).setWrapStrategy(SpreadsheetApp.WrapStrategy.OVERFLOW);
+                  })(popArgument(Lang.MakeIntUsingAnyP));
                break;
 
             case 'TURN_ON':
                if (!self_.TurnOn())
                   {
-                  //self_.InteractiveError('Unable to turn on');
+                  self_.InteractiveError('Unable to turn on');
                   rvExecutionDetails.didAbort = true;
                   nInstructionCount = 0;
                   }
@@ -1089,23 +1112,29 @@ function AgentConnection ()
                      selectedRange = sheet_.getRange(rangeIdentifier);
                      kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
                      }
-                  })(popArgument(Lang.stringCast));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'NAME':
-               kSelectedRangePropertyName = Lang.stringCast(eArguments[0]);
-               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kSelectedRangePropertyName), selectedRange);
+               (function (kName)
+                  {
+                  kSelectedRangePropertyName = kName;
+                  spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kSelectedRangePropertyName), selectedRange);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'TOGGLE':
                selectedRange.insertCheckboxes();
-               var value = Lang.IsValueContainedInSetP('TRUE', eArgumentSet);
+               if (Lang.IsContainedInSetP('TRUE', eArgumentSet))
+                  {
+                  selectedRange.check();
+                  }
                self_.Log('+toggle: ' + kSelectedRangePropertyName);
                break;
 
             case 'FIELD':
                selectedRange.setBackground('#1c4587');
-               self_.Log('+field: ' + kSelectedRangePropertyName, value);
+               self_.Log('+field: ' + kSelectedRangePropertyName);
                break;
             
             case 'NOTE':
@@ -1115,28 +1144,37 @@ function AgentConnection ()
                break;
 
             case 'CODE':
-               console.log('TODO: make sure every newline literal from the args has a space after it when writing CODE instruction');
-               var value = '  TURN_ON\n  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------\n  TURN_OFF';
-               selectedRange.setNote(value);
+               (function (code)
+                  {
+                  var value = '  TURN_ON\n  EVAL "---"\n--------\n' + code + '\n--------\n  TURN_OFF';
+                  selectedRange.setNote(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
             
             case 'FORMULA':
-               var formula = eArguments[0];
-               selectedRange.setFormula(formula);
+               (function (value)
+                  {
+                  selectedRange.setFormula(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
             
             case 'TEXT':
-               var text = eArguments[0];
-               selectedRange.setValue(text);
+               (function (value)
+                  {
+                  selectedRange.setValue(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'FORMAT':
-               switch (eArguments[0])
+               (function (format)
                   {
-                  case 'DATETIME': selectedRange.setNumberFormat('M/d/yyyy H:mm:ss'); break;
-                  case 'CHECKBOX': selectedRange.setNumberFormat('"☑";"☐"'); break;
-                  default: selectedRange.setNumberFormat(eArguments[0]); break;
-                  }
+                  switch (format)
+                     {
+                     case 'DATETIME': selectedRange.setNumberFormat('M/d/yyyy H:mm:ss'); break;
+                     case 'CHECKBOX': selectedRange.setNumberFormat('"☑";"☐"'); break;
+                     default: selectedRange.setNumberFormat(format); break;
+                     }
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'READONLY':
@@ -1153,7 +1191,7 @@ function AgentConnection ()
                         break;
                      default: self_.Warn('READONLY used before the selection was given a type. Place this command after SELECT and one of the following instructions: ' + Object.keys(selectionTypeInstructionsSet).join(','));
                      }
-                  })(Lang.IsStringAffirmative(eArguments[0]));
+                  })(popArgument(Lang.IsAffirmativeStringP));
                break;
 
             case 'LOAD':
@@ -1166,16 +1204,16 @@ function AgentConnection ()
                      STACK: ((name, value) => stackValues.push(value))
                   };
                   var previousValue = null;
-                  if (!Lang.IsString(propertyName))
+                  if (Lang.IsNotStringP(propertyName))
                      {
                      self_.Error('LOAD: missing propertyName');
                      }
                   else if (importedValueFromPropertyNameFromAlias.hasOwnProperty(kAlias))
                      {
                      var importedValueFromPropertyName = importedValueFromPropertyNameFromAlias[kAlias];
-                     if (Lang.IsObject(importedValueFromPropertyName)
-                           && Lang.IsObject(importedValueFromPropertyName)
-                           && Lang.IsMeaningful(previousValue = importedValueFromPropertyName[propertyName]))
+                     if (Lang.IsObjectP(importedValueFromPropertyName)
+                           && Lang.IsObjectP(importedValueFromPropertyName)
+                           && Lang.IsMeaningfulP(previousValue = importedValueFromPropertyName[propertyName]))
                         {
                         (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
                         }
@@ -1184,10 +1222,10 @@ function AgentConnection ()
                         self_.Warn('LOAD: no property named "' + propertyName + '" in "' + kAlias + '"; skipping');
                         }
                      }
-                  else if (Lang.IsUndefined(kAlias))
+                  else if (Lang.IsUndefinedP(kAlias))
                      {
                      var range = getRangeFromPropertyName(propertyName);
-                     if (Lang.IsObject(range))
+                     if (Lang.IsObjectP(range))
                         {
                         previousValue = range.getValue();
                         (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
@@ -1204,81 +1242,116 @@ function AgentConnection ()
                         self_.Warn('LOAD: "' + kAlias + '" is not available');
                         }
                      }
-                  })(popArgument(Lang.stringCast), popArgument(Lang.stringCast));
+                  })(popArgument(Lang.MakeStringUsingAnyP), popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'PUSH':
-               stackValues.push(eArguments[0]);
+               (function (value)
+                  {
+                  stackValues.push(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'VALUE':
-               switch (Lang.stringCast(eArguments[0]))
+               (function (value)
                   {
-                  case 'LAST_INSTALL_URL':
-                     selectedRange.setValue(lastInstallUrl);
-                     break;
+                  switch (value)
+                     {
+                     case 'LAST_INSTALL_URL':
+                        selectedRange.setValue(lastInstallUrl);
+                        break;
 
-                  default:
-                     self_.Error('Unknown VALUE requested: ' + eArguments[0]);
-                     break;
-                  }
-               break;
-            
-            case 'PANEL':
-               var color = Lang.GetDarkRainbowColorFromAnyP(eArguments[0]);
-               selectedRange.setBackground(color)
-                    .setBorder(true, true, true, true, false, false, '#434343', SpreadsheetApp.BorderStyle.SOLID_MEDIUM);
+                     case 'NOW':
+                        selectedRange.setValue(new Date());
+                        break;
+
+                     default:
+                        self_.Error('Unknown VALUE requested: ' + value);
+                        break;
+                     }
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'VALIDATE':
-               if (Lang.IsValueContainedInSetP('IS_GMAIL_LABEL', eArgumentSet))
+               (function (validationType)
                   {
-                  selectedRange.setDataValidation(
-                        SpreadsheetApp.newDataValidation()
-                              .requireValueInList(
-                                    GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort()
-                                    )
-                              .setHelpText(eArguments[0])
-                              .build()
-                        );
-                  }
-               if (Lang.IsValueContainedInSetP('IS_URL', eArgumentSet))
-                  {
-                  selectedRange.setDataValidation(
-                        SpreadsheetApp.newDataValidation()
-                              .requireTextIsUrl()
-                              .setHelpText(eArguments[0])
-                              .build()
-                        );
-                  }
+                  switch (Lang.MakeStringUsingAnyP(validationType))
+                     {
+                     case 'IS_GMAIL_LABEL':
+                        selectedRange.setDataValidation(
+                              SpreadsheetApp.newDataValidation()
+                                    .requireValueInList(
+                                          GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort()
+                                          )
+                                    .setHelpText(validationType)
+                                    .build()
+                              );
+                        break;
+
+                     case 'IS_URL':
+                        selectedRange.setDataValidation(
+                              SpreadsheetApp.newDataValidation()
+                                    .requireTextIsUrl()
+                                    .setHelpText(eArguments[0])
+                                    .build()
+                              );
+                        break;
+
+                     default:
+                        self_.Error('Unknown VALIDATE requested: ' + validationType);
+                        break;
+                     }
+                  })(popArgument(Lang.MakeStringUsingAnyP));
+
                break;
             
             case 'REM':
-               console.log('REM ' + eArguments.join('\n'));
+               (function (value)
+                  {
+                  self_.InteractiveInfo(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'TOAST':
-               spreadsheet.toast(eArguments.join('\n'));
+               (function (value)
+                  {
+                  spreadsheet_.toast(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'BG':
-               selectedRange.setBackground(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setBackground(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'FG':
-               selectedRange.setFontColor(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setFontColor(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'FONT':
-               selectedRange.setFontFamily(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setFontFamily(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'HALIGN':
-               selectedRange.setHorizontalAlignment(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setHorizontalAlignment(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'VALIGN':
-               selectedRange.setVerticalAlignment(eArguments[0]);
+               (function (value)
+                  {
+                  selectedRange.setVerticalAlignment(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             } // switch agent instruction

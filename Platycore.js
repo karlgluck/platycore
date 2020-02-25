@@ -11,18 +11,18 @@ ns.IsInteractive = true;
 
 var scriptProperties = PropertiesService.getScriptProperties();
 var configFromSettingName = {
-      'DocumentTryLockWaitTime': { cast: Lang.intCast, defaultValue: 15000 },
-      'IsVerbose': { cast: Lang.boolCast, defaultValue: true },
-      'BlockRuntimeLimit': { cast: Lang.intCast, defaultValue: 60000 },
-      'PumpRuntimeLimit': { cast: Lang.intCast, defaultValue: 300000 },
-      'MaximumAgentLogRows': { cast: Lang.intCast, defaultValue: 99 },
+      'DocumentTryLockWaitTime': { cast: Lang.MakeIntUsingAnyP, defaultValue: 15000 },
+      'IsVerbose': { cast: Lang.MakeBoolUsingAnyP, defaultValue: true },
+      'BlockRuntimeLimit': { cast: Lang.MakeIntUsingAnyP, defaultValue: 60000 },
+      'PumpRuntimeLimit': { cast: Lang.MakeIntUsingAnyP, defaultValue: 300000 },
+      'MaximumAgentLogRows': { cast: Lang.MakeIntUsingAnyP, defaultValue: 99 },
       };
 Object.keys(configFromSettingName).forEach(function (eSettingName) {
    var config = configFromSettingName[eSettingName];
    var value = scriptProperties.getProperty(eSettingName);
-   if (!Lang.IsMeaningful(value))
+   if (Lang.IsNotMeaningfulP(value))
       {
-      value = Lang.stringCast(config.defaultValue);
+      value = Lang.MakeStringUsingAnyP(config.defaultValue);
       scriptProperties.setProperty(eSettingName, value);
       }
    ns[eSettingName] = config.cast(value);
@@ -40,7 +40,7 @@ ns.UpdateDriveFileTriggers = function ()
    //
 
    var sheet = spreadsheet.getSheetByName('drive_file_triggers');
-   if (!Lang.IsObject(sheet))
+   if (Lang.IsNotObjectP(sheet))
       {
       sheet = spreadsheet.insertSheet('drive_file_triggers', 0);
       }
@@ -74,14 +74,14 @@ ns.UpdateDriveFileTriggers = function ()
 
    var sheetAgentIds = icLastColumn > 2 ? sheet.getRange(1,3, 1, icLastColumn - 2).getDisplayValues()[0] : [];
    var existingAgentIds = sheets.map(eSheet => new AgentConnection(eSheet)).filter(eAgent => eAgent.IsConnected()).map(eAgent => eAgent.GetAgentId());
-   var deadAgents = sheetAgentIds.filter(e => !Lang.lcontains(existingAgentIds, e));
+   var deadAgents = sheetAgentIds.filter(e => Lang.IsNotContainedInArrayP(e, existingAgentIds));
    if (deadAgents.length > 0)
       {
       deadAgents.map(eAgentId => sheetAgentIds.indexOf(eAgentId) + 3)
             .reverse()
             .forEach(eicColumn => sheet.deleteColumn(eicColumn));
       }
-   var newAgents = existingAgentIds.filter(e => !Lang.lcontains(sheetAgentIds, e));
+   var newAgents = existingAgentIds.filter(e => Lang.IsNotContainedInArrayP(e, sheetAgentIds));
    if (newAgents.length > 0)
       {
       sheet.insertColumnsAfter(2, newAgents.length);
@@ -118,7 +118,7 @@ ns.UpdateDriveFileTriggers = function ()
    // Set the GO flags for agents whose input channels changed
    //
 
-   var channelsTable = GAS.GetTableFromSheetP(sheet);
+   var channelsTable = GAS.MakeTableUsingSheetP(sheet);
    var relationships = Lang.MakeRelationshipsUsingTable(channelsTable);
    if (relationships.length > 0)
       {
@@ -127,9 +127,9 @@ ns.UpdateDriveFileTriggers = function ()
       relationships.forEach(function (eRelationship, iRelationship)
          {
          var id = eRelationship.drive_file_url.match(/[-\w]{25,}/);
-         if (!Lang.IsArray(id)) return;
+         if (Lang.IsNotArrayP(id)) return;
          var file = DriveApp.getFileById(id[0]);
-         if (!Lang.IsObject(file)) return;
+         if (Lang.IsNotObjectP(file)) return;
          var lastUpdatedDate = file.getLastUpdated();
          var utsLastUpdated = lastUpdatedDate.getTime();
          var utsLastTriggered = new Date(eRelationship.last_updated).getTime();
@@ -139,7 +139,7 @@ ns.UpdateDriveFileTriggers = function ()
             eRelationship.agents.forEach(function (eAgentId)
                {
                var goRange = spreadsheet.getRangeByName(eAgentId + '_GO');
-               if (Lang.IsObject(goRange))
+               if (Lang.IsObjectP(goRange))
                   {
                   console.log(eRelationship.drive_file_url + ' triggered ' + eAgentId);
                   goRange.setValue(true);
@@ -161,11 +161,11 @@ ns.MainLoop = function ()
 
    var spreadsheet_ = SpreadsheetApp.getActiveSpreadsheet();
    var file_ = DriveApp.getFileById(spreadsheet_.getId());
-   var utsExecutionCutoffTime_ = Lang.GetTimestampNow() + Platycore.PumpRuntimeLimit - Platycore.BlockRuntimeLimit;
+   var utsExecutionCutoffTime_ = Lang.GetTimestampNowP() + Platycore.PumpRuntimeLimit - Platycore.BlockRuntimeLimit;
    var sheets_ = spreadsheet_.getSheets();
    var nSheetCount_ = sheets_.length;
    var iSheet_ = -1;
-   var utsLastSync = Lang.GetTimestampNow();
+   var utsLastSync = Lang.GetTimestampNowP();
 
    ns.MainLoop = function ()
       {
@@ -175,7 +175,7 @@ ns.MainLoop = function ()
       //
 
       var utsLastUpdated = file_.getLastUpdated().getTime();
-      var utsIterationStarted = Lang.GetTimestampNow();
+      var utsIterationStarted = Lang.GetTimestampNowP();
 
       if (utsLastSync < utsLastUpdated)
          {
@@ -200,8 +200,8 @@ ns.MainLoop = function ()
          if (agent.IsConnected())
             {
             qSheetsLeftToSearch = 0;
-            /*var executionDetails = */agent.ExecuteRoutineFromA1Note();
-            var dtRuntime = Lang.GetTimestampNow() - utsIterationStarted;
+            /*var executionDetails = */agent.ExecuteRoutineUsingA1Note();
+            var dtRuntime = Lang.GetTimestampNowP() - utsIterationStarted;
             if (dtRuntime > Platycore.BlockRuntimeLimit)
                {
                agent.Error('agent is running for too long!');
@@ -211,7 +211,7 @@ ns.MainLoop = function ()
          } // while - look through every sheet once until one can be run, or none are runnable
 
 
-      return Lang.GetTimestampNow() < utsExecutionCutoffTime_;
+      return Lang.GetTimestampNowP() < utsExecutionCutoffTime_;
 
       };
 
