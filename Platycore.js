@@ -1,6 +1,6 @@
 var Platycore = (function (ns) {
 
-ns.Version = '2008.5';
+ns.Version = '2009.2';
 ns.IsInteractive = true;
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -12,7 +12,7 @@ ns.IsInteractive = true;
 var scriptProperties = PropertiesService.getScriptProperties();
 var configFromSettingName = {
       'DocumentTryLockWaitTime': { cast: Lang.intCast, defaultValue: 15000 },
-      'Verbose': { cast: Lang.boolCast, defaultValue: true },
+      'IsVerbose': { cast: Lang.boolCast, defaultValue: true },
       'BlockRuntimeLimit': { cast: Lang.intCast, defaultValue: 60000 },
       'PumpRuntimeLimit': { cast: Lang.intCast, defaultValue: 300000 },
       'MaximumAgentLogRows': { cast: Lang.intCast, defaultValue: 99 },
