@@ -374,17 +374,22 @@ ns.GetObjectsFromTableP = function (table)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetTableFromObjectsP = function (objects, headers)
-   {
-   var rvTable =
-      [ns.IsArray(headers) ? headers : Object.keys(objects.length < 1 ? [] : objects[0])]
-      .concat(objects.map(function (eObject)
-         {
-         return headers.map(function (eHeader) { return eObject[eHeader] });
-         }))
-      ;
-   return rvTable;
-   };
+  ns.GetTableFromObjectsP = function (objects, headers)
+     {
+     if (!ns.IsArray(headers))
+        {
+        headers = objects.length < 1 ? [] : objects[0];
+        }
+     var rvTable =
+        [headers]
+        .concat(objects.map(function (eObject)
+           {
+           return headers.map(function (eHeader) { return eObject[eHeader] });
+           }))
+        ;
+     return rvTable;
+     };
+  
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -542,7 +547,7 @@ ns.GetDictionaryFromTableP = function (table, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.TransposeRowsP = function (rows)
+ns.TransposeTableP = function (rows)
    {
    return rows[0].map(function (x,i) { return rows.map(function (x) { return x[i]; }); });
    };
