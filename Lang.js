@@ -142,6 +142,13 @@ ns.TestMeaningfulValue = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.IsMeaningfulString = function (any)
+   {
+   return ns.IsString(any) && any.trim().length > 0;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.Average = function (numbers)
    {
    return Array.isArray(numbers) ? numbers.reduce(function (prev, current) { return prev + current}, 0) / numbers.length : undefined;

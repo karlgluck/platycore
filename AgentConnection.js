@@ -726,7 +726,7 @@ function AgentConnection ()
 
    this.ExecuteRoutineFromUrl = function (urlAgentInstructions)
       {
-      if (Platycore.Verbose)
+      if (Platycore.IsVerbose)
          {
          self_.Info('Fetching ' + Lang.ClampStringLengthP(urlAgentInstructions, 50));
          }
@@ -764,7 +764,7 @@ function AgentConnection ()
                   }
                else
                   {
-                  if (Platycore.Verbose)
+                  if (Platycore.IsVerbose)
                      {
                      self_.Warn('invalid line: ' + eLine);
                      }
@@ -821,13 +821,14 @@ function AgentConnection ()
       var selectedRange = null;
       var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT', 'NOTE', 'VALUE']);
       var hasMergedCurrentSelection = false;
-      var previousAgentValueFromPropertyName = null;
       var lastInstallUrl = null;
-      var selectionTypeInstructionsSet = Lang.MakeSetFromObjectsP(['TOGGLE', 'FIELD', 'TEXT']);
+      var selectionTypeInstructionsSet = Lang.MakeSetFromObjectsP(['TOGGLE', 'FIELD', 'TEXT', 'NOTE']);
       var selectionTypeInstruction = null;
       var sheetFromAlias = {};
+      var kSelectedRangePropertyName = null;
       var currentAgentAlias = null;
       var stackValues = [];
+      var importedValueFromPropertyNameFromAlias = {};
       
       for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
          {
@@ -845,29 +846,30 @@ function AgentConnection ()
                }
             hasMergedCurrentSelection = true;
             }
-         if ('SELECT' === eInstruction)
-            {
-            selectionTypeInstruction = null;
-            hasMergedCurrentSelection = false;
-            isSelectionReadonly = false;
-            }
-         else if (Lang.IsValueContainedInSetP(eInstruction, selectionTypeInstructionsSet))
+         if (Lang.IsValueContainedInSetP(eInstruction, selectionTypeInstructionsSet))
             {
             selectionTypeInstruction = eInstruction;
             }
 
          console.log(eInstruction);
 
-         var popArgument = function (castFunction)
+         var popArgument = function (castFunction = null)
             {
-            var rv = null;
+            var rv = undefined;
             if (eArguments.length > 0)
                {
-               rv = castFunction(eArguments.shift());
+               rv = eArguments.shift();
+               if (null === rv)
+                  {
+                  if (stackValues.length > 0)
+                     {
+                     rv = stackValues.shift();
+                     }
+                  }
                }
-            else if (stackValues.length > 0)
+            if (!Lang.IsUndefined(rv))
                {
-               rv = castFunction(stackValues.shift());
+               rv = castFunction(rv);
                }
             return rv;
             };
@@ -914,6 +916,18 @@ function AgentConnection ()
                   }
                break;
 
+            case 'NEW_AGENT':
+               var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+               sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "NEW_AGENT"');
+               if (!self_.ConnectUsingSheet(sheet))
+                  {
+                  self_.Error('NEW_AGENT: Failed to connect to agent');
+                  rvExecutionDetails.didAbort = true;
+                  nInstructionCount = 0;
+                  }
+               sheetFromAlias[popArgument(Lang.stringCast)] = sheet;
+               break;
+
             case 'CONNECT':
                (function (identifier)
                   {
@@ -928,11 +942,11 @@ function AgentConnection ()
                      }
                   if (!didConnect)
                      {
-                     self_.Error('Unable to connect to "' + identifier + '"');
+                     self_.Error('CONNECT: Unable to connect to "' + identifier + '"');
                      rvExecutionDetails.didAbort = true;
                      nInstructionCount = 0;
                      }
-                  })(Lang.stringCast(eArguments[0]));
+                  })(popArgument(Lang.stringCast));
                break;
 
             case 'ALIAS':
@@ -940,24 +954,7 @@ function AgentConnection ()
                   {
                   currentAgentAlias = kAlias;
                   sheetFromAlias[kAlias] = sheet_;
-                  })(Lang.stringCast(eArguments[0]));
-               break;
-
-            case 'IMPORT':
-               previousAgentValueFromPropertyName = (function (kAlias)
-                  {
-                  var rv = null;
-                  try
-                     {
-                     var json = CacheService.getUserCache().get(kAlias);
-                     rv = JSON.parse(json);
-                     self_.Log('IMPORT ' + kAlias, json);
-                     }
-                  catch (e)
-                     {
-                     self_.Error('Unable to import agent using alias "' + kAlias + '"');
-                     }
-                  })(Lang.stringCast(eArguments[0]));
+                  })(popArgument(Lang.stringCast));
                break;
             
             case 'EXPORT':
@@ -977,7 +974,7 @@ function AgentConnection ()
                      valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningful(noteValue) ? noteValue : range.getValue();
                      eRange.remove();
                      });
-                  CacheService.getUserCache().put(currentAgentAlias, JSON.stringify(valueFromPropertyName));
+                  importedValueFromPropertyNameFromAlias[currentAgentAlias] = valueFromPropertyName;
                   })();
                break;
             
@@ -997,37 +994,6 @@ function AgentConnection ()
                   default:
                      self_.Error('Unknown STYLE type: ' + eArguments[0]);
                      break;
-                  }
-               break;
-
-            case 'NEW_AGENT':
-               var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
-               sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "NEW_AGENT"');
-               if (!self_.ConnectUsingSheet(sheet))
-                  {
-                  self_.Error('NEW_AGENT: Failed to connect to agent');
-                  rvExecutionDetails.didAbort = true;
-                  nInstructionCount = 0;
-                  }
-               break;
-
-            case 'SWITCH_AGENT':
-               if (!self_.ConnectUsingSheet(sheetFromAlias[popArgument(Lang.stringCast)]))
-                  {
-                  self_.Error('SWITCH_AGENT: Failed to connect to agent');
-                  rvExecutionDetails.didAbort = true;
-                  nInstructionCount = 0;
-                  }
-               break;
-
-            case 'IF_REINSTALLING': // execute code if this is a reinstall operation; guarantee access to the variable previousAgentValueFromPropertyName
-               var code = eArguments.join('\n');
-               if (Lang.IsObject(previousAgentValueFromPropertyName))
-                  {
-                  (function (agent, previousAgentValueFromPropertyName)
-                     {
-                     eval(code);
-                     })(self_, previousAgentValueFromPropertyName);
                   }
                break;
 
@@ -1109,16 +1075,26 @@ function AgentConnection ()
                break;
 
             case 'SELECT':
-               selectedRange = sheet_.getRange(eArguments[0]);
-               if (eArguments.length >= 2 && Lang.IsValueContainedInSetP(eArguments[1], selectionTypeInstructionsSet))
+               (function (rangeIdentifier)
                   {
-                  selectionTypeInstruction = eArguments[1];
-                  }
+                  hasMergedCurrentSelection = false;
+                  if ('STACK' === rangeIdentifier)
+                     {
+                     selectionTypeInstruction = 'STACK';
+                     kSelectedRangePropertyName = null;
+                     }
+                  else
+                     {
+                     selectionTypeInstruction = null;
+                     selectedRange = sheet_.getRange(rangeIdentifier);
+                     kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
+                     }
+                  })(popArgument(Lang.stringCast));
                break;
 
             case 'NAME':
-               var kName = Lang.stringCast(eArguments[0]);
-               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kName), selectedRange);
+               kSelectedRangePropertyName = Lang.stringCast(eArguments[0]);
+               spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kSelectedRangePropertyName), selectedRange);
                break;
 
             case 'TOGGLE':
@@ -1170,25 +1146,81 @@ function AgentConnection ()
                      {
                      case 'TOGGLE': setToggleReadonly_(selectedRange, isReadonly, true === selectedRange.isChecked()); break;
                      case 'FIELD': setFieldReadonly_(selectedRange, isReadonly); break;
-                     case 'TEXT': break;
+                     case 'TEXT':
+                     case 'NOTE':
+                     case 'STACK':
+                        self_.Warn('READONLY has no effect on type ' + selectionTypeInstruction);
+                        break;
                      default: self_.Warn('READONLY used before the selection was given a type. Place this command after SELECT and one of the following instructions: ' + Object.keys(selectionTypeInstructionsSet).join(','));
                      }
                   })(Lang.IsStringAffirmative(eArguments[0]));
                break;
 
-            case 'RESTORE':
-               var writeMethodFromTypeName = {
-                  NOTE: self_.WriteNote,
-                  FIELD: self_.WriteField,
-                  TOGGLE: self_.WriteToggle
-               };
-               var kName = self_.FindNameUsingRangeP(selectedRange);
-               var previousValue = null;
-               if (Lang.IsString(kName)
-                     && Lang.IsObject(previousAgentValueFromPropertyName)
-                     && Lang.IsMeaningful(previousValue = previousAgentValueFromPropertyName[kName]))
+            case 'LOAD':
+               (function (propertyName, kAlias)
                   {
-                  (writeMethodFromTypeName[eArguments[0]])(kName, previousValue);
+                  var writeMethodFromTypeName = {
+                     NOTE: self_.WriteNote,
+                     FIELD: self_.WriteField,
+                     TOGGLE: self_.WriteToggle,
+                     STACK: ((name, value) => stackValues.push(value))
+                  };
+                  var previousValue = null;
+                  if (!Lang.IsString(propertyName))
+                     {
+                     self_.Error('LOAD: missing propertyName');
+                     }
+                  else if (importedValueFromPropertyNameFromAlias.hasOwnProperty(kAlias))
+                     {
+                     var importedValueFromPropertyName = importedValueFromPropertyNameFromAlias[kAlias];
+                     if (Lang.IsObject(importedValueFromPropertyName)
+                           && Lang.IsObject(importedValueFromPropertyName)
+                           && Lang.IsMeaningful(previousValue = importedValueFromPropertyName[propertyName]))
+                        {
+                        (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
+                        }
+                     else
+                        {
+                        self_.Warn('LOAD: no property named "' + propertyName + '" in "' + kAlias + '"; skipping');
+                        }
+                     }
+                  else if (Lang.IsUndefined(kAlias))
+                     {
+                     var range = getRangeFromPropertyName(propertyName);
+                     if (Lang.IsObject(range))
+                        {
+                        previousValue = range.getValue();
+                        (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
+                        }
+                     else
+                        {
+                        self_.Warn('LOAD: no property named "' + propertyName + '" in the current agent; skipping');
+                        }
+                     }
+                  else
+                     {
+                     if (Platycore.IsVerbose)
+                        {
+                        self_.Warn('LOAD: "' + kAlias + '" is not available');
+                        }
+                     }
+                  })(popArgument(Lang.stringCast), popArgument(Lang.stringCast));
+               break;
+
+            case 'PUSH':
+               stackValues.push(eArguments[0]);
+               break;
+
+            case 'VALUE':
+               switch (Lang.stringCast(eArguments[0]))
+                  {
+                  case 'LAST_INSTALL_URL':
+                     selectedRange.setValue(lastInstallUrl);
+                     break;
+
+                  default:
+                     self_.Error('Unknown VALUE requested: ' + eArguments[0]);
+                     break;
                   }
                break;
             
@@ -1218,26 +1250,6 @@ function AgentConnection ()
                               .setHelpText(eArguments[0])
                               .build()
                         );
-                  }
-               break;
-
-            case 'LOAD':
-               stackValues.push(self_.ReadField(Lang.stringCast(eArguments[0])));
-               break;
-
-            case 'PUSH':
-               stackValues.push(eArguments);
-               break;
-
-            case 'VALUE':
-               switch (Lang.stringCast(eArguments[0]))
-                  {
-                  case 'LAST_INSTALL_URL':
-                     selectedRange.setValue(lastInstallUrl);
-                     break;
-                  default:
-                     self_.Error('Unknown VALUE requested: ' + eArguments[0]);
-                     break;
                   }
                break;
             
