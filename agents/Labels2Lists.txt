@@ -116,8 +116,7 @@ Manual Actions
 The stack is a place for storing temporary values so that
 they can be passed as arguments to functions.
       SELECT "STACK"
-With the stack selected, this will read a value from
-the IMPORT-ed agent and push it to the stack.
+Read the value REINSTALL_URL from OLD_AGENT and add it to the stack
       LOAD "REINSTALL_URL", "OLD_AGENT"
 "null" means read the value for the parameter from the stack
       INSTALL null

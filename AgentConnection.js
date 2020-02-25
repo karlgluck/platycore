@@ -8,7 +8,6 @@ function AgentConnection ()
    var isThisOn_ = false;
    var spreadsheet_ = null;
    var irNewMessage_ = 2;
-   var readonlyNames_ = [];
    var sheet_ = null;
 
 //------------------------------------------------------------------------------------------------------------------------------------
