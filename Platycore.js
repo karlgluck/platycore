@@ -118,7 +118,7 @@ ns.UpdateDriveFileTriggers = function ()
    // Set the GO flags for agents whose input channels changed
    //
 
-   var channelsTable = GAS.GetTableFromSheetP(sheet);
+   var channelsTable = GAS.MakeTableUsingSheetP(sheet);
    var relationships = Lang.MakeRelationshipsUsingTable(channelsTable);
    if (relationships.length > 0)
       {

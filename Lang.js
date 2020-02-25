@@ -413,7 +413,7 @@ ns.GetLoopingIndexFromPercentP = function (nCount, pPercent)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetObjectsFromTableP = function (table)
+ns.MakeObjectsUsingTableP = function (table)
    {
    if (table.length === 0)
       {
@@ -435,7 +435,7 @@ ns.GetObjectsFromTableP = function (table)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-  ns.GetTableFromObjectsP = function (objects, headers)
+  ns.MakeTableFromObjectsP = function (objects, headers)
      {
      if (!ns.IsArrayP(headers))
         {

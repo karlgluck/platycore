@@ -59,14 +59,14 @@ function AgentConnection ()
 
    this.ConnectUsingUrl = function (sheetUrl)
       {
-      return self_.ConnectUsingSheet(GAS.GetSheetFromUrl(sheetUrl));
+      return self_.ConnectUsingSheet(GAS.OpenSheetUsingUrl(sheetUrl));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.ConnectUsingSheetId = function (sheetId)
       {
-      return self_.ConnectUsingSheet(GAS.GetSheetFromSheetId(sheet));
+      return self_.ConnectUsingSheet(GAS.OpenSheetUsingSheetId(sheet));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------

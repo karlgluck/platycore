@@ -150,7 +150,7 @@ agent.ExecuteRoutineUsingNoteName('REFRESH_LABELS');
     STYLE "BUTTON"
      CODE "---"
 ------------------------
-var sheet = GAS.GetSheetFromUrl(agent.ReadField('SHEET'));
+var sheet = GAS.OpenSheetUsingUrl(agent.ReadField('SHEET'));
 var headers = GAS.MergeSheetHeaders(sheet, ['input_label']);
 var ciInputLabelColumn = 1 + headers.indexOf('input_label');
 var labels = GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort();
@@ -175,12 +175,12 @@ if (!en)
    {
    agent.Log('[!EN]: Agent is disabled (to enable, set EN=TRUE)');
    }
-var sheet = GAS.GetSheetFromUrl(agent.ReadField('SHEET'));
-var records = GAS.GetObjectsFromSheetP(sheet);
+var sheet = GAS.OpenSheetUsingUrl(agent.ReadField('SHEET'));
+var records = GAS.MakeObjectsUsingSheetP(sheet);
 records.forEach(function (eRecord)
    {
    eRecord.GetObjectFromGmailMessage = eval(eRecord.object_from_gmail_message_function);
-   eRecord.outputSheet = GAS.GetSheetFromUrl(eRecord.sheet_url);
+   eRecord.outputSheet = GAS.OpenSheetUsingUrl(eRecord.sheet_url);
    });
 var inputLabel = GmailApp.getUserLabelByName(agent.ReadField('INPUT_LABEL'));
 var recordsFromLabelName = Lang.MakeObjectArrayFromKeyDictionaryUsingObjectsP(records, 'input_label');
@@ -214,7 +214,7 @@ Object.keys(outputsFromLabelName).forEach(function (eLabelName)
    var outputSheet = eOutputs[0].record.outputSheet;
    var objects = eOutputs.map(function (e) { return e.object });
    var headers = GAS.MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
-   var table = Lang.GetTableFromObjectsP(objects, headers);
+   var table = Lang.MakeTableFromObjectsP(objects, headers);
    var rows = Lang.GetRowsFromTableP(table);
    if (en)
       {

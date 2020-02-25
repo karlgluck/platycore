@@ -34,7 +34,7 @@ ns.IsTriggeredFunctionP = function (functionName)
 // 
 //
 
-ns.GetA1AddressFromCoordinatesP = function  (irRow, icColumn)
+ns.MakeA1AddressFromCoordinatesP = function  (irRow, icColumn)
    {
    var iLetter, rvColumnLetters = '$';
    while (icColumn > 0)
@@ -90,12 +90,19 @@ ns.GetUrlFromSheet = function (sheet)
 ns.IsValidRangeNameP = function (name)
    {
    // https://support.google.com/docs/answer/63175
-   return !name.match(/[^A-Za-z0-9_]|^true|^false|^.{250}.|^$/);
+   return Lang.IsString(name) && !name.match(/[^A-Za-z0-9_]|^true|^false|^.{250}.|^$/);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetSheetFromUrl = function (url)
+ns.IsNotValidRangeNameP = function (name)
+   {
+   return !ns.IsValidRangeNameP(name);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.OpenSheetUsingUrl = function (url)
    {
    var spreadsheet = SpreadsheetApp.openByUrl(url);
    if (!spreadsheet)
@@ -103,13 +110,13 @@ ns.GetSheetFromUrl = function (url)
       return null;
       }
    var match = url.match(/#gid=(\d+)/);
-   var rvSheet = Lang.IsArrayP(match) ? ns.GetSheetFromSheetId(spreadsheet, Lang.MakeIntUsingAnyP(match[1])) : null;
+   var rvSheet = Lang.IsArrayP(match) ? ns.OpenSheetUsingSheetId(spreadsheet, Lang.MakeIntUsingAnyP(match[1])) : null;
    return rvSheet;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetSheetFromSheetId = function (spreadsheet, sheetId)
+ns.OpenSheetUsingSheetId = function (spreadsheet, sheetId)
    {
    var rvSheet = null;
    var sheets = spreadsheet.getSheets();
@@ -127,21 +134,21 @@ ns.GetSheetFromSheetId = function (spreadsheet, sheetId)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetObjectsFromSheetP = function (sheet)
+ns.MakeObjectsUsingSheetP = function (sheet)
    {
-   return Lang.GetObjectsFromTableP(GAS.GetTableFromSheetP(sheet));
+   return Lang.MakeObjectsUsingTableP(GAS.MakeTableUsingSheetP(sheet));
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.DictionaryFromSheetP = function (sheet, key)
+ns.MakeDictionaryUsingSheetP = function (sheet, key)
    {
-   return Lang.MakeDictionaryUsingTableP(GAS.GetTableFromSheetP(sheet), key);
+   return Lang.MakeDictionaryUsingTableP(GAS.MakeTableUsingSheetP(sheet), key);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetTableFromSheetP = function (sheet)
+ns.MakeTableUsingSheetP = function (sheet)
    {
    var irHeaders = Math.max(1, sheet.getFrozenRows());
    var qRows = sheet.getLastRow() - irHeaders + 1;
