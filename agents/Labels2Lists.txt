@@ -41,7 +41,6 @@ Common Initialization
  READONLY  "OFF"
      EVAL  "agent.WriteField('WAKE', Lang.GetTimestampNow() + 15000)"
    RESTORE "FIELD"
-    PANEL  5
    SELECT  "F2:G2"
      TEXT  "WAKE"
    SELECT  "F3:L3"
@@ -55,7 +54,6 @@ Common Initialization
     FIELD
  READONLY  "OFF"
      EVAL  "agent.WriteField('LOCK', Lang.GetTimestampNow())"
-    PANEL  5
    SELECT  "F5:G5"
      TEXT  "LOCK"
    SELECT  "F6:L6"
@@ -75,7 +73,6 @@ Agent-specific
     FIELD
  READONLY "OFF"
   RESTORE "FIELD"
-    PANEL "5"
 
 --- Processed ---
    SELECT "C6:D6"
@@ -85,10 +82,6 @@ Agent-specific
  READONLY "ON"
   RESTORE "FIELD"
    HALIGN "center"
-   VALIGN "middle"
-       FG "#FF0000"
-       BG "#440000"
-    PANEL "7"
 
 --- Input Gmail Label ---
 
@@ -97,13 +90,12 @@ Agent-specific
    HALIGN "right"
    SELECT "S4:AC4"
      TEXT "<Input Label>"
-     NAME 
+     NAME "INPUT"
     FIELD
  READONLY "OFF"
   RESTORE "FIELD"
  VALIDATE "Enter the name of a label from your Gmail account"
         + "IS_GMAIL_LABEL"
-    PANEL "5"
 
 
 ==================================================================
@@ -111,21 +103,31 @@ Manual Actions
 
 --- [Reinstall] ---
 
-   SELECT  "AS6:AV6"
-     TEXT  "[Reinstall]"
-       FG "#000"
-       BG "#ffff00"
-   HALIGN "center"
-     WRITE_REINSTALL_NOTE
+   SELECT "AS6:AV6"
+     TEXT "[Reinstall]"
+    STYLE "BUTTON"
+     NOTE "---"
+------------------------
+ ABORT_UNLESS_INTERACTIVE
+        ALIAS  "OLD_AGENT"
+       EXPORT
+    UNINSTALL
+    NEW_AGENT
+       IMPORT  "OLD_AGENT"
+         LOAD  "REINSTALL_URL"
+      INSTALL
+------------------------
+   SELECT "AJ6:AR6"
+     NAME "REINSTALL_URL"
+    VALUE "LAST_INSTALL_URL"
+    FIELD
+ READONLY "OFF"
 
 --- [Make Sheet] ---
 
    SELECT "AJ2:AN2"
      TEXT "[Make Sheet]"
-       FG "#000"
-       BG "#ffff00"
-   HALIGN "center"
-     NOTE "MAKE_SHEET"
+    STYLE "BUTTON"
      CODE "---"
 ------------------------
 var sheet = SpreadsheetApp.create("🏭 Labels2Lists", 1, 1).getSheets()[0];
@@ -141,10 +143,7 @@ agent.ExecuteRoutineByName('REFRESH_LABELS');
 
    SELECT "AP2:AV2"
      TEXT "[Refresh Labels]"
-       FG "#000"
-       BG "#ffff00"
-   HALIGN "center"
-     NOTE "REFRESH_LABELS"
+    STYLE "BUTTON"
      CODE "---"
 ------------------------
 var sheet = GAS.GetSheetFromUrl(agent.ReadField('SHEET'));

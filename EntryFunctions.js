@@ -15,6 +15,7 @@ function commandSidebarExecute(text)
       SpreadsheetApp.toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
       }
    }
+   
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -68,6 +69,7 @@ function menuAddEmptyAgent()
    var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
    sheet.getRange('A1').insertCheckboxes().check().setNote('Add agent instructions to this note\n  INFO "This agent is empty"');
    sheet.activate();
+   menuOpenCommandSidebar(); // almost always want to do this next
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------

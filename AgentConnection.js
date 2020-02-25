@@ -13,6 +13,31 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+   this.Connect = function (identifier)
+      {
+      var rvConnected = false;
+      if (Lang.IsUrl(identifier))
+         {
+         rvConnected = self_.ConnectUsingUrl(identifier);
+         }
+      else if (Lang.IsString(identifier))
+         {
+         rvConnected = self_.ConnectUsingAgentId(identifier)
+               || self_.ConnectUsingSheetName(identifier);
+         }
+      else if (Lang.IsNumber(identifier))
+         {
+         rvConnected = self_.ConnectUsingSheetId(identifier);
+         }
+      else if (Lang.IsObject(identifier))
+         {
+         rvConnected = self_.ConnectUsingSheet(identifier);
+         }
+      return rvConnected;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.ConnectUsingAgentId = function (agentId)
       {
       var rvConnected = false;
@@ -21,6 +46,20 @@ function AgentConnection ()
          rvConnected = self_.ConnectUsingSheetId(Lang.intCast(sheet.slice(1)));
          }
       return rvConnected;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   this.ConnectUsingSheetName = function (sheetName)
+      {
+      return self_.ConnectUsingSheet(SpreadsheetApp.getActive().getSheetByName(sheetName));
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   this.ConnectUsingUrl = function (sheetUrl)
+      {
+      return self_.ConnectUsingSheet(GAS.GetSheetFromUrl(sheetUrl));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -124,7 +163,6 @@ function AgentConnection ()
 
    var setToggleReadonly_ = function (range, isReadonly, value)
       {
-      self_.Log('setToggleReadonly('+isReadonly+','+value+')');
       if (isReadonly)
          {
          range.setFontColor('#666666').setFormula(value ? '=TRUE' : '=FALSE'); // readonly
@@ -404,10 +442,6 @@ function AgentConnection ()
          valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningful(noteValue) ? noteValue : range.getValue();
          eRange.remove();
          });
-
-      console.log('[Uninstall] valueFromPropertyName', valueFromPropertyName);
-      var documentCache = CacheService.getDocumentCache();
-      documentCache.put(kAgentId_, JSON.stringify(valueFromPropertyName));
 
       spreadsheet_.deleteSheet(sheet_);
       self_.ConnectUsingSheet(null);
@@ -785,13 +819,15 @@ function AgentConnection ()
             };
 
       var selectedRange = null;
-      var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT', 'NOTE']);
+      var mergingInstructionsSet = Lang.MakeSetFromObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT', 'NOTE', 'VALUE']);
       var hasMergedCurrentSelection = false;
       var previousAgentValueFromPropertyName = null;
-      var installationUrl = null;
+      var lastInstallUrl = null;
       var selectionTypeInstructionsSet = Lang.MakeSetFromObjectsP(['TOGGLE', 'FIELD', 'TEXT']);
       var selectionTypeInstruction = null;
-      var isSelectionReadonly = false;
+      var sheetFromAlias = {};
+      var currentAgentAlias = null;
+      var stackValues = [];
       
       for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
          {
@@ -822,6 +858,20 @@ function AgentConnection ()
 
          console.log(eInstruction);
 
+         var popArgument = function (castFunction)
+            {
+            var rv = null;
+            if (eArguments.length > 0)
+               {
+               rv = castFunction(eArguments.shift());
+               }
+            else if (stackValues.length > 0)
+               {
+               rv = castFunction(stackValues.shift());
+               }
+            return rv;
+            };
+
          switch (eInstruction)
             {
             default:
@@ -848,27 +898,12 @@ function AgentConnection ()
                   }
                break;
 
-            case 'UPGRADE':
-               previousAgentValueFromPropertyName = (function (v)
-                  {
-                  try
-                     {
-                     return JSON.parse(v);
-                     }
-                  catch (e)
-                     {
-                     return null;
-                     }
-                  })(CacheService.getDocumentCache().get(Lang.stringCast(eArguments[0])));
-               self_.Log('upgrading from ' + eArguments[0], JSON.stringify(previousAgentValueFromPropertyName));
-               break;
-
             case 'INSTALL':
                isThisOn_ = true;
-               installationUrl = Lang.stringCast(eArguments[0]);
+               lastInstallUrl = popArgument(Lang.stringCast);
                try
                   {
-                  instructions = instructions.concat(getRoutineFromText(getRoutineTextFromUrl(installationUrl)));
+                  instructions = instructions.concat(getRoutineFromText(getRoutineTextFromUrl(lastInstallUrl)));
                   nInstructionCount = instructions.length;
                   }
                catch (e)
@@ -878,37 +913,110 @@ function AgentConnection ()
                   nInstructionCount = 0;
                   }
                break;
+
+            case 'CONNECT':
+               (function (identifier)
+                  {
+                  var didConnect = false;
+                  if (sheetFromAlias.hasOwnProperty(identifier))
+                     {
+                     didConnect = self.ConnectUsingSheet(sheetFromAlias[identifier]);
+                     }
+                  else
+                     {
+                     didConnect = self.Connect(identifier);
+                     }
+                  if (!didConnect)
+                     {
+                     self_.Error('Unable to connect to "' + identifier + '"');
+                     rvExecutionDetails.didAbort = true;
+                     nInstructionCount = 0;
+                     }
+                  })(Lang.stringCast(eArguments[0]));
+               break;
+
+            case 'ALIAS':
+               (function (kAlias)
+                  {
+                  currentAgentAlias = kAlias;
+                  sheetFromAlias[kAlias] = sheet_;
+                  })(Lang.stringCast(eArguments[0]));
+               break;
+
+            case 'IMPORT':
+               previousAgentValueFromPropertyName = (function (kAlias)
+                  {
+                  var rv = null;
+                  try
+                     {
+                     var json = CacheService.getUserCache().get(kAlias);
+                     rv = JSON.parse(json);
+                     self_.Log('IMPORT ' + kAlias, json);
+                     }
+                  catch (e)
+                     {
+                     self_.Error('Unable to import agent using alias "' + kAlias + '"');
+                     }
+                  })(Lang.stringCast(eArguments[0]));
+               break;
+            
+            case 'EXPORT':
+               (function ()
+                  {
+                  if (!Lang.IsString(currentAgentAlias))
+                     {
+                     self_.Error("Cannot EXPORT until the current agent connection is named with ALIAS");
+                     return;
+                     }
+                  var valueFromPropertyName = {};
+                  var qPrefixLength = getRangeNameFromPropertyName('').length;
+                  sheet_.getNamedRanges().forEach(function (eRange)
+                     {
+                     var range = eRange.getRange();
+                     var noteValue = range.getNote();
+                     valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningful(noteValue) ? noteValue : range.getValue();
+                     eRange.remove();
+                     });
+                  CacheService.getUserCache().put(currentAgentAlias, JSON.stringify(valueFromPropertyName));
+                  })();
+               break;
             
             case 'UNINSTALL':
                self_.Uninstall();
                break;
 
-            case 'CONTINUE_IN_NEW_AGENT':
-               var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
-               sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "CONTINUE_IN_NEW_AGENT"');
-               if (!self_.ConnectUsingSheet(sheet))
+            case 'STYLE':
+               switch (eArguments[0])
                   {
-                  self_.Error('ConnectUsingSheet failed during CONTINUE_IN_NEW_AGENT');
-                  rvExecutionDetails.didAbort = true;
-                  nInstructionCount = iInstruction;
+                  case 'BUTTON': 
+                     selectedRange.setFontColor('#000');
+                     selectedRange.setBackground('#ffff00');
+                     selectedRange.setHorizontalAlignment('center');
+                     break;
+
+                  default:
+                     self_.Error('Unknown STYLE type: ' + eArguments[0]);
+                     break;
                   }
                break;
 
-            case 'WRITE_REINSTALL_NOTE':
-               if (Lang.IsString(installationUrl))
+            case 'NEW_AGENT':
+               var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
+               sheet.getRange('A1').insertCheckboxes().check().setNote('  REM "NEW_AGENT"');
+               if (!self_.ConnectUsingSheet(sheet))
                   {
-                  selectedRange.setNote(
-                        'Run this note to reinstall ' + kAgentId_
-                        + '\n  ABORT_UNLESS_INTERACTIVE'
-                        + '\n  UNINSTALL'
-                        + '\n  CONTINUE_IN_NEW_AGENT'
-                        + '\n  UPGRADE "' + kAgentId_ + '"'
-                        + '\n  INSTALL "' + installationUrl + '"'
-                     );
+                  self_.Error('NEW_AGENT: Failed to connect to agent');
+                  rvExecutionDetails.didAbort = true;
+                  nInstructionCount = 0;
                   }
-               else
+               break;
+
+            case 'SWITCH_AGENT':
+               if (!self_.ConnectUsingSheet(sheetFromAlias[popArgument(Lang.stringCast)]))
                   {
-                  self_.Warn('WRITE_REINSTALL_NOTE has no installationUrl; ignoring');
+                  self_.Error('SWITCH_AGENT: Failed to connect to agent');
+                  rvExecutionDetails.didAbort = true;
+                  nInstructionCount = 0;
                   }
                break;
 
@@ -1020,6 +1128,7 @@ function AgentConnection ()
                break;
 
             case 'FIELD':
+               selectedRange.setBackground('#1c4587');
                self_.Log('+field: ' + kName, value);
                break;
             
@@ -1031,7 +1140,7 @@ function AgentConnection ()
 
             case 'CODE':
                console.log('TODO: make sure every newline literal from the args has a space after it when writing CODE instruction');
-               var value = '  TURN_ON\n  EVAL "---"\n--------\n  TURN_OFF\n' + eArguments.join('\n ') + '\n--------';
+               var value = '  TURN_ON\n  EVAL "---"\n--------\n' + eArguments.join('\n ') + '\n--------\n  TURN_OFF';
                selectedRange.setNote(value);
                break;
             
@@ -1111,6 +1220,26 @@ function AgentConnection ()
                         );
                   }
                break;
+
+            case 'LOAD':
+               stackValues.push(self_.ReadField(Lang.stringCast(eArguments[0])));
+               break;
+
+            case 'PUSH':
+               stackValues.push(eArguments);
+               break;
+
+            case 'VALUE':
+               switch (Lang.stringCast(eArguments[0]))
+                  {
+                  case 'LAST_INSTALL_URL':
+                     selectedRange.setValue(lastInstallUrl);
+                     break;
+                  default:
+                     self_.Error('Unknown VALUE requested: ' + eArguments[0]);
+                     break;
+                  }
+               break;
             
             case 'REM':
                console.log('REM ' + eArguments.join('\n'));
@@ -1162,18 +1291,7 @@ function AgentConnection ()
 // If an argument was provided to the constructor, try
 // to Connect using it.
 
-   if (Lang.IsString(arguments[0]))
-      {
-      self_.ConnectUsingAgentId(arguments[0]);
-      }
-   else if (Lang.IsNumber(arguments[0]))
-      {
-      self_.ConnectUsingSheetId(arguments[0]);
-      }
-   else if (Lang.IsObject(arguments[0]))
-      {
-      self_.ConnectUsingSheet(arguments[0]);
-      }
+   self_.Connect(arguments[0]);
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
