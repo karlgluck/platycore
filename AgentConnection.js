@@ -577,7 +577,7 @@ function AgentConnection ()
          return;
          }
 
-      var rv = self_.ExecuteRoutineByName(update);
+      var rv = self_.ExecuteRoutineUsingNoteName(update);
       return rv;
       };
 
@@ -586,9 +586,9 @@ function AgentConnection ()
 // Execute the routine that defines this agent in A1
 //
 
-   this.ExecuteRoutineFromA1Note = function ()
+   this.ExecuteRoutineUsingA1Note = function ()
       {
-      return this.ExecuteRoutineFromText(sheet_.getRange(1,1).getNote());
+      return this.ExecuteRoutineUsingText(sheet_.getRange(1,1).getNote());
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -596,7 +596,7 @@ function AgentConnection ()
 // Execute the routine in the note named
 //
 
-   this.ExecuteRoutineByName = function (noteName)
+   this.ExecuteRoutineUsingNoteName = function (noteName)
       {
       if (!isThisOn_)
          {
@@ -610,7 +610,7 @@ function AgentConnection ()
          return null;
          }
 
-      return this.ExecuteRoutineFromText(routine);
+      return this.ExecuteRoutineUsingText(routine);
       };
 
 
@@ -730,7 +730,7 @@ function AgentConnection ()
          {
          self_.Info('Fetching ' + Lang.ClampStringLengthP(urlAgentInstructions, 50));
          }
-      return self_.ExecuteRoutineFromText(getRoutineTextFromUrl(urlAgentInstructions));
+      return self_.ExecuteRoutineUsingText(getRoutineTextFromUrl(urlAgentInstructions));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -795,10 +795,10 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ExecuteRoutineFromText = function (agentInstructionsText)
+   this.ExecuteRoutineUsingText = function (agentInstructionsText)
       {
       var routine = getRoutineFromText(agentInstructionsText);
-      return self_.ExecuteRoutine(routine);
+      return self_.ExecuteRoutineUsingInstructions(routine);
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -810,7 +810,7 @@ function AgentConnection ()
 // the agent in the same way that Platycore does.
 //
 
-   this.ExecuteRoutine = function (instructions)
+   this.ExecuteRoutineUsingInstructions = function (instructions)
       {
       if (!Lang.IsArray(instructions)) throw "!Lang.IsArray(instructions)";
 
@@ -1099,13 +1099,16 @@ function AgentConnection ()
 
             case 'TOGGLE':
                selectedRange.insertCheckboxes();
-               var value = Lang.IsValueContainedInSetP('TRUE', eArgumentSet);
+               if (Lang.IsValueContainedInSetP('TRUE', eArgumentSet))
+                  {
+                  selectedRange.check();
+                  }
                self_.Log('+toggle: ' + kSelectedRangePropertyName);
                break;
 
             case 'FIELD':
                selectedRange.setBackground('#1c4587');
-               self_.Log('+field: ' + kSelectedRangePropertyName, value);
+               self_.Log('+field: ' + kSelectedRangePropertyName);
                break;
             
             case 'NOTE':

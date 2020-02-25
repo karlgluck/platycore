@@ -8,7 +8,7 @@ function commandSidebarExecute(text)
    var agentConnection = new AgentConnection();
    if (agentConnection.ConnectUsingActiveSheet())
       {
-      agentConnection.ExecuteRoutineFromText(text);
+      agentConnection.ExecuteRoutineUsingText(text);
       }
    else
       {
@@ -100,7 +100,7 @@ var menuRunRange_ = function (range)
    if (agentConnection.ConnectUsingSheet(range.getSheet()))
       {
       agentConnection.Info('Running ' + range.getA1Notation() + ' ' + String(range.getValue()));
-      var execution = agentConnection.ExecuteRoutineFromText(range.getNote());
+      var execution = agentConnection.ExecuteRoutineUsingText(range.getNote());
       if (execution.didAbort)
          {
          agentConnection.Error('Execution aborted!');

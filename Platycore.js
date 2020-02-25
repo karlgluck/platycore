@@ -200,7 +200,7 @@ ns.MainLoop = function ()
          if (agent.IsConnected())
             {
             qSheetsLeftToSearch = 0;
-            /*var executionDetails = */agent.ExecuteRoutineFromA1Note();
+            /*var executionDetails = */agent.ExecuteRoutineUsingA1Note();
             var dtRuntime = Lang.GetTimestampNow() - utsIterationStarted;
             if (dtRuntime > Platycore.BlockRuntimeLimit)
                {
