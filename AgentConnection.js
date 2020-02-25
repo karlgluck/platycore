@@ -1100,18 +1100,18 @@ function AgentConnection ()
             case 'TOGGLE':
                selectedRange.insertCheckboxes();
                var value = Lang.IsValueContainedInSetP('TRUE', eArgumentSet);
-               self_.Log('+toggle: ' + kName);
+               self_.Log('+toggle: ' + kSelectedRangePropertyName);
                break;
 
             case 'FIELD':
                selectedRange.setBackground('#1c4587');
-               self_.Log('+field: ' + kName, value);
+               self_.Log('+field: ' + kSelectedRangePropertyName, value);
                break;
             
             case 'NOTE':
                var value = eArguments.join('\n');
                selectedRange.setNote(value);
-               self_.Log('+note: ' + kName, value);
+               self_.Log('+note: ' + kSelectedRangePropertyName, value);
                break;
 
             case 'CODE':
