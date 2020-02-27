@@ -828,7 +828,7 @@ function AgentConnection ()
          var eArguments   = instructions[iInstruction - 0];
          var eArgumentSet = Lang.MakeSetUsingObjectsP(eArguments);
 
-         if (!hasMergedCurrentSelection && Lang.IsContainedInSetP(eInstruction, mergingInstructionsSet))
+         if (!hasMergedCurrentSelection && Lang.IsContainedInSetP(eInstruction, mergingInstructionsSet) && null != selectedRange)
             {
             switch (((selectedRange.getWidth() > 1) ? 1 : 0) + ((selectedRange.getHeight() > 1) ? 2 : 0))
                {
