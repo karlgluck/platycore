@@ -1047,38 +1047,45 @@ function AgentConnection ()
                   {
                   switch (styleType)
                      {
-                     case 'FIELD':
 
-                        var textStyleBuilder = range.getTextStyle().copy();
-                        if (isReadonly)
-                           {
-                           textStyleBuilder
-                                 .setForegroundColor('#666666')
-                                 .setUnderline(false)
-                                 ;
-                           }
-                        else
-                           {
-                           textStyleBuilder
-                                 .setForegroundColor('#00ffff')
-                                 .setUnderline(true)
-                                 ;
-                           }
+                     default:
+                        self_.Error('Unknown STYLE type: ' + styleType);
+                        break;
+
+                     case 'BUTTON': 
                         selectedRange
-                              .setTextStyle(textStyleBuilder.build())
+                              .setFontColor('#000')
+                              .setBackground('#ffff00')
+                              .setHorizontalAlignment('center')
+                              ;
+                        break;
+
+                     case 'FIELD':
+                        selectedRange
+                              .setTextStyle(
+                                    selectedRange
+                                          .getTextStyle()
+                                          .copy()
+                                          .setForegroundColor('#00ffff')
+                                          .setUnderline(true)
+                                    )
                               .setBackground('#1c4587')
                               ;
 
                         break;
 
-                     case 'BUTTON': 
-                        selectedRange.setFontColor('#000');
-                        selectedRange.setBackground('#ffff00');
-                        selectedRange.setHorizontalAlignment('center');
-                        break;
+                     case 'READONLY_FIELD':
+                        selectedRange
+                              .setTextStyle(
+                                    selectedRange
+                                          .getTextStyle()
+                                          .copy()
+                                          .setForegroundColor('#666666')
+                                          .setUnderline(false)
+                                    )
+                              .setBackground('#1c4587')
+                              ;
 
-                     default:
-                        self_.Error('Unknown STYLE type: ' + styleType);
                         break;
                      }
                   })(popArgument(Lang.MakeStringUsingAnyP));
