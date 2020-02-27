@@ -76,8 +76,7 @@ Agent-specific
    SELECT "C6:D6"
     VALUE 0
      NAME "PROCESSED"
-    STYLE "FIELD"
- READONLY "ON"
+    STYLE "READONLY_FIELD"
      LOAD "PROCESSED", "OLD_AGENT"
    HALIGN "center"
 
