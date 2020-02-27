@@ -863,7 +863,7 @@ function AgentConnection ()
                      }
                   }
                }
-            if (Lang.IsNotUndefinedP(rv))
+            if (Lang.IsNotUndefinedP(rv) && null != castFunction)
                {
                rv = castFunction(rv);
                }
@@ -881,17 +881,17 @@ function AgentConnection ()
             case 'INFO':      self_.Info(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'WARN':      self_.Warn(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'ERROR':     self_.Error(popArgument(Lang.MakeStringUsingAnyP)); break;
-            case 'NOTE':      selectedRange.setNote(Lang.MakeStringUsingAnyP); break;
-            case 'FORMULA':   selectedRange.setFormula(Lang.MakeStringUsingAnyP); break;
-            case 'VALUE':     selectedRange.setValue(Lang.MakeStringUsingAnyP); break;
-            case 'PUSH':      stackValues.push(Lang.MakeStringUsingAnyP); break;
-            case 'REM':       self_.InteractiveInfo(Lang.MakeStringUsingAnyP); break;
-            case 'TOAST':     spreadsheet_.toast(Lang.MakeStringUsingAnyP); break;
-            case 'BG':        selectedRange.setBackground(Lang.MakeStringUsingAnyP); break;
-            case 'FG':        selectedRange.setFontColor(Lang.MakeStringUsingAnyP); break;
-            case 'FONT':      selectedRange.setFontFamily(Lang.MakeStringUsingAnyP); break;
-            case 'HALIGN':    selectedRange.setHorizontalAlignment(Lang.MakeStringUsingAnyP); break;
-            case 'VALIGN':    selectedRange.setVerticalAlignment(Lang.MakeStringUsingAnyP); break;
+            case 'NOTE':      selectedRange.setNote(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'FORMULA':   selectedRange.setFormula(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'VALUE':     selectedRange.setValue(popArgument()); break;
+            case 'PUSH':      stackValues.push(popArgument()); break;
+            case 'REM':       self_.InteractiveInfo(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'TOAST':     spreadsheet_.toast(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'BG':        selectedRange.setBackground(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'FG':        selectedRange.setFontColor(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'FONT':      selectedRange.setFontFamily(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'HALIGN':    selectedRange.setHorizontalAlignment(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'VALIGN':    selectedRange.setVerticalAlignment(popArgument(Lang.MakeStringUsingAnyP)); break;
 
             case 'EVAL':
                self_.EvalCode(popArgument(Lang.MakeStringUsingAnyP), 'EVAL@'+iInstruction);                  
@@ -1172,7 +1172,7 @@ function AgentConnection ()
                         .setValue(value)
                         ;
                      }
-                  })(popArgument(Lang.MakeBoolUsingAnyP), Lang.IsContainedInSetP('READONLY', eArgumentSet));
+                  })(popArgument(Lang.IsAffirmativeStringP), Lang.IsContainedInSetP('READONLY', eArgumentSet));
                break;
 
             case 'LOAD':
