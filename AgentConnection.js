@@ -734,7 +734,7 @@ function AgentConnection ()
                         .map((function (qCharactersToTrim)
                            {
                            return eLine => eLine.substring(qCharactersToTrim)
-                           })(match[1].length-1))
+                           })(match[0].length-1))
                         .join('\n')
                         ;
                   }
