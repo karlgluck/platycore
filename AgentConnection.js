@@ -716,7 +716,7 @@ function AgentConnection ()
 
    var getRoutineFromText = function (agentInstructionsText)
       {
-      var match = /^\s+</.match(agentInstructionsText);
+      var match = /^\s+</.exec(agentInstructionsText);
       if (Lang.IsArrayP(match))
          {
          agentInstructionsText = agentInstructionsText
