@@ -729,6 +729,7 @@ function AgentConnection ()
                if (Lang.IsArrayP(match))
                   {
                   group = group
+                        .substring(1)
                         .split('\n')
                         .map((function (qCharactersToTrim)
                            {
