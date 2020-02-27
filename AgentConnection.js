@@ -604,11 +604,14 @@ function AgentConnection ()
          {
          var lineNumber = 0;
          var codeLines = code.split('\n');
+         var rv = null;
          try
             {
-            eval(codeLines
+            var code = codeLines
                   .map(function (e, i) { return e.replace(/;\s$/,';lineNumber='+(i+1)+';'); })
-                  .join('\n'));
+                  .join('\n')
+                  ;
+            rv = eval(code);
             }
          catch (e)
             {
@@ -624,6 +627,10 @@ function AgentConnection ()
                   + '\n\n'
                   + (Lang.IsUndefinedP(e.stack) ? '     no stack trace' : e.stack)
                   );
+            }
+         finally
+            {
+            return rv;
             }
          })(self_);
 
@@ -709,6 +716,19 @@ function AgentConnection ()
 
    var getRoutineFromText = function (agentInstructionsText)
       {
+      var match = /^\s+</.match(agentInstructionsText);
+      if (Lang.IsArrayP(match))
+         {
+         agentInstructionsText = agentInstructionsText
+               .split('\n')
+               .map((function (qCharactersToTrim)
+                  {
+                  return eLine => eLine.substring(qCharactersToTrim)
+                  })(match[1].length-1))
+               .join('\n')
+               ;
+         }
+
       var multilineObjectConcatenationRegex = new RegExp(/{---+}\s---+\s([\s\S]*?)[\r\n]---+/gm);
       var multilineConcatenationRegex = new RegExp(/"---+"\s---+\s([\s\S]*?)[\r\n]---+/gm);
       var whitespaceRegex = new RegExp(/^\s/);
@@ -791,7 +811,7 @@ function AgentConnection ()
             };
 
       var selectedRange = null;
-      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'CHECKBOX', 'VALUE', 'TEXT', 'NOTE', 'VALUE']);
+      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'CHECKBOX', 'EVALUE', 'VALUE', 'TEXT', 'NOTE', 'VALUE', 'LOAD']);
       var hasMergedCurrentSelection = false;
       var lastInstallUrl = null;
       var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['CHECKBOX', 'VALUE', 'TEXT', 'NOTE']);
@@ -868,6 +888,10 @@ function AgentConnection ()
             case 'FONT':      selectedRange.setFontFamily(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'HALIGN':    selectedRange.setHorizontalAlignment(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'VALIGN':    selectedRange.setVerticalAlignment(popArgument(Lang.MakeStringUsingAnyP)); break;
+
+            case 'EVALUE':
+               selectedRange.setValue(self_.EvalCode(popArgument(Lang.MakeStringUsingAnyP), 'EVALUE@'+iInstruction));
+               break;
 
             case 'EVAL':
                self_.EvalCode(popArgument(Lang.MakeStringUsingAnyP), 'EVAL@'+iInstruction);                  
