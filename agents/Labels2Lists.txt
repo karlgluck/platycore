@@ -10,39 +10,39 @@ Common Initialization
 
    SELECT  "C2"
      NAME  "EN"
-   TOGGLE
-  READONLY "OFF"
+ CHECKBOX  "FALSE"
+
    SELECT  "D2"
-     TEXT  "EN"
+    VALUE  "EN"
 
 --- ON ---
 
    SELECT  "C3"
      NAME  "ON"
-   TOGGLE  "TRUE"
- READONLY  "ON"
+ CHECKBOX  "TRUE"
+        +  "READONLY"
+
    SELECT  "D3"
-     TEXT  "ON"
+    VALUE  "ON"
 
 --- GO ---
 
    SELECT  "C4"
      NAME  "GO"
-   TOGGLE
- READONLY  "OFF"
+ CHECKBOX  "FALSE"
+
    SELECT  "D4"
-     TEXT  "GO"
+    VALUE  "GO"
 
 --- WAKE ---
 
    SELECT  "H2:L2"
      NAME  "WAKE"
-    FIELD
- READONLY  "OFF"
-     EVAL  "agent.WriteField('WAKE', Lang.GetTimestampNowP() + 15000)"
+    STYLE  "READONLY_FIELD"
+     EVAL  "agent.WriteValue('WAKE', Lang.GetTimestampNowP() + 15000)"
      LOAD  "WAKE", "OLD_AGENT"
    SELECT  "F2:G2"
-     TEXT  "WAKE"
+    VALUE  "WAKE"
    SELECT  "F3:L3"
   FORMULA  "=(H2-(60*2+4)*1000)/1000/60/60/24+25568.6681"
    FORMAT  "DATETIME"
@@ -51,11 +51,10 @@ Common Initialization
 
    SELECT  "H5:L5"
      NAME  "LOCK"
-    FIELD
- READONLY  "OFF"
-     EVAL  "agent.WriteField('LOCK', Lang.GetTimestampNowP())"
+    STYLE  "READONLY_FIELD"
+     EVAL  "agent.WriteValue('LOCK', Lang.GetTimestampNowP())"
    SELECT  "F5:G5"
-     TEXT  "LOCK"
+    VALUE  "LOCK"
    SELECT  "F6:L6"
   FORMULA  "=(H5-(60*2+4)*1000)/1000/60/60/24+25568.6681"
    FORMAT  "DATETIME"
@@ -66,19 +65,18 @@ Agent-specific
 --- SHEET ---
 
    SELECT "N2:R2"
-     TEXT "Sheet:"
+    VALUE "Sheet:"
    HALIGN "right"
    SELECT "S2:AH2"
      NAME "SHEET"
-    FIELD
- READONLY "OFF"
+    STYLE "FIELD"
      LOAD "SHEET", "OLD_AGENT"
 
 --- Processed ---
    SELECT "C6:D6"
-     TEXT 0
+    VALUE 0
      NAME "PROCESSED"
-    FIELD
+    STYLE "FIELD"
  READONLY "ON"
      LOAD "PROCESSED", "OLD_AGENT"
    HALIGN "center"
@@ -86,13 +84,12 @@ Agent-specific
 --- Input Gmail Label ---
 
    SELECT "N4:R4"
-     TEXT "Input label:"
+    VALUE "Input label:"
    HALIGN "right"
    SELECT "S4:AC4"
-     TEXT "<Input Label>"
+    VALUE "<Input Label>"
      NAME "INPUT"
-    FIELD
- READONLY "OFF"
+    STYLE "FIELD"
      LOAD "INPUT", "OLD_AGENT"
  VALIDATE "Enter the name of a label from your Gmail account"
         + "IS_GMAIL_LABEL"
@@ -104,7 +101,7 @@ Manual Actions
 --- [Reinstall] ---
 
    SELECT "AS6:AV6"
-     TEXT "[Reinstall]"
+    VALUE "[Reinstall]"
     STYLE "BUTTON"
      NOTE "---"
 ------------------------
@@ -123,13 +120,13 @@ Read the value REINSTALL_URL from OLD_AGENT and add it to the stack
 ------------------------
    SELECT "AJ6:AR6"
      NAME "REINSTALL_URL"
-    FIELD
-    VALUE "LAST_INSTALL_URL"
+    STYLE "FIELD"
+     LOAD "$LAST_INSTALL_URL"
 
 --- [Make Sheet] ---
 
    SELECT "AJ2:AN2"
-     TEXT "[Make Sheet]"
+    VALUE "[Make Sheet]"
     STYLE "BUTTON"
      CODE "---"
 ------------------------
@@ -139,17 +136,17 @@ var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-s
 GAS.AddRowsToJournalingSheet(
       [['<Gmail Label>', stringOfGetObjectFromGmailMessage, '<sheet url>']],
       sheet);
-agent.WriteField('SHEET', GAS.GetUrlFromSheet(sheet));
+agent.WriteValue('SHEET', GAS.GetUrlFromSheet(sheet));
 agent.ExecuteRoutineUsingNoteName('REFRESH_LABELS');
 ------------------------
 
 
    SELECT "AP2:AV2"
-     TEXT "[Refresh Labels]"
+    VALUE "[Refresh Labels]"
     STYLE "BUTTON"
      CODE "---"
 ------------------------
-var sheet = GAS.OpenSheetUsingUrl(agent.ReadField('SHEET'));
+var sheet = GAS.OpenSheetUsingUrl(agent.ReadValue('SHEET'));
 var headers = GAS.MergeSheetHeaders(sheet, ['input_label']);
 var ciInputLabelColumn = 1 + headers.indexOf('input_label');
 var labels = GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort();
@@ -169,19 +166,19 @@ Scripts
    SELECT  "A1"
      CODE  "---"
 ------------------------
-var en = agent.ReadToggle('EN');
+var en = agent.ReadCheckbox('EN');
 if (!en)
    {
    agent.Log('[!EN]: Agent is disabled (to enable, set EN=TRUE)');
    }
-var sheet = GAS.OpenSheetUsingUrl(agent.ReadField('SHEET'));
+var sheet = GAS.OpenSheetUsingUrl(agent.ReadValue('SHEET'));
 var records = GAS.MakeObjectsUsingSheetP(sheet);
 records.forEach(function (eRecord)
    {
    eRecord.GetObjectFromGmailMessage = eval(eRecord.object_from_gmail_message_function);
    eRecord.outputSheet = GAS.OpenSheetUsingUrl(eRecord.sheet_url);
    });
-var inputLabel = GmailApp.getUserLabelByName(agent.ReadField('INPUT_LABEL'));
+var inputLabel = GmailApp.getUserLabelByName(agent.ReadValue('INPUT_LABEL'));
 var recordsFromLabelName = Lang.MakeArrayFromKeyDictionaryUsingObjectsP(records, 'input_label');
 var threads = inputLabel.getThreads();
 var outputs = [];
@@ -232,7 +229,7 @@ if (0 < threads.length)
    }
 if (en)
    {
-   agent.WriteField('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadField('PROCESSED')) + threads.length);
+   agent.WriteValue('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadValue('PROCESSED')) + threads.length);
    }
 else
    {

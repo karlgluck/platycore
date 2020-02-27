@@ -147,20 +147,19 @@ function AgentConnection ()
       return kAgentId_;
       };
 
-
 /*************************************************************************************************************************************
-******            ****     *********     *******     ****   *******         **********************************************************
-***********   ******   ****   ****  ****   ***  ****   **   *******   ****************************************************************
-***********   ****   ********   *   *********   *********   *******   ****************************************************************
-***********   ****   ********   *   *********   *********   *******       ************************************************************
-***********   ****   ********   *   ***     *   ***     *   *******   ****************************************************************
-***********   ******   *****   ***   ****  ***   ****  **   *******   ****************************************************************
-***********   ********     ********      ******      ****         *         **********************************************************
+**********   *****   *****   ***         *****   ****   ***   ****      *********       ****   ******   *****************************
+*******   ***   **   *****   ***   ********   ***   *   **   *****  ****   *****   ****   ****   ***   *******************************
+******   *********   *****   ***   *******   ********   *   ******  *****   **   ********   ***   *   ********************************
+******   *********       *   ***       ***   ********  *  ********        ***   ********   *****   **********************************
+******   *********   *****   ***   *******   ********   **   *****  *****   **   ********   ***   *   ********************************
+*******   ***   **   *****   ***   ********   ***   *   ***   ****  ******  ****   ****    ***   ***   *******************************
+*********     ****   *****   ***         ****     ***   *****   **        *******       ****   ******   *****************************
 *************************************************************************************************************************************/
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   var setToggleReadonly_ = function (range, isReadonly, value)
+   var setCheckboxReadonly_ = function (range, isReadonly, value)
       {
       if (isReadonly)
          {
@@ -174,7 +173,7 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ReadToggle = function (name, ignoreCache)
+   this.ReadCheckbox = function (name, ignoreCache)
       {
       var range = getRangeFromPropertyName(name);
       return Lang.IsObjectP(range) ? range.isChecked() : undefined;
@@ -182,7 +181,7 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.WriteToggle = function (name, value)
+   this.WriteCheckbox = function (name, value)
       {
       var range = getRangeFromPropertyName(name);
       if (Lang.IsObjectP(range))
@@ -199,9 +198,10 @@ function AgentConnection ()
          }
       else 
          {
-         self_.Warn('WriteToggle(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('WriteCheckbox(name="'+name+'",value='+value+'): name does not exist');
          }
       };
+
 
 /*************************************************************************************************************************************
 ******         ***   ****         ***   *********      *******************************************************************************
@@ -213,28 +213,10 @@ function AgentConnection ()
 ******   *********   ****         ***         ***      *******************************************************************************
 *************************************************************************************************************************************/
 
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   var setFieldReadonly_ = function (range, isReadonly)
-      {
-      var textStyleBuilder = range.getTextStyle().copy();
-      if (isReadonly)
-         {
-         textStyleBuilder.setForegroundColor('#666666')
-                         .setUnderline(false);
-         }
-      else
-         {
-         textStyleBuilder
-               .setForegroundColor('#00ffff')
-               .setUnderline(true);
-         }
-      range.setTextStyle(textStyleBuilder.build());
-      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ReadField = function (name, ignoreCache)
+   this.ReadValue = function (name)
       {
       var range = getRangeFromPropertyName(name);
       return Lang.IsObjectP(range) ? range.getValue() : undefined;
@@ -242,7 +224,7 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.WriteField = function (name, value)
+   this.WriteValue = function (name, value)
       {
       var range = getRangeFromPropertyName(name);
       if (Lang.IsObjectP(range))
@@ -251,7 +233,7 @@ function AgentConnection ()
          }
       else 
          {
-         self_.Warn('WriteField(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('WriteValue(name="'+name+'",value='+value+'): name does not exist');
          }
       };
 
@@ -469,14 +451,14 @@ function AgentConnection ()
          {
          return true;
          }
-      var isAlreadyRunning = self_.ReadToggle('ON', true);
-      var lockValue = self_.ReadField('LOCK', true);
+      var isAlreadyRunning = self_.ReadCheckbox('ON', true);
+      var lockValue = self_.ReadValue('LOCK', true);
       var hasLockField = Lang.IsNotUndefinedP(lockValue);
       if (hasLockField)
          {
          lockValue = Lang.MakeIntUsingAnyP(lockValue);
          var lockValueWithSentinel = (lockValue - (lockValue % 1000)) + (((lockValue % 1000) + 1) % 1000);
-         self_.WriteField('LOCK', lockValueWithSentinel);
+         self_.WriteValue('LOCK', lockValueWithSentinel);
          var canOverrideLock = Platycore.PumpRuntimeLimit < (Lang.GetTimestampNowP() - lockValue);
          }
       else
@@ -503,10 +485,10 @@ function AgentConnection ()
          {
          try
             {
-               isAlreadyRunning = Lang.MakeBoolUsingAnyP(self_.ReadToggle('ON', true));
+               isAlreadyRunning = Lang.MakeBoolUsingAnyP(self_.ReadCheckbox('ON', true));
                if (hasLockField)
                   {
-                  canTurnOn = self_.ReadField('LOCK', true) === lockValueWithSentinel
+                  canTurnOn = self_.ReadValue('LOCK', true) === lockValueWithSentinel
                         && (!isAlreadyRunning || canOverrideLock);
                   }
                else
@@ -516,8 +498,8 @@ function AgentConnection ()
 
             if (canTurnOn)
                {
-               self_.WriteField('LOCK', Lang.GetTimestampNowP());
-               self_.WriteToggle('ON', true);
+               self_.WriteValue('LOCK', Lang.GetTimestampNowP());
+               self_.WriteCheckbox('ON', true);
                GAS.LimitAndTrimSheetRows(sheet_,  irNewMessage_ + Platycore.MaximumAgentLogRows);
                isThisOn_ = true;
                }
@@ -559,7 +541,7 @@ function AgentConnection ()
             {
             try
                {
-               self_.WriteToggle('ON', false);
+               self_.WriteCheckbox('ON', false);
                }
             finally
                {
@@ -584,7 +566,7 @@ function AgentConnection ()
          throw "must be turned on, otherwise the program might not have exclusive control of the agent"
          }
 
-      var update = self_.ReadField('UPDATE');
+      var update = self_.ReadValue('UPDATE');
       if (Lang.IsUndefinedP(update))
          {
          self_.Warn('This agent does not do anything when activated because there is no UPDATE field');
@@ -695,7 +677,7 @@ function AgentConnection ()
       {
       var utsNow = Lang.GetTimestampNowP();
       dtMilliseconds = Math.max(15000, dtMilliseconds);
-      var maybePreviousWakeTime = self_.ReadField('WAKE');
+      var maybePreviousWakeTime = self_.ReadValue('WAKE');
       var utsNewWakeTime = utsNow + dtMilliseconds;
       if (Lang.IsNumberP(maybePreviousWakeTime))
          {
@@ -705,7 +687,7 @@ function AgentConnection ()
             utsNewWakeTime = maybePreviousWakeTime + dtMilliseconds;
             }
          }
-      self_.WriteField('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
+      self_.WriteValue('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
       self_.LogWithBadge(
             Lang.GetMoonPhaseFromDateP(new Date(utsNewWakeTime)),
             'snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNowP()) + ' from now at ' + Lang.MakeWallTimeStringUsingTimestampP(utsNewWakeTime)
@@ -717,7 +699,7 @@ function AgentConnection ()
    this.SnoozeForever = function ()
       {
       self_.Log(Lang.GetMoonPhaseFromDateP(Lang.GetTimestampNowP()) + 'Snoozing, no alarm... ');
-      self_.WriteField('WAKE', 'SNOOZE');
+      self_.WriteValue('WAKE', 'SNOOZE');
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -833,10 +815,10 @@ function AgentConnection ()
             };
 
       var selectedRange = null;
-      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'TOGGLE', 'FIELD', 'TEXT', 'NOTE', 'VALUE']);
+      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'CHECKBOX', 'FIELD', 'TEXT', 'NOTE', 'VALUE']);
       var hasMergedCurrentSelection = false;
       var lastInstallUrl = null;
-      var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['TOGGLE', 'FIELD', 'TEXT', 'NOTE']);
+      var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['CHECKBOX', 'FIELD', 'TEXT', 'NOTE']);
       var selectionTypeInstruction = null;
       var sheetFromAlias = {};
       var kSelectedRangePropertyName = null;
@@ -894,6 +876,51 @@ function AgentConnection ()
                self_.Error('invalid instruction', eInstruction);
                break;
 
+            case 'TURN_OFF':  self_.TurnOff(); break;
+            case 'UNINSTALL': self_.Uninstall(); break;
+            case 'INFO':      self_.Info(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'WARN':      self_.Warn(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'ERROR':     self_.Error(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'NOTE':      selectedRange.setNote(Lang.MakeStringUsingAnyP); break;
+            case 'FORMULA':   selectedRange.setFormula(Lang.MakeStringUsingAnyP); break;
+            case 'VALUE':     selectedRange.setValue(Lang.MakeStringUsingAnyP); break;
+            case 'PUSH':      stackValues.push(Lang.MakeStringUsingAnyP); break;
+            case 'REM':       self_.InteractiveInfo(Lang.MakeStringUsingAnyP); break;
+            case 'TOAST':     spreadsheet_.toast(Lang.MakeStringUsingAnyP); break;
+            case 'BG':        selectedRange.setBackground(Lang.MakeStringUsingAnyP); break;
+            case 'FG':        selectedRange.setFontColor(Lang.MakeStringUsingAnyP); break;
+            case 'FONT':      selectedRange.setFontFamily(Lang.MakeStringUsingAnyP); break;
+            case 'HALIGN':    selectedRange.setHorizontalAlignment(Lang.MakeStringUsingAnyP); break;
+            case 'VALIGN':    selectedRange.setVerticalAlignment(Lang.MakeStringUsingAnyP); break;
+
+            case 'EVAL':
+               self_.EvalCode(popArgument(Lang.MakeStringUsingAnyP), 'EVAL@'+iInstruction);                  
+               break;
+
+            case 'ALIAS':
+               (function (kAlias)
+                  {
+                  currentAgentAlias = kAlias;
+                  sheetFromAlias[kAlias] = sheet_;
+                  })(popArgument(Lang.MakeStringUsingAnyP));
+               break;
+
+            case 'TITLE':
+               (function (title)
+                  {
+                  sheet_.setName(Lang.MakeNameUniqueP('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
+                  })(popArgument(Lang.MakeStringUsingAnyP));
+               break;
+
+            case 'TURN_ON':
+               if (!self_.TurnOn())
+                  {
+                  self_.InteractiveError('Unable to turn on');
+                  rvExecutionDetails.didAbort = true;
+                  nInstructionCount = 0;
+                  }
+               break;
+
             case 'ABORT_UNLESS_INTERACTIVE':
                if (!Platycore.IsInteractive)
                   {
@@ -901,11 +928,39 @@ function AgentConnection ()
                   nInstructionCount = 0;
                   }
                break;
+
+            case 'NAME':
+               (function (kName)
+                  {
+                  kSelectedRangePropertyName = kName;
+                  spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kSelectedRangePropertyName), selectedRange);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
+               break;
+
+            case 'CODE':
+               (function (code)
+                  {
+                  var value = '  TURN_ON\n  EVAL "---"\n--------\n' + code + '\n--------\n  TURN_OFF';
+                  selectedRange.setNote(value);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
+               break;
+
+            case 'FORMAT':
+               (function (format)
+                  {
+                  switch (format)
+                     {
+                     case 'DATETIME': selectedRange.setNumberFormat('M/d/yyyy H:mm:ss'); break;
+                     case 'CHECKBOX': selectedRange.setNumberFormat('"☑";"☐"'); break;
+                     default: selectedRange.setNumberFormat(format); break;
+                     }
+                  })(popArgument(Lang.MakeStringUsingAnyP));
+               break;
             
             case 'ABORT_UNLESS_TRIGGERED':
-               var isEnabled = (function (en) { return Lang.IsUndefinedP(en) || Lang.MakeBoolUsingAnyP(en) })(self_.ReadToggle('EN'));
-               var isGo = (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolUsingAnyP(go) })(self_.ReadToggle('GO'));
-               var isWake = (function (wake) { return Lang.IsNumberP(wake) && utsIterationStarted > wake })(self_.ReadField('WAKE'));
+               var isEnabled = (function (en) { return Lang.IsUndefinedP(en) || Lang.MakeBoolUsingAnyP(en) })(self_.ReadCheckbox('EN'));
+               var isGo = (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolUsingAnyP(go) })(self_.ReadCheckbox('GO'));
+               var isWake = (function (wake) { return Lang.IsNumberP(wake) && utsIterationStarted > wake })(self_.ReadValue('WAKE'));
                var isTriggered = isEnabled && (isGo || isWake);
                if (!isTriggered)
                   {
@@ -965,14 +1020,6 @@ function AgentConnection ()
                      }
                   })(popArgument(Lang.MakeStringUsingAnyP));
                break;
-
-            case 'ALIAS':
-               (function (kAlias)
-                  {
-                  currentAgentAlias = kAlias;
-                  sheetFromAlias[kAlias] = sheet_;
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
             
             case 'EXPORT':
                (function ()
@@ -994,16 +1041,36 @@ function AgentConnection ()
                   importedValueFromPropertyNameFromAlias[currentAgentAlias] = valueFromPropertyName;
                   })();
                break;
-            
-            case 'UNINSTALL':
-               self_.Uninstall();
-               break;
 
             case 'STYLE':
                (function (styleType)
                   {
                   switch (styleType)
                      {
+                     case 'FIELD':
+
+                        var textStyleBuilder = range.getTextStyle().copy();
+                        if (isReadonly)
+                           {
+                           textStyleBuilder
+                                 .setForegroundColor('#666666')
+                                 .setUnderline(false)
+                                 ;
+                           }
+                        else
+                           {
+                           textStyleBuilder
+                                 .setForegroundColor('#00ffff')
+                                 .setUnderline(true)
+                                 ;
+                           }
+                        selectedRange
+                              .setTextStyle(textStyleBuilder.build())
+                              .setBackground('#1c4587')
+                              ;
+
+                        break;
+
                      case 'BUTTON': 
                         selectedRange.setFontColor('#000');
                         selectedRange.setBackground('#ffff00');
@@ -1014,13 +1081,6 @@ function AgentConnection ()
                         self_.Error('Unknown STYLE type: ' + styleType);
                         break;
                      }
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'TITLE':
-               (function (title)
-                  {
-                  sheet_.setName(Lang.MakeNameUniqueP('🧚 ' + title, n => null === spreadsheet_.getSheetByName(n)));
                   })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
@@ -1035,7 +1095,8 @@ function AgentConnection ()
                         .setFontFamily('IBM Plex Mono')
                         .setVerticalAlignment('top')
                         .setWrap(false)
-                        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP);
+                        .setWrapStrategy(SpreadsheetApp.WrapStrategy.CLIP)
+                        ;
 
                   sheet_.setRowHeights(1, mrMaxRows, 21);
                   sheet_.setColumnWidths(1, sheet_.getMaxColumns(), 21); // square the cells
@@ -1066,36 +1127,6 @@ function AgentConnection ()
                   })(popArgument(Lang.MakeIntUsingAnyP));
                break;
 
-            case 'TURN_ON':
-               if (!self_.TurnOn())
-                  {
-                  self_.InteractiveError('Unable to turn on');
-                  rvExecutionDetails.didAbort = true;
-                  nInstructionCount = 0;
-                  }
-               break;
-
-            case 'TURN_OFF':
-               self_.TurnOff();
-               break;
-
-            case 'INFO':
-               self_.Info(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'WARN':
-               self_.Warn(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'ERROR':
-               self_.Error(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'EVAL':
-               var code = popArgument(Lang.MakeStringUsingAnyP);
-               self_.EvalCode(code, 'EVAL@'+iInstruction);                  
-               break;
-
             case 'SELECT':
                (function (rangeIdentifier)
                   {
@@ -1107,90 +1138,34 @@ function AgentConnection ()
                      }
                   else
                      {
-                     selectionTypeInstruction = null;
+                     selectionTypeInstruction = 'VALUE';
                      selectedRange = sheet_.getRange(rangeIdentifier);
                      kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
                      }
                   })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
-            case 'NAME':
-               (function (kName)
+            case 'CHECKBOX':
+               (function (value, isReadonly)
                   {
-                  kSelectedRangePropertyName = kName;
-                  spreadsheet_.setNamedRange(getRangeNameFromPropertyName(kSelectedRangePropertyName), selectedRange);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'TOGGLE':
-               selectedRange.insertCheckboxes();
-               if (Lang.IsContainedInSetP('TRUE', eArgumentSet))
-                  {
-                  selectedRange.check();
-                  }
-               self_.Log('+toggle: ' + kSelectedRangePropertyName);
-               break;
-
-            case 'FIELD':
-               selectedRange.setBackground('#1c4587');
-               self_.Log('+field: ' + kSelectedRangePropertyName);
-               break;
-            
-            case 'NOTE':
-               var value = eArguments.join('\n');
-               selectedRange.setNote(value);
-               self_.Log('+note: ' + kSelectedRangePropertyName, value);
-               break;
-
-            case 'CODE':
-               (function (code)
-                  {
-                  var value = '  TURN_ON\n  EVAL "---"\n--------\n' + code + '\n--------\n  TURN_OFF';
-                  selectedRange.setNote(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-            
-            case 'FORMULA':
-               (function (value)
-                  {
-                  selectedRange.setFormula(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-            
-            case 'TEXT':
-               (function (value)
-                  {
-                  selectedRange.setValue(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'FORMAT':
-               (function (format)
-                  {
-                  switch (format)
+                  
+                  if (isReadonly)
                      {
-                     case 'DATETIME': selectedRange.setNumberFormat('M/d/yyyy H:mm:ss'); break;
-                     case 'CHECKBOX': selectedRange.setNumberFormat('"☑";"☐"'); break;
-                     default: selectedRange.setNumberFormat(format); break;
+                     selectedRange
+                        .insertCheckboxes()
+                        .setFontColor('#666666')
+                        .setFormula(value ? '=TRUE' : '=FALSE')
+                        ;
                      }
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'READONLY':
-               (function (isReadonly)
-                  {
-                  switch (selectionTypeInstruction)
+                  else
                      {
-                     case 'TOGGLE': setToggleReadonly_(selectedRange, isReadonly, true === selectedRange.isChecked()); break;
-                     case 'FIELD': setFieldReadonly_(selectedRange, isReadonly); break;
-                     case 'TEXT':
-                     case 'NOTE':
-                     case 'STACK':
-                        self_.Warn('READONLY has no effect on type ' + selectionTypeInstruction);
-                        break;
-                     default: self_.Warn('READONLY used before the selection was given a type. Place this command after SELECT and one of the following instructions: ' + Object.keys(selectionTypeInstructionsSet).join(','));
+                     selectedRange
+                        .insertCheckboxes()
+                        .setFontColor('#00ffff')
+                        .setValue(value)
+                        ;
                      }
-                  })(popArgument(Lang.IsAffirmativeStringP));
+                  })(popArgument(Lang.MakeBoolUsingAnyP), Lang.IsContainedInSetP('READONLY', eArgumentSet));
                break;
 
             case 'LOAD':
@@ -1198,11 +1173,10 @@ function AgentConnection ()
                   {
                   var writeMethodFromTypeName = {
                      NOTE: self_.WriteNote,
-                     FIELD: self_.WriteField,
-                     TOGGLE: self_.WriteToggle,
+                     VALUE: self_.WriteValue,
+                     CHECKBOX: self_.WriteCheckbox,
                      STACK: ((name, value) => stackValues.push(value))
                   };
-                  var previousValue = null;
                   if (Lang.IsNotStringP(propertyName))
                      {
                      self_.Error('LOAD: missing propertyName');
@@ -1210,8 +1184,8 @@ function AgentConnection ()
                   else if (importedValueFromPropertyNameFromAlias.hasOwnProperty(kAlias))
                      {
                      var importedValueFromPropertyName = importedValueFromPropertyNameFromAlias[kAlias];
+                     var previousValue = null;
                      if (Lang.IsObjectP(importedValueFromPropertyName)
-                           && Lang.IsObjectP(importedValueFromPropertyName)
                            && Lang.IsMeaningfulP(previousValue = importedValueFromPropertyName[propertyName]))
                         {
                         (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
@@ -1223,15 +1197,34 @@ function AgentConnection ()
                      }
                   else if (Lang.IsUndefinedP(kAlias))
                      {
-                     var range = getRangeFromPropertyName(propertyName);
-                     if (Lang.IsObjectP(range))
+                     if (GAS.IsValidRangeNameP(propertyName))
                         {
-                        previousValue = range.getValue();
-                        (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
+                        var range = getRangeFromPropertyName(propertyName);
+                        if (Lang.IsObjectP(range))
+                           {
+                           (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, range.getValue());
+                           }
+                        else
+                           {
+                           self_.Warn('LOAD: no property named "' + propertyName + '" in the current agent; skipping');
+                           }
                         }
                      else
                         {
-                        self_.Warn('LOAD: no property named "' + propertyName + '" in the current agent; skipping');
+                        switch (propertyName)
+                           {
+                           case '$LAST_INSTALL_URL':
+                              selectedRange.setValue(lastInstallUrl);
+                              break;
+
+                           case '$NOW':
+                              selectedRange.setValue(new Date());
+                              break;
+
+                           default:
+                              self_.Error('LOAD requested an unknown value: "' + value + '"');
+                              break;
+                           }
                         }
                      }
                   else
@@ -1242,33 +1235,6 @@ function AgentConnection ()
                         }
                      }
                   })(popArgument(Lang.MakeStringUsingAnyP), popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'PUSH':
-               (function (value)
-                  {
-                  stackValues.push(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'VALUE':
-               (function (value)
-                  {
-                  switch (value)
-                     {
-                     case 'LAST_INSTALL_URL':
-                        selectedRange.setValue(lastInstallUrl);
-                        break;
-
-                     case 'NOW':
-                        selectedRange.setValue(new Date());
-                        break;
-
-                     default:
-                        self_.Error('Unknown VALUE requested: ' + value);
-                        break;
-                     }
-                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'VALIDATE':
@@ -1303,73 +1269,12 @@ function AgentConnection ()
                   })(popArgument(Lang.MakeStringUsingAnyP), popArgument(Lang.MakeStringUsingAnyP));
 
                break;
-            
-            case 'REM':
-               (function (value)
-                  {
-                  self_.InteractiveInfo(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'TOAST':
-               (function (value)
-                  {
-                  spreadsheet_.toast(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'BG':
-               (function (value)
-                  {
-                  selectedRange.setBackground(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'FG':
-               (function (value)
-                  {
-                  selectedRange.setFontColor(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'FONT':
-               (function (value)
-                  {
-                  selectedRange.setFontFamily(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'HALIGN':
-               (function (value)
-                  {
-                  selectedRange.setHorizontalAlignment(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-
-            case 'VALIGN':
-               (function (value)
-                  {
-                  selectedRange.setVerticalAlignment(value);
-                  })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
 
             } // switch agent instruction
          } // for each agent instruction
 
          return rvExecutionDetails;
       };
-
-
-/*************************************************************************************************************************************
-**********     ******   *****   *            *        ***   *****   *            *****************************************************
-********   ****   ***   *****   ******   *****   ****   *   *****   ******   *********************************************************
-******   ********   *   *****   ******   *****   ****   *   *****   ******   *********************************************************
-******   ********   *   *****   ******   *****        ***   *****   ******   *********************************************************
-******   ********   *   *****   ******   *****   ********   *****   ******   *********************************************************
-********   *****   **   *****   ******   *****   ********   *****   ******   *********************************************************
-**********     ********      *********   *****   **********      *********   *********************************************************
-*************************************************************************************************************************************/
-
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // If an argument was provided to the constructor, try
