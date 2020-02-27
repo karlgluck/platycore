@@ -41,8 +41,10 @@ Common Initialization
     STYLE  "READONLY_FIELD"
    EVALUE  "Lang.GetTimestampNowP() + 15000"
      LOAD  "WAKE", "OLD_AGENT"
+
    SELECT  "F2:G2"
     VALUE  "WAKE"
+
    SELECT  "F3:L3"
   FORMULA  "=(H2-(60*2+4)*1000)/1000/60/60/24+25568.6681"
    FORMAT  "DATETIME"
@@ -53,8 +55,10 @@ Common Initialization
      NAME  "LOCK"
     STYLE  "READONLY_FIELD"
    EVALUE  "Lang.GetTimestampNowP()"
+
    SELECT  "F5:G5"
     VALUE  "LOCK"
+
    SELECT  "F6:L6"
   FORMULA  "=(H5-(60*2+4)*1000)/1000/60/60/24+25568.6681"
    FORMAT  "DATETIME"
@@ -67,6 +71,7 @@ Agent-specific
    SELECT "N2:R2"
     VALUE "Sheet:"
    HALIGN "right"
+
    SELECT "S2:AH2"
      NAME "SHEET"
     STYLE "FIELD"
@@ -85,9 +90,11 @@ Agent-specific
    SELECT "N4:R4"
     VALUE "Input label:"
    HALIGN "right"
+
    SELECT "S4:AC4"
     VALUE "<Input Label>"
      NAME "INPUT"
+
     STYLE "FIELD"
      LOAD "INPUT", "OLD_AGENT"
  VALIDATE "Enter the name of a label from your Gmail account"
@@ -117,6 +124,7 @@ Read the value REINSTALL_URL from OLD_AGENT and add it to the stack
 "null" means read the value for the parameter from the stack
       INSTALL null
 ------------------------
+
    SELECT "AJ6:AR6"
      NAME "REINSTALL_URL"
     STYLE "FIELD"
@@ -138,7 +146,6 @@ GAS.AddRowsToJournalingSheet(
 agent.WriteValue('SHEET', GAS.GetUrlFromSheet(sheet));
 agent.ExecuteRoutineUsingNoteName('REFRESH_LABELS');
 ------------------------
-
 
    SELECT "AP2:AV2"
     VALUE "[Refresh Labels]"
