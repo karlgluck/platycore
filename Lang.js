@@ -389,7 +389,7 @@ ns.GetUnicodeAstralCodePointFromSurrogatePairP = function (highSurrogate, lowSur
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetStringFromTimestampP = function (utsTime)
+ns.MakeStringUsingTimestampP = function (utsTime)
    {
    var date = new Date(utsTime);
    if (date instanceof Date && !isNaN(date.getTime()))
@@ -404,9 +404,9 @@ ns.GetStringFromTimestampP = function (utsTime)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetStringFromDateP = function (date)
+ns.MakeStringUsingDateP = function (date)
    {
-   return ns.IsDateP(date) ? date.toUTCString() + ' (=' + String(utsTime) + ')' : '<invalid date>';
+   return ns.IsDateP(date) ? date.toUTCString() + ' (=' + String(date.getTime()) + ')' : '<invalid date>';
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -449,7 +449,7 @@ ns.MakeObjectsUsingTableP = function (table)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-  ns.MakeTableFromObjectsP = function (objects, headers)
+  ns.MakeTableUsingObjectsP = function (objects, headers)
      {
      if (!ns.IsArrayP(headers))
         {
@@ -710,7 +710,7 @@ ns.MakeFloatUsingAnyP = function (any)
 
 ns.MakeStringUsingAnyP = function (any)
    {
-   return String(any);
+   return Lang.IsObjectP(any) ? JSON.stringify(any) : String(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------

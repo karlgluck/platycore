@@ -3,7 +3,7 @@ Any line that doesn't start with a space is ignored, so we can write whatever we
 ==================================================================
 Common Initialization
 
-      TITLE  "Labels to Lists"
+      TITLE  "Make Calendar Events"
     RESERVE  7
 
 --- EN ---
@@ -63,6 +63,38 @@ Common Initialization
   FORMULA  "=(H5-(60*2+4)*1000)/1000/60/60/24+25568.6681"
    FORMAT  "DATETIME"
 
+
+
+
+==================================================================
+Reinstall
+
+   SELECT "AS6:AV6"
+    VALUE "[Reinstall]"
+    STYLE "BUTTON"
+     NOTE "---"
+------------------------
+      ALIAS "OLD_AGENT"
+      EXPORT
+      UNINSTALL
+      NEW_AGENT "NEW_AGENT"
+The stack is a place for storing temporary values so that
+they can be passed as arguments to functions.
+      SELECT "STACK"
+Read the value REINSTALL_URL from OLD_AGENT and add it to the stack
+      LOAD "REINSTALL_URL", "OLD_AGENT"
+"null" means read the value for the parameter from the stack
+      INSTALL null
+------------------------
+
+   SELECT "AJ6:AR6"
+     NAME "REINSTALL_URL"
+    STYLE "FIELD"
+     LOAD "$LAST_INSTALL_URL"
+
+
+
+
 ==================================================================
 Agent-specific
 
@@ -101,33 +133,6 @@ Agent-specific
         + "IS_GMAIL_LABEL"
 
 
-==================================================================
-Manual Actions
-
---- [Reinstall] ---
-
-   SELECT "AS6:AV6"
-    VALUE "[Reinstall]"
-    STYLE "BUTTON"
-     NOTE "---"
-------------------------
-      ALIAS "OLD_AGENT"
-      EXPORT
-      UNINSTALL
-      NEW_AGENT "NEW_AGENT"
-The stack is a place for storing temporary values so that
-they can be passed as arguments to functions.
-      SELECT "STACK"
-Read the value REINSTALL_URL from OLD_AGENT and add it to the stack
-      LOAD "REINSTALL_URL", "OLD_AGENT"
-"null" means read the value for the parameter from the stack
-      INSTALL null
-------------------------
-
-   SELECT "AJ6:AR6"
-     NAME "REINSTALL_URL"
-    STYLE "FIELD"
-     LOAD "$LAST_INSTALL_URL"
 
 --- [Make Sheet] ---
 

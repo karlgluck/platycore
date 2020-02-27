@@ -1,6 +1,6 @@
 var Platycore = (function (ns) {
 
-ns.Version = '2009.2';
+ns.Version = '2009.4';
 ns.IsInteractive = true;
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -27,6 +27,21 @@ Object.keys(configFromSettingName).forEach(function (eSettingName) {
       }
    ns[eSettingName] = config.cast(value);
    });
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+ns.ConnectAndRun = function (sheet, callbackUsingConnection)
+   {
+   var agentConnection = new AgentConnection();
+   if (agentConnection.ConnectUsingSheet(sheet))
+      {
+      return callbackUsingConnection(agentConnection);
+      }
+   else
+      {
+      sheet.getParent().toast('Unable to connect to an agent on this sheet');
+      }
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //

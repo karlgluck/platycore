@@ -193,6 +193,51 @@ ns.MergeSheetHeaders = function (sheet, requiredHeaders)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+ns.WriteSheetUsingObjects = function (sheet, objects, headers)
+   {
+   ns.WriteSheetUsingTable(sheet, Lang.MakeTableUsingObjectsP(objects, headers));
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+ns.WriteSheetUsingTable = function (sheet, table)
+   {
+   var range = ns.SetSheetTableSize(sheet, table.length, table[0].length);
+   range.setValues(table);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.SetSheetTableSize = function (sheet, qrRows, qcColumns)
+   {
+   var irHeaderRow = sheet.getFrozenRows();
+   var irFirstDataRow = irHeaderRow + 1;
+
+   var mrMaxRows = sheet.getMaxRows();
+   var qrExtraRows = (mrMaxRows - irFirstDataRow + 1) - qrRows;
+   if (qrExtraRows > 0)
+      {
+      sheet.deleteRows(mrMaxRows - qrExtraRows + 1, qrExtraRows);
+      }
+   else if (qrExtraRows < 0)
+      {
+      sheet.insertRowsAfter(mrMaxRows, -qrExtraRows)
+      }
+   
+   var mrMaxColumns = sheet.getMaxColumns();
+   var qrExtraColumns = mrMaxColumns - qcColumns;
+   if (qrExtraColumns > 0)
+      {
+      sheet.deleteColumns(mrMaxColumns - qrExtraColumns + 1, qrExtraColumns);
+      }
+   else if (qrExtraColumns < 0)
+      {
+      sheet.insertColumnsAfter(mrMaxColumns, -qrExtraColumns)
+      }
+
+   return sheet.getRange(irHeaderRow, 1, qrRows, qcColumns);
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
 ns.AddRowsToJournalingSheet = function (rows, sheet)
    {

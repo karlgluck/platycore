@@ -5,15 +5,7 @@
 
 function commandSidebarExecute(text)
    {
-   var agentConnection = new AgentConnection();
-   if (agentConnection.ConnectUsingActiveSheet())
-      {
-      agentConnection.ExecuteRoutineUsingText(text);
-      }
-   else
-      {
-      SpreadsheetApp.getActiveSpreadsheet().toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
-      }
+   Platycore.ConnectAndRun(SpreadsheetApp.getActiveSheet(), (c) => c.ExecuteRoutineUsingText(text));
    }
    
 
@@ -69,6 +61,7 @@ function menuAddEmptyAgent()
    var sheet = SpreadsheetApp.getActiveSpreadsheet().insertSheet();
    sheet.getRange('A1').insertCheckboxes().check().setNote('Add agent instructions to this note\n  INFO "This agent is empty"');
    sheet.activate();
+   Platycore.UpdateDriveFileTriggers();
    menuOpenCommandSidebar(); // almost always want to do this next
    }
 
@@ -76,54 +69,56 @@ function menuAddEmptyAgent()
 
 function menuUninstallAgent()
    {
-   var agentConnection = new AgentConnection();
-   if (agentConnection.ConnectUsingActiveSheet())
-      {
-      var ui = SpreadsheetApp.getUi();
-      var button = ui.alert('Uninstall Agent', 'Are you sure you want to delete agent ' + agentConnection.GetName() + '(' + agentConnection.GetAgentId() + ')?', ui.ButtonSet.YES_NO);
-      if (ui.Button.YES === button)
-         {
-         agentConnection.Uninstall();
-         }
-      }
-   else
-      {
-      SpreadsheetApp.getActiveSpreadsheet().toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
-      }
+   Platycore.ConnectAndRun(
+         SpreadsheetApp.getActiveSheet(),
+         function (agentConnection)
+            {
+            var ui = SpreadsheetApp.getUi();
+            var button = ui.alert('Uninstall Agent', 'Are you sure you want to delete agent ' + agentConnection.GetName() + '(' + agentConnection.GetAgentId() + ')?', ui.ButtonSet.YES_NO);
+            if (ui.Button.YES === button)
+               {
+               agentConnection.Uninstall();
+               }
+            }
+         );
+   Platycore.UpdateDriveFileTriggers();
    }
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-var menuRunRange_ = function (range)
-   {
-   var agentConnection = new AgentConnection();
-   if (agentConnection.ConnectUsingSheet(range.getSheet()))
-      {
-      agentConnection.Info('Running ' + agentConnection.GetName());
-      var execution = agentConnection.ExecuteRoutineUsingText(range.getNote());
-      if (execution.didAbort)
-         {
-         agentConnection.Error('Execution aborted!');
-         }
-      }
-   else
-      {
-      SpreadsheetApp.getActiveSpreadsheet().toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
-      }
-   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 function menuRunSelectedNote ()
    {
-   menuRunRange_(SpreadsheetApp.getCurrentCell());
+   Platycore.ConnectAndRun(
+         SpreadsheetApp.getActiveSheet(),
+         function (agentConnection)
+            {
+            var range = SpreadsheetApp.getCurrentCell();
+            agentConnection.Info('Running ' + range.getA1Notation() + ' ' + String(range.getValue()));
+            var execution = agentConnection.ExecuteRoutineUsingText(range.getNote());
+            if (execution.didAbort)
+               {
+               agentConnection.Error('Execution aborted!');
+               }
+            }
+         );
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 function menuStepAgent()
    {
-   menuRunRange_(SpreadsheetApp.getActiveSheet().getRange('A1'));
+   Platycore.ConnectAndRun(
+         SpreadsheetApp.getActiveSheet(),
+         function (agentConnection)
+            {
+            agentConnection.Info('Running ' + agentConnection.GetName());
+            var execution = agentConnection.ExecuteRoutineUsingA1Note();
+            if (execution.didAbort)
+               {
+               agentConnection.Error('Execution aborted!');
+               }
+            }
+         );
    }
  
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -140,7 +135,7 @@ function menuOpenCommandSidebar()
    {
    var html = HtmlService.createHtmlOutputFromFile('CommandSidebar.html')
       .setTitle('Platycore')
-      .setWidth(300);
+      .setWidth(500);
    SpreadsheetApp.getUi().showSidebar(html);
    }
 
@@ -172,13 +167,7 @@ function menuStopRunningMainLoop ()
 
 function menuClearAgentOutput ()
    {
-   var sheet = SpreadsheetApp.getActiveSheet();
-   var qrFrozenRows = sheet.getFrozenRows();
-   var mrMaxRows = sheet.getMaxRows();
-   var irFirstUnfrozenRow = qrFrozenRows + 1;
-   var irFirstRowToDelete = irFirstUnfrozenRow + 1;
-   sheet.insertRowsBefore(irFirstUnfrozenRow, 1);
-   sheet.deleteRows(irFirstRowToDelete, mrMaxRows - irFirstRowToDelete + 2);
+   Platycore.ConnectAndRun(SpreadsheetApp.getActiveSheet(), (c) => c.ClearOutput());
    }
    
 //------------------------------------------------------------------------------------------------------------------------------------

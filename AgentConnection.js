@@ -157,19 +157,6 @@ function AgentConnection ()
 *********     ****   *****   ***         ****     ***   *****   **        *******       ****   ******   *****************************
 *************************************************************************************************************************************/
 
-//------------------------------------------------------------------------------------------------------------------------------------
-
-   var setCheckboxReadonly_ = function (range, isReadonly, value)
-      {
-      if (isReadonly)
-         {
-         range.setFontColor('#666666').setFormula(value ? '=TRUE' : '=FALSE'); // readonly
-         }
-      else
-         {
-         range.setFontColor('#00ffff').setValue(value); // editable
-         }
-      };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
@@ -181,24 +168,24 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.WriteCheckbox = function (name, value)
+   this.WriteCheckbox = function (name, any)
       {
       var range = getRangeFromPropertyName(name);
       if (Lang.IsObjectP(range))
          {
-         value = Lang.MakeBoolUsingAnyP(value);
+         any = Lang.MakeBoolUsingAnyP(any);
          if (range.getFormula().length > 0)
             {
-            range.setFormula(value ? '=TRUE' : '=FALSE');
+            range.setFormula(any ? '=TRUE' : '=FALSE');
             }
          else
             {
-            if (value) range.check(); else range.uncheck();
+            if (any) range.check(); else range.uncheck();
             }
          }
       else 
          {
-         self_.Warn('WriteCheckbox(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('WriteCheckbox(name="'+name+'",any='+any+'): name does not exist');
          }
       };
 
@@ -224,16 +211,16 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.WriteValue = function (name, value)
+   this.WriteValue = function (name, any)
       {
       var range = getRangeFromPropertyName(name);
       if (Lang.IsObjectP(range))
          {
-         range.setValue(value);
+         range.setValue(any);
          }
       else 
          {
-         self_.Warn('WriteValue(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('WriteValue(name="'+name+'",any='+any+'): name does not exist');
          }
       };
 
@@ -257,16 +244,16 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.WriteNote = function (name, value)
+   this.WriteNote = function (name, any)
       {
       var range = getRangeFromPropertyName(name);
       if (Lang.IsObjectP(range))
          {
-         range.setNote(Lang.MakeStringUsingAnyP(value));
+         range.setNote(Lang.MakeStringUsingAnyP(any));
          }
       else 
          {
-         self_.Warn('WriteNote(name="'+name+'",value='+value+'): name does not exist');
+         self_.Warn('WriteNote(name="'+name+'",any='+any+'): name does not exist');
          }
       };
 
@@ -278,6 +265,11 @@ function AgentConnection ()
 
    this.FindNameUsingRangeP = function (range)
       {
+      if (Lang.IsNotObjectP(range))
+         {
+         return null;
+         }
+
       var searchRow = range.getRow();
       var searchColumn = range.getColumn();
       var searchWidth = range.getWidth();
@@ -309,6 +301,15 @@ function AgentConnection ()
 **************************************************************************************************************************************
 *************************************************************************************************************************************/
 
+   this.ClearOutput = function ()
+      {
+      var irFirstRowToDelete = irNewMessage_ + 1;
+      sheet.insertRowsBefore(irNewMessage_, 1);
+      sheet.deleteRows(irFirstRowToDelete, sheet.getMaxRows() - irFirstRowToDelete + 2);
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    var writeOutputFirstTime_ = function (badge, args)
       {
       if (Lang.IsNotMeaningfulP(badge))
@@ -322,6 +323,8 @@ function AgentConnection ()
       writeOutput_ = writeOutputNormal_;
       return rvRange;
       };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    var writeOutputNormal_ = function (badge, args)
       {
@@ -780,6 +783,7 @@ function AgentConnection ()
             ;
 
       agentInstructionsText = '[' + agentInstructions.join(',') + ']';
+      self_.LogInteractive('agentInstructionsText', agentInstructionsText);
       return JSON.parse(agentInstructionsText);
       };
 
@@ -819,6 +823,13 @@ function AgentConnection ()
       var currentAgentAlias = null;
       var stackValues = [];
       var importedValueFromPropertyNameFromAlias = {};
+
+      var writeSelectionFunctionFromTypeName = {
+         NOTE: self_.WriteNote,
+         VALUE: self_.WriteValue,
+         CHECKBOX: self_.WriteCheckbox,
+         STACK: ((name, value) => stackValues.push(value))
+      };
       
       for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
          {
@@ -842,6 +853,7 @@ function AgentConnection ()
             }
 
          console.log(eInstruction);
+         var writeSelection = (any) => writeSelectionFunctionFromTypeName[selectionTypeInstruction](kSelectedRangePropertyName, any);
 
          var popArgument = function (castFunction = null)
             {
@@ -875,6 +887,9 @@ function AgentConnection ()
             case 'INFO':      self_.Info(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'WARN':      self_.Warn(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'ERROR':     self_.Error(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'TEXT':      writeSelection(popArgument(Lang.MakeStringUsingAnyP)); break;
+            case 'CLS':       self_.ClearOutput(); break;
+            case 'CLEAR':     selectedRange.clear(); break;
             case 'NOTE':      selectedRange.setNote(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'FORMULA':   selectedRange.setFormula(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'VALUE':     selectedRange.setValue(popArgument()); break;
@@ -887,11 +902,11 @@ function AgentConnection ()
             case 'HALIGN':    selectedRange.setHorizontalAlignment(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'VALIGN':    selectedRange.setVerticalAlignment(popArgument(Lang.MakeStringUsingAnyP)); break;
 
-            case 'EVALUE':
+            case 'EVALUE': // combination of EVAL + VALUE
                selectedRange.setValue(self_.EvalCode(popArgument(Lang.MakeStringUsingAnyP), 'EVALUE@'+iInstruction));
                break;
 
-            case 'EVAL':
+            case 'EVAL': // run the code
                self_.EvalCode(popArgument(Lang.MakeStringUsingAnyP), 'EVAL@'+iInstruction);                  
                break;
 
@@ -919,14 +934,6 @@ function AgentConnection ()
                   }
                break;
 
-            case 'ABORT_UNLESS_INTERACTIVE':
-               if (!Platycore.IsInteractive)
-                  {
-                  rvExecutionDetails.didAbort = true;
-                  nInstructionCount = 0;
-                  }
-               break;
-
             case 'NAME':
                (function (kName)
                   {
@@ -938,9 +945,36 @@ function AgentConnection ()
             case 'CODE':
                (function (code)
                   {
-                  var value = '  TURN_ON\n  EVAL "---"\n--------\n' + code + '\n--------\n  TURN_OFF';
+                  var value = '  TURN_ON\n  EVAL "---"\n--------\n   <' + code.replace(/\n/g, /\n   /) + '\n--------\n  TURN_OFF';
                   selectedRange.setNote(value);
                   })(popArgument(Lang.MakeStringUsingAnyP));
+               break;
+
+            case 'ABORT_UNLESS_INTERACTIVE':
+               if (!Platycore.IsInteractive)
+                  {
+                  rvExecutionDetails.didAbort = true;
+                  nInstructionCount = 0;
+                  }
+               break;
+            
+            case 'ABORT_UNLESS_ACTIVATED':
+               (function ()
+                  {
+                  var isActivated = Platycore.IsInteractive;
+                  if (!isActivated)
+                     {
+                     var isEnabled = (function (en) { return Lang.IsUndefinedP(en) || Lang.MakeBoolUsingAnyP(en) })(self_.ReadCheckbox('EN'));
+                     var isGo = (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolUsingAnyP(go) })(self_.ReadCheckbox('GO'));
+                     var isWake = (function (wake) { return Lang.IsNumberP(wake) && utsIterationStarted > wake })(self_.ReadValue('WAKE'));
+                     isActivated = isEnabled && (isGo || isWake);
+                     }
+                  if (!isActivated)
+                     {
+                     rvExecutionDetails.didAbort = true;
+                     nInstructionCount = 0;
+                     }
+                  })();
                break;
 
             case 'FORMAT':
@@ -953,18 +987,6 @@ function AgentConnection ()
                      default: selectedRange.setNumberFormat(format); break;
                      }
                   })(popArgument(Lang.MakeStringUsingAnyP));
-               break;
-            
-            case 'ABORT_UNLESS_TRIGGERED':
-               var isEnabled = (function (en) { return Lang.IsUndefinedP(en) || Lang.MakeBoolUsingAnyP(en) })(self_.ReadCheckbox('EN'));
-               var isGo = (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolUsingAnyP(go) })(self_.ReadCheckbox('GO'));
-               var isWake = (function (wake) { return Lang.IsNumberP(wake) && utsIterationStarted > wake })(self_.ReadValue('WAKE'));
-               var isTriggered = isEnabled && (isGo || isWake);
-               if (!isTriggered)
-                  {
-                  rvExecutionDetails.didAbort = true;
-                  nInstructionCount = 0;
-                  }
                break;
 
             case 'INSTALL':
@@ -1145,8 +1167,12 @@ function AgentConnection ()
                      }
                   else
                      {
-                     selectionTypeInstruction = 'VALUE';
                      selectedRange = sheet_.getRange(rangeIdentifier);
+                     if (null == selectedRange && GAS.IsValidRangeNameP(rangeIdentifier))
+                        {
+                        selectedRange = getRangeFromPropertyName(rangeIdentifier);
+                        }
+                     selectionTypeInstruction = 'VALUE';
                      kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
                      }
                   })(popArgument(Lang.MakeStringUsingAnyP));
@@ -1175,32 +1201,15 @@ function AgentConnection ()
                   })(popArgument(Lang.IsAffirmativeStringP), Lang.IsContainedInSetP('READONLY', eArgumentSet));
                break;
 
+            case 'TEXT':
+               break;
+
             case 'LOAD':
                (function (propertyName, kAlias)
                   {
-                  var writeMethodFromTypeName = {
-                     NOTE: self_.WriteNote,
-                     VALUE: self_.WriteValue,
-                     CHECKBOX: self_.WriteCheckbox,
-                     STACK: ((name, value) => stackValues.push(value))
-                  };
                   if (Lang.IsNotStringP(propertyName))
                      {
                      self_.Error('LOAD: missing propertyName');
-                     }
-                  else if (importedValueFromPropertyNameFromAlias.hasOwnProperty(kAlias))
-                     {
-                     var importedValueFromPropertyName = importedValueFromPropertyNameFromAlias[kAlias];
-                     var previousValue = null;
-                     if (Lang.IsObjectP(importedValueFromPropertyName)
-                           && Lang.IsMeaningfulP(previousValue = importedValueFromPropertyName[propertyName]))
-                        {
-                        (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
-                        }
-                     else
-                        {
-                        self_.Warn('LOAD: no property named "' + propertyName + '" in "' + kAlias + '"; skipping');
-                        }
                      }
                   else if (Lang.IsUndefinedP(kAlias))
                      {
@@ -1232,6 +1241,20 @@ function AgentConnection ()
                               self_.Error('LOAD requested an unknown value: "' + value + '"');
                               break;
                            }
+                        }
+                     }
+                  else if (importedValueFromPropertyNameFromAlias.hasOwnProperty(kAlias))
+                     {
+                     var importedValueFromPropertyName = importedValueFromPropertyNameFromAlias[kAlias];
+                     var previousValue = null;
+                     if (Lang.IsObjectP(importedValueFromPropertyName)
+                           && Lang.IsMeaningfulP(previousValue = importedValueFromPropertyName[propertyName]))
+                        {
+                        (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
+                        }
+                     else
+                        {
+                        self_.Warn('LOAD: no property named "' + propertyName + '" in "' + kAlias + '"; skipping');
                         }
                      }
                   else
@@ -1282,6 +1305,29 @@ function AgentConnection ()
 
          return rvExecutionDetails;
       };
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+   this.ProcessSheetObjects = function (sheet, callbackUsingObjects)
+      {
+      var headerForThisAgent = kAgentId_;
+      var table = GAS.MakeTableUsingSheetP(sheet);
+      var objectsToProcess = Lang.MakeObjectsUsingTableP(table);
+      var headers = Lang.GetHeadersFromTableP(table);
+      if (headers.indexOf(headerForThisAgent) >= 0)
+         {
+         objectsToProcess = objectsToProcess.filter((e) => !Lang.MakeBoolUsingAnyP(e[headerForThisAgent]));
+         }
+      var processedObjects = callbackUsingObjects(objectsToProcess);
+      if (processedObjects.length > 0)
+         {
+         processedObjects.forEach(function (o) { o[headerForThisAgent] = true });
+         headers = GAS.MergeSheetHeaders(sheet, Object.keys(processedObjects[0]));
+         }
+      GAS.WriteSheetUsingObjects(sheet, processedObjects, headers);
+      };
+
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // If an argument was provided to the constructor, try
