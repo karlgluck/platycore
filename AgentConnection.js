@@ -607,11 +607,9 @@ function AgentConnection ()
          var rv = null;
          try
             {
-            var code = codeLines
+            rv = eval(codeLines
                   .map(function (e, i) { return e.replace(/;\s$/,';lineNumber='+(i+1)+';'); })
-                  .join('\n')
-                  ;
-            rv = eval(code);
+                  .join('\n'));
             }
          catch (e)
             {
