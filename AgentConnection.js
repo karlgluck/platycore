@@ -712,21 +712,8 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   var getRoutineFromText = function (agentInstructionsText)
+   var makeRoutineUsingText = function (agentInstructionsText)
       {
-      var match = /^\s+</.exec(agentInstructionsText);
-      if (Lang.IsArrayP(match))
-         {
-         agentInstructionsText = agentInstructionsText
-               .split('\n')
-               .map((function (qCharactersToTrim)
-                  {
-                  return eLine => eLine.substring(qCharactersToTrim)
-                  })(match[1].length-1))
-               .join('\n')
-               ;
-         }
-
       var multilineObjectConcatenationRegex = new RegExp(/{---+}\s---+\s([\s\S]*?)[\r\n]---+/gm);
       var multilineConcatenationRegex = new RegExp(/"---+"\s---+\s([\s\S]*?)[\r\n]---+/gm);
       var whitespaceRegex = new RegExp(/^\s/);
@@ -738,6 +725,18 @@ function AgentConnection ()
                })
             .replace(multilineConcatenationRegex, function (matched, group, index) // allow easy multi-line concatenation
                {
+               var match = /^\s+</.exec(group);
+               if (Lang.IsArrayP(match))
+                  {
+                  group = group
+                        .split('\n')
+                        .map((function (qCharactersToTrim)
+                           {
+                           return eLine => eLine.substring(qCharactersToTrim)
+                           })(match[1].length-1))
+                        .join('\n')
+                        ;
+                  }
                return JSON.stringify(group);
                })
             .split(/\n/)
@@ -787,7 +786,7 @@ function AgentConnection ()
 
    this.ExecuteRoutineUsingText = function (agentInstructionsText)
       {
-      var routine = getRoutineFromText(agentInstructionsText);
+      var routine = makeRoutineUsingText(agentInstructionsText);
       return self_.ExecuteRoutineUsingInstructions(routine);
       };
 
@@ -972,7 +971,7 @@ function AgentConnection ()
                lastInstallUrl = popArgument(Lang.MakeStringUsingAnyP);
                try
                   {
-                  instructions = instructions.concat(getRoutineFromText(getRoutineTextFromUrl(lastInstallUrl)));
+                  instructions = instructions.concat(makeRoutineUsingText(getRoutineTextFromUrl(lastInstallUrl)));
                   nInstructionCount = instructions.length;
                   }
                catch (e)
