@@ -453,8 +453,8 @@ function AgentConnection ()
          }
       var isAlreadyRunning = self_.ReadCheckbox('ON', true);
       var lockValue = self_.ReadValue('LOCK', true);
-      var hasLockField = Lang.IsNotUndefinedP(lockValue);
-      if (hasLockField)
+      var hasLockValue = Lang.IsNotUndefinedP(lockValue);
+      if (hasLockValue)
          {
          lockValue = Lang.MakeIntUsingAnyP(lockValue);
          var lockValueWithSentinel = (lockValue - (lockValue % 1000)) + (((lockValue % 1000) + 1) % 1000);
@@ -467,7 +467,7 @@ function AgentConnection ()
          var canOverrideLock = false;
          }
 
-      var canTurnOn = !isAlreadyRunning || (hasLockField && canOverrideLock);
+      var canTurnOn = !isAlreadyRunning || (hasLockValue && canOverrideLock);
       if (canTurnOn)
          {
          var lock = LockService.getDocumentLock();
@@ -486,7 +486,7 @@ function AgentConnection ()
          try
             {
                isAlreadyRunning = Lang.MakeBoolUsingAnyP(self_.ReadCheckbox('ON', true));
-               if (hasLockField)
+               if (hasLockValue)
                   {
                   canTurnOn = self_.ReadValue('LOCK', true) === lockValueWithSentinel
                         && (!isAlreadyRunning || canOverrideLock);
@@ -551,30 +551,6 @@ function AgentConnection ()
             }
          }
 
-      };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-//
-// Execute the code in the note named by the field SCRIPT,
-// given all of these things exist and are valid.
-//
-
-   this.Step = function ()
-      {
-      if (!isThisOn_)
-         {
-         throw "must be turned on, otherwise the program might not have exclusive control of the agent"
-         }
-
-      var update = self_.ReadValue('UPDATE');
-      if (Lang.IsUndefinedP(update))
-         {
-         self_.Warn('This agent does not do anything when activated because there is no UPDATE field');
-         return;
-         }
-
-      var rv = self_.ExecuteRoutineUsingNoteName(update);
-      return rv;
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -815,10 +791,10 @@ function AgentConnection ()
             };
 
       var selectedRange = null;
-      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'CHECKBOX', 'FIELD', 'TEXT', 'NOTE', 'VALUE']);
+      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'CHECKBOX', 'VALUE', 'TEXT', 'NOTE', 'VALUE']);
       var hasMergedCurrentSelection = false;
       var lastInstallUrl = null;
-      var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['CHECKBOX', 'FIELD', 'TEXT', 'NOTE']);
+      var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['CHECKBOX', 'VALUE', 'TEXT', 'NOTE']);
       var selectionTypeInstruction = null;
       var sheetFromAlias = {};
       var kSelectedRangePropertyName = null;
@@ -1068,6 +1044,7 @@ function AgentConnection ()
                                           .copy()
                                           .setForegroundColor('#00ffff')
                                           .setUnderline(true)
+                                          .build()
                                     )
                               .setBackground('#1c4587')
                               ;
@@ -1082,6 +1059,7 @@ function AgentConnection ()
                                           .copy()
                                           .setForegroundColor('#666666')
                                           .setUnderline(false)
+                                          .build()
                                     )
                               .setBackground('#1c4587')
                               ;

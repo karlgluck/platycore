@@ -90,7 +90,7 @@ ns.GetUrlFromSheet = function (sheet)
 ns.IsValidRangeNameP = function (name)
    {
    // https://support.google.com/docs/answer/63175
-   return Lang.IsString(name) && !name.match(/[^A-Za-z0-9_]|^true|^false|^.{250}.|^$/);
+   return Lang.IsStringP(name) && !name.match(/[^A-Za-z0-9_]|^true|^false|^.{250}.|^$/);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
