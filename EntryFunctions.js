@@ -12,7 +12,7 @@ function commandSidebarExecute(text)
       }
    else
       {
-      SpreadsheetApp.toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
+      SpreadsheetApp.getActiveSpreadsheet().toast('Unable to connect to an agent on this sheet. Try adding an empty agent.');
       }
    }
    
