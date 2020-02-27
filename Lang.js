@@ -28,18 +28,18 @@ ns.ClampStringLengthP = function (text, length)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetRainbowColorUsingAnyP = function (v)
+ns.GetRainbowColorUsingAnyP = function (any)
    {
    var colors = ['#ff0000','#ff9900','#ffff00','#00ff00','#00ffff','#4a86e8','#9900ff'];
-   return colors[((v >>> 0) % colors.length)];
+   return colors[((any >>> 0) % colors.length)];
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.GetDarkRainbowColorUsingAnyP = function (v)
+ns.GetDarkRainbowColorUsingAnyP = function (any)
    {
    var colors = ['#5b0f00', '#783f04', '#7f6000', '#274e13', '#0c343d', '#1c4587', '#073763', '#20124d', '#4c1130'];
-   return colors[((v >>> 0) % colors.length)];
+   return colors[((any >>> 0) % colors.length)];
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -58,17 +58,31 @@ ns.GetBase64GzipFromStringP = function (stringToEncode)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsDateP = function (v)
+ns.IsDateP = function (any)
    {
-   return v instanceof Date && !isNaN(v.getTime());
+   return any instanceof Date && !isNaN(any.getTime());
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsNotDateP = function (any)
+   {
+   return !ns.IsDateP(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/1303646/check-whether-variable-is-number-or-string-in-javascript/20373925
 
-ns.IsNumberP = function (v)
+ns.IsNumberP = function (any)
    {
-   return !isNaN(parseFloat(v)) && !isNaN(v - 0)
+   return !isNaN(parseFloat(any)) && !isNaN(any - 0)
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsNotNumberP = function (any)
+   {
+   return !ns.IsNotNumberP(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -156,14 +170,14 @@ ns.IsNotMeaningfulStringP = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsUndefinedP = function (v)
+ns.IsUndefinedP = function (any)
    {
-   return 'undefined' === typeof v;
+   return 'undefined' === typeof any;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.IsNotUndefinedP = function (v)
+ns.IsNotUndefinedP = function (any)
    {
    return !ns.IsUndefinedP(any);
    };
@@ -539,7 +553,7 @@ ns.MakeIndexFromContentDictionaryUsingArrayP = function (array)
 //
 //  ==> rv: {1: [{q: 1, t:'apple'}, {q: 1, t:'banana'}], 4: [{q: 2, t:'pear'}]}
 
-ns.MakeObjectArrayFromKeyDictionaryUsingObjectsP = function (objects, key)
+ns.MakeArrayFromKeyDictionaryUsingObjectsP = function (objects, key)
    {
    if (objects.length === 0) return {};
 
@@ -559,6 +573,17 @@ ns.MakeObjectArrayFromKeyDictionaryUsingObjectsP = function (objects, key)
       }
 
    return retval;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.AddToArrayFromKeyDictionary = function (dictionary, key, any)
+   {
+   if (!dictionary.hasOwnProperty(key))
+      {
+      dictionary[key] = [];
+      }
+   dictionary[key].push(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------

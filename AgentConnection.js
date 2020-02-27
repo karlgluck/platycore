@@ -1080,19 +1080,19 @@ function AgentConnection ()
                break;
 
             case 'INFO':
-               self_.Info(eArguments.join('\n'));
+               self_.Info(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'WARN':
-               self_.Warn(eArguments.join('\n'));
+               self_.Warn(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'ERROR':
-               self_.Error(eArguments.join('\n'));
+               self_.Error(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'EVAL':
-               var code = eArguments.join('\n');
+               var code = popArgument(Lang.MakeStringUsingAnyP);
                self_.EvalCode(code, 'EVAL@'+iInstruction);                  
                break;
 
@@ -1272,9 +1272,9 @@ function AgentConnection ()
                break;
 
             case 'VALIDATE':
-               (function (validationType)
+               (function (helpText, validationType)
                   {
-                  switch (Lang.MakeStringUsingAnyP(validationType))
+                  switch (validationType)
                      {
                      case 'IS_GMAIL_LABEL':
                         selectedRange.setDataValidation(
@@ -1282,7 +1282,7 @@ function AgentConnection ()
                                     .requireValueInList(
                                           GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort()
                                           )
-                                    .setHelpText(validationType)
+                                    .setHelpText(helpText)
                                     .build()
                               );
                         break;
@@ -1291,7 +1291,7 @@ function AgentConnection ()
                         selectedRange.setDataValidation(
                               SpreadsheetApp.newDataValidation()
                                     .requireTextIsUrl()
-                                    .setHelpText(eArguments[0])
+                                    .setHelpText(helpText)
                                     .build()
                               );
                         break;
@@ -1300,7 +1300,7 @@ function AgentConnection ()
                         self_.Error('Unknown VALIDATE requested: ' + validationType);
                         break;
                      }
-                  })(popArgument(Lang.MakeStringUsingAnyP));
+                  })(popArgument(Lang.MakeStringUsingAnyP), popArgument(Lang.MakeStringUsingAnyP));
 
                break;
             

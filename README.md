@@ -22,5 +22,3 @@ Here are some ideas I'm tossing around at the moment:
  * Breaker schedule: If something fails, try again with exponential backoff - use metadata to track, reset if sheet changes (to try all again)
 
 
-
-

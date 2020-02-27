@@ -182,7 +182,7 @@ records.forEach(function (eRecord)
    eRecord.outputSheet = GAS.OpenSheetUsingUrl(eRecord.sheet_url);
    });
 var inputLabel = GmailApp.getUserLabelByName(agent.ReadField('INPUT_LABEL'));
-var recordsFromLabelName = Lang.MakeObjectArrayFromKeyDictionaryUsingObjectsP(records, 'input_label');
+var recordsFromLabelName = Lang.MakeArrayFromKeyDictionaryUsingObjectsP(records, 'input_label');
 var threads = inputLabel.getThreads();
 var outputs = [];
 threads.forEach(function (eThread)
@@ -206,7 +206,7 @@ threads.forEach(function (eThread)
       eThread.removeLabel(inputLabel);
       }
    });
-var outputsFromLabelName = Lang.MakeObjectArrayFromKeyDictionaryUsingObjectsP(outputs, 'label_name');
+var outputsFromLabelName = Lang.MakeArrayFromKeyDictionaryUsingObjectsP(outputs, 'label_name');
 Object.keys(outputsFromLabelName).forEach(function (eLabelName)
    {
    var eOutputs = outputsFromLabelName[eLabelName];
