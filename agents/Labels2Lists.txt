@@ -93,10 +93,10 @@ Agent-specific
 
    SELECT "S4:AC4"
     VALUE "<Input Label>"
-     NAME "INPUT"
+     NAME "INPUT_LABEL"
 
     STYLE "FIELD"
-     LOAD "INPUT", "OLD_AGENT"
+     LOAD "INPUT_LABEL", "OLD_AGENT"
  VALIDATE "Enter the name of a label from your Gmail account"
         + "IS_GMAIL_LABEL"
 

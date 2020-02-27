@@ -99,7 +99,7 @@ var menuRunRange_ = function (range)
    var agentConnection = new AgentConnection();
    if (agentConnection.ConnectUsingSheet(range.getSheet()))
       {
-      agentConnection.Info('Running ' + range.getA1Notation() + ' ' + String(range.getValue()));
+      agentConnection.Info('Running ' + agentConnection.GetName());
       var execution = agentConnection.ExecuteRoutineUsingText(range.getNote());
       if (execution.didAbort)
          {

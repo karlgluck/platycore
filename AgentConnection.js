@@ -173,7 +173,7 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ReadCheckbox = function (name, ignoreCache)
+   this.ReadCheckbox = function (name)
       {
       var range = getRangeFromPropertyName(name);
       return Lang.IsObjectP(range) ? range.isChecked() : undefined;
@@ -451,8 +451,8 @@ function AgentConnection ()
          {
          return true;
          }
-      var isAlreadyRunning = self_.ReadCheckbox('ON', true);
-      var lockValue = self_.ReadValue('LOCK', true);
+      var isAlreadyRunning = self_.ReadCheckbox('ON');
+      var lockValue = self_.ReadValue('LOCK');
       var hasLockValue = Lang.IsNotUndefinedP(lockValue);
       if (hasLockValue)
          {
@@ -485,10 +485,10 @@ function AgentConnection ()
          {
          try
             {
-               isAlreadyRunning = Lang.MakeBoolUsingAnyP(self_.ReadCheckbox('ON', true));
+               isAlreadyRunning = Lang.MakeBoolUsingAnyP(self_.ReadCheckbox('ON'));
                if (hasLockValue)
                   {
-                  canTurnOn = self_.ReadValue('LOCK', true) === lockValueWithSentinel
+                  canTurnOn = self_.ReadValue('LOCK') === lockValueWithSentinel
                         && (!isAlreadyRunning || canOverrideLock);
                   }
                else
