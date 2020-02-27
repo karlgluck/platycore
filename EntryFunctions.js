@@ -123,7 +123,7 @@ function menuRunSelectedNote ()
 
 function menuStepAgent()
    {
-   menuRunRange_(SpreadsheetApp.getSheet().getRange('A1'));
+   menuRunRange_(SpreadsheetApp.getActiveSheet().getRange('A1'));
    }
  
 //------------------------------------------------------------------------------------------------------------------------------------
