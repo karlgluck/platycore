@@ -1,0 +1,144 @@
+There is no WAKE field, so the only way this agent is
+run is by the GO toggle being set. This agent's
+spreadsheet input should be added to the Drive triggers
+sheet to set GO automatically whenever the file changes.
+
+==================================================================
+Common Initialization
+
+      TITLE  "Add Scheduling Reminder"
+    RESERVE  7
+
+--- EN ---
+
+   SELECT  "C2"
+     NAME  "EN"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D2"
+    VALUE  "EN"
+
+--- ON ---
+
+   SELECT  "C3"
+     NAME  "ON"
+ CHECKBOX  "TRUE"
+        +  "READONLY"
+
+   SELECT  "D3"
+    VALUE  "ON"
+
+--- GO ---
+
+   SELECT  "C4"
+     NAME  "GO"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D4"
+    VALUE  "GO"
+
+--- LOCK ---
+
+   SELECT  "H5:L5"
+     NAME  "LOCK"
+    STYLE  "READONLY_FIELD"
+   EVALUE  "Lang.GetTimestampNowP()"
+
+   SELECT  "F5:G5"
+    VALUE  "LOCK"
+
+   SELECT  "F6:L6"
+  FORMULA  "=(H5-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+
+
+==================================================================
+Reinstall
+
+   SELECT "AJ6:AR6"
+     NAME "REINSTALL_URL"
+    STYLE "FIELD"
+     LOAD "$LAST_INSTALL_URL"
+
+   SELECT "AS6:AV6"
+    VALUE "[Reinstall]"
+    STYLE "BUTTON"
+     NOTE "---"
+------------------------
+      ALIAS "OLD_AGENT"
+      EXPORT
+      UNINSTALL
+      NEW_AGENT "NEW_AGENT"
+      SELECT "STACK"
+      LOAD "REINSTALL_URL", "OLD_AGENT"
+      INSTALL null
+------------------------
+
+
+
+==================================================================
+Agent-specific
+
+--- SHEET ---
+
+   SELECT "N2:R2"
+    VALUE "Sheet:"
+   HALIGN "right"
+
+   SELECT "S2:AH2"
+     NAME "SHEET"
+    STYLE "FIELD"
+     LOAD "SHEET", "OLD_AGENT"
+
+--- Processed ---
+   SELECT "C6:D6"
+    VALUE 0
+     NAME "PROCESSED"
+    STYLE "READONLY_FIELD"
+     LOAD "PROCESSED", "OLD_AGENT"
+   HALIGN "center"
+
+==================================================================
+Scripts
+
+--- UPDATE ---
+
+   SELECT  "A1"
+     NOTE  "---"
+------------------------
+   <  ABORT_UNLESS_ACTIVATED
+      TURN_ON
+      EVAL  "---"
+   ------------------------
+   var sheet = GAS.OpenSheetUsingUrl(agent.ReadValue('SHEET'));
+   var dateTomorrow = Lang.MakeDateByDaysInFuture(1);
+   var processObject;
+   if (agent.WhatIf)
+      {
+      processObject = function (eNewObject)
+         {
+         agent.InteractiveLog('[!EN]: Would have made an all-day event named "' + eNewObject.item + '" tomorrow');
+         };
+      }
+   else
+      {
+      processObject = function (eNewObject) 
+         {
+         Calendar.createAllDayEvent(eNewObject.item, dateTomorrow, {
+               description: eNewObject.email + '\n\n' + eNewObject.url + '\n\n' + eNewObject.details
+               });
+         };
+      }
+   var newObjects = agent.ProcessEachNewObjectFromSheet(sheet, process);
+   if (0 < newObjects.length)
+      {
+      agent.Log('There were ' + newObjects.length + ' new record(s)');
+      }
+   if (en)
+      {
+      agent.WriteValue('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadValue('PROCESSED')) + newObjects.length);
+      }
+   ------------------------
+      TURN_OFF
+------------------------
+      TURN_OFF

@@ -184,6 +184,20 @@ ns.IsNotUndefinedP = function (any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.IsNullP = function (any)
+   {
+   return null === any;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.IsNotNullP = function (any)
+   {
+   return null !== any;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.IsUrlP = function (any)
    {
    return !!Lang.MakeStringUsingAnyP(any).match(/(https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|www\.[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9]\.[^\s]{2,}|https?:\/\/(?:www\.|(?!www))[a-zA-Z0-9]+\.[^\s]{2,}|www\.[a-zA-Z0-9]+\.[^\s]{2,})/gi);
@@ -553,15 +567,24 @@ ns.MakeIndexFromContentDictionaryUsingArrayP = function (array)
 //
 //  ==> rv: {1: [{q: 1, t:'apple'}, {q: 1, t:'banana'}], 4: [{q: 2, t:'pear'}]}
 
-ns.MakeArrayFromKeyDictionaryUsingObjectsP = function (objects, key)
+ns.MakeMultimapUsingObjectsP = function (objects, key, knownKeys = [])
    {
-   if (objects.length === 0) return {};
+   return ns.MakeMultimapUsingObjectsByCallbackP(objects, (eObject) => eObject[key], knownKeys);
+   };
 
-   var retval = {};
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.MakeMultimapUsingObjectsByCallbackP = function (objects, getKeyFromObjectCallback, knownKeys = [])
+   {
+   var rv = {};
+   if (ns.IsNotUndefinedP(knownKeys))
+      {
+      knownKeys.forEach(eObject => rv[eObject] = []);
+      }
    for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
       {
       var eObject = objects[iObject];
-      var kValue = eObject[key];
+      var kValue = getKeyFromObjectCallback(eObject);
       if (retval.hasOwnProperty(kValue))
          {
          retval[kValue].push(eObject);
@@ -571,13 +594,19 @@ ns.MakeArrayFromKeyDictionaryUsingObjectsP = function (objects, key)
          retval[kValue] = [eObject];
          }
       }
-
-   return retval;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.AddToArrayFromKeyDictionary = function (dictionary, key, any)
+ns.SplitArrayP = function (objects, getBoolFromObjectCallback)
+   {
+   var multimap = ns.MakeMultimapUsingObjectsByCallbackP(objects, getBoolFromObjectCallback, [true, false]);
+   return [multimap[true], multimap[false]];
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.AddToMultimap = function (dictionary, key, any)
    {
    if (!dictionary.hasOwnProperty(key))
       {
@@ -738,6 +767,14 @@ ns.MakeDateUsingAnyP = function (any)
       }
    return new Date(0);
    };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.MakeDateByDaysInFutureP = function (qDayCount)
+   {
+   return new Date(new Date().getTime() + qDayCount * 24 * 60 * 60 * 1000);
+   };
+
 
 //------------------------------------------------------------------------------------------------------------------------------------
 

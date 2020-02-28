@@ -11,6 +11,14 @@ function AgentConnection ()
    var sheet_ = null;
 
 //------------------------------------------------------------------------------------------------------------------------------------
+// If WhatIf is truthy, the AgentConnection avoids
+// operations that change program state. If the
+// agent has an EN property, WhatIf is set to !EN
+// during TURN_ON.
+
+   this.WhatIf = false;
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
    this.Connect = function (identifier)
       {
@@ -503,6 +511,7 @@ function AgentConnection ()
                {
                self_.WriteValue('LOCK', Lang.GetTimestampNowP());
                self_.WriteCheckbox('ON', true);
+               self_.WhatIf = false === self_.ReadCheckbox('EN');
                GAS.LimitAndTrimSheetRows(sheet_,  irNewMessage_ + Platycore.MaximumAgentLogRows);
                isThisOn_ = true;
                }
@@ -645,14 +654,14 @@ function AgentConnection ()
 // 
 // Snoozing for a duration simply asks Platycore to check in on this
 // agent in the future. Snoozing forever disables this check, but
-// the agent can still be woken up other ways.
+// the agent can still be woken up in other ways.
 //
 // There are basically no guarantees about the amount of time snoozing
 // actually puts the agent to sleep... but "rest" assured that it does
 // ...something like what you would expect, but with some asterisks.
 //
-// One thing's for sure, though: if you want regular execution intervals,
-// do NOT rely on Snooze.
+// One thing's for sure, though: if you require regular execution intervals,
+// do NOT rely on Snooze to provide them.
 //
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -931,6 +940,10 @@ function AgentConnection ()
                   self_.InteractiveError('Unable to turn on');
                   rvExecutionDetails.didAbort = true;
                   nInstructionCount = 0;
+                  }
+               else if (agent.WhatIf)
+                  {
+                  agent.InteractiveLog('[WhatIf]: Agent is disabled (to enable, set EN=TRUE)');
                   }
                break;
 
@@ -1309,25 +1322,33 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ProcessSheetObjects = function (sheet, callbackUsingObjects)
+   this.ProcessEachNewObjectFromSheet = function (sheet, callbackForEachObject)
       {
-      var headerForThisAgent = kAgentId_;
+      var headerForThisAgent = '__' + kAgentId_.toLowerCase();
       var table = GAS.MakeTableUsingSheetP(sheet);
-      var objectsToProcess = Lang.MakeObjectsUsingTableP(table);
+      var allObjects = Lang.MakeObjectsUsingTableP(table);
       var headers = Lang.GetHeadersFromTableP(table);
-      if (headers.indexOf(headerForThisAgent) >= 0)
+      var [oldObjects, newObjects] = Lang.SplitArrayP(allObjects, (e) => Lang.MakeBoolUsingAnyP(e[headerForThisAgent]));
+      var processedObjects =
+         newObjects
+         .map(function (eObject)
+            {
+            var eProcessedObject = callbackForEachObject(eObject);
+            return null === eProcessedObject ? null : eObject;
+            })
+         .filter(Lang.IsNotNull)
+         ;
+      if (!self_.WhatIf)
          {
-         objectsToProcess = objectsToProcess.filter((e) => !Lang.MakeBoolUsingAnyP(e[headerForThisAgent]));
+         if (processedObjects.length > 0)
+            {
+            processedObjects.forEach(function (eObject) { eObject[headerForThisAgent] = true });
+            headers = GAS.MergeSheetHeaders(sheet, Object.keys(processedObjects[0]));
+            }
+         GAS.WriteSheetUsingObjects(sheet, processedObjects.concat(oldObjects), headers);
          }
-      var processedObjects = callbackUsingObjects(objectsToProcess);
-      if (processedObjects.length > 0)
-         {
-         processedObjects.forEach(function (o) { o[headerForThisAgent] = true });
-         headers = GAS.MergeSheetHeaders(sheet, Object.keys(processedObjects[0]));
-         }
-      GAS.WriteSheetUsingObjects(sheet, processedObjects, headers);
+      return processedObjects;
       };
-
 
 //------------------------------------------------------------------------------------------------------------------------------------
 // If an argument was provided to the constructor, try
