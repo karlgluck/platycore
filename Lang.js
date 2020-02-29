@@ -585,15 +585,16 @@ ns.MakeMultimapUsingObjectsByCallbackP = function (objects, getKeyFromObjectCall
       {
       var eObject = objects[iObject];
       var kValue = getKeyFromObjectCallback(eObject);
-      if (retval.hasOwnProperty(kValue))
+      if (rv.hasOwnProperty(kValue))
          {
-         retval[kValue].push(eObject);
+         rv[kValue].push(eObject);
          }
       else
          {
-         retval[kValue] = [eObject];
+         rv[kValue] = [eObject];
          }
       }
+   return rv;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------

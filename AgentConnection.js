@@ -370,6 +370,11 @@ function AgentConnection ()
       writeOutput_('', arguments).setFontColor('#b7b7b7').setBackground('black');
       };
 
+   this.InteractiveLog = function ()
+      {
+      if (Platycore.IsInteractive) self_.Log.apply(self_, arguments);
+      };
+
 //------------------------------------------------------------------------------------------------------------------------------------
 
    this.LogWithBadge = function (badge, message)
@@ -681,9 +686,9 @@ function AgentConnection ()
             }
          }
       self_.WriteValue('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
-      self_.LogWithBadge(
-            Lang.GetMoonPhaseFromDateP(new Date(utsNewWakeTime)),
-            'snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNowP()) + ' from now at ' + Lang.MakeWallTimeStringUsingTimestampP(utsNewWakeTime)
+      self_.InteractiveLog(
+            Lang.GetMoonPhaseFromDateP(new Date(utsNewWakeTime))
+            + ' snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNowP()) + ' from now at ' + Lang.MakeWallTimeStringUsingTimestampP(utsNewWakeTime)
             );
       };
 
@@ -792,7 +797,7 @@ function AgentConnection ()
             ;
 
       agentInstructionsText = '[' + agentInstructions.join(',') + ']';
-      self_.LogInteractive('agentInstructionsText', agentInstructionsText);
+      self_.InteractiveLog('agentInstructionsText', agentInstructionsText);
       return JSON.parse(agentInstructionsText);
       };
 
@@ -818,7 +823,8 @@ function AgentConnection ()
       if (Lang.IsNotArrayP(instructions)) throw "Lang.IsNotArrayP(instructions)";
 
       var rvExecutionDetails = {
-            didAbort: false
+            didAbort: false,
+            didTurnOn: false
             };
 
       var selectedRange = null;
@@ -941,9 +947,13 @@ function AgentConnection ()
                   rvExecutionDetails.didAbort = true;
                   nInstructionCount = 0;
                   }
-               else if (agent.WhatIf)
+               else
                   {
-                  agent.InteractiveLog('[WhatIf]: Agent is disabled (to enable, set EN=TRUE)');
+                  rvExecutionDetails.didTurnOn = true;
+                  if (self_.WhatIf)
+                     {
+                     self_.InteractiveLog('[WhatIf]: Agent is disabled (to enable, set EN=TRUE)');
+                     }
                   }
                break;
 
@@ -974,13 +984,17 @@ function AgentConnection ()
             case 'ABORT_UNLESS_ACTIVATED':
                (function ()
                   {
-                  var isActivated = Platycore.IsInteractive;
+                  var isActivated = Platycore.IsMainLoop ? false : Platycore.IsInteractive;
                   if (!isActivated)
                      {
                      var isEnabled = (function (en) { return Lang.IsUndefinedP(en) || Lang.MakeBoolUsingAnyP(en) })(self_.ReadCheckbox('EN'));
-                     var isGo = (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolUsingAnyP(go) })(self_.ReadCheckbox('GO'));
-                     var isWake = (function (wake) { return Lang.IsNumberP(wake) && utsIterationStarted > wake })(self_.ReadValue('WAKE'));
-                     isActivated = isEnabled && (isGo || isWake);
+                     var isGo = isEnabled && (function (go) { return Lang.IsNotUndefinedP(go) && Lang.MakeBoolUsingAnyP(go) })(self_.ReadCheckbox('GO'));
+                     var isWake = isEnabled && !isGo && (function (wake) { return Lang.IsNumberP(wake) && Lang.GetTimestampNowP() > wake })(self_.ReadValue('WAKE'));
+                     isActivated = isGo || isWake;
+                     if (isGo)
+                        {
+                        self_.WriteCheckbox('GO', false);
+                        }
                      }
                   if (!isActivated)
                      {
@@ -1231,7 +1245,7 @@ function AgentConnection ()
                         var range = getRangeFromPropertyName(propertyName);
                         if (Lang.IsObjectP(range))
                            {
-                           (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, range.getValue());
+                           writeSelection(range.getValue());
                            }
                         else
                            {
@@ -1263,7 +1277,7 @@ function AgentConnection ()
                      if (Lang.IsObjectP(importedValueFromPropertyName)
                            && Lang.IsMeaningfulP(previousValue = importedValueFromPropertyName[propertyName]))
                         {
-                        (writeMethodFromTypeName[selectionTypeInstruction])(kSelectedRangePropertyName, previousValue);
+                        writeSelection(previousValue);
                         }
                      else
                         {
@@ -1336,7 +1350,7 @@ function AgentConnection ()
             var eProcessedObject = callbackForEachObject(eObject);
             return null === eProcessedObject ? null : eObject;
             })
-         .filter(Lang.IsNotNull)
+         .filter(Lang.IsNotNullP)
          ;
       if (!self_.WhatIf)
          {

@@ -2,6 +2,7 @@ var Platycore = (function (ns) {
 
 ns.Version = '2009.4';
 ns.IsInteractive = true;
+ns.IsMainLoop = false;
 
 //------------------------------------------------------------------------------------------------------------------------------------
 //
@@ -184,6 +185,7 @@ ns.MainLoop = function ()
 
    ns.MainLoop = function ()
       {
+      Platycore.IsMainLoop = true;
 
       //
       // Recover from errors in previous executions
@@ -196,6 +198,7 @@ ns.MainLoop = function ()
          {
          utsLastSync = utsLastUpdated;
          sheets_ = spreadsheet_.getSheets();
+         nSheetCount_ = sheets_.length;
          iSheet_ = -1;
          }
 
@@ -205,7 +208,8 @@ ns.MainLoop = function ()
          }
       
       var qSheetsLeftToSearch = nSheetCount_;
-      while (--qSheetsLeftToSearch >= 0)
+      var rvContinueExecuting = false;
+      while (--qSheetsLeftToSearch >= 0 && (Lang.GetTimestampNowP() < utsExecutionCutoffTime_))
          {
 
          iSheet_ = (iSheet_ + 1 ) % nSheetCount_;
@@ -214,8 +218,12 @@ ns.MainLoop = function ()
          
          if (agent.IsConnected())
             {
-            qSheetsLeftToSearch = 0;
-            /*var executionDetails = */agent.ExecuteRoutineUsingA1Note();
+            var executionDetails = agent.ExecuteRoutineUsingA1Note();
+            if (executionDetails.didTurnOn)
+               {
+               rvContinueExecuting = true;
+               qSheetsLeftToSearch = 0;
+               }
             var dtRuntime = Lang.GetTimestampNowP() - utsIterationStarted;
             if (dtRuntime > Platycore.BlockRuntimeLimit)
                {
@@ -226,7 +234,7 @@ ns.MainLoop = function ()
          } // while - look through every sheet once until one can be run, or none are runnable
 
 
-      return Lang.GetTimestampNowP() < utsExecutionCutoffTime_;
+      return rvContinueExecuting;
 
       };
 

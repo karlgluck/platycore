@@ -13,10 +13,16 @@ function commandSidebarExecute(text)
 
 function triggerMainLoop ()
    {
+
    Platycore.IsInteractive = false;
-   // TODO: run multiple times while there is stuff to do and we have time
-   Platycore.UpdateDriveFileTriggers();
-   Platycore.MainLoop();
+
+   var continueExecuting = true;
+   while (continueExecuting)
+      {
+      Platycore.UpdateDriveFileTriggers();
+      continueExecuting = Platycore.MainLoop();
+      }
+
    }
 
 
