@@ -313,7 +313,7 @@ function AgentConnection ()
       {
       var irFirstRowToDelete = irNewMessage_ + 1;
       sheet_.insertRowsBefore(irNewMessage_, 1);
-      sheet_.deleteRows(irFirstRowToDelete, sheet_.getMaxRows() - irFirstRowToDelete + 2);
+      sheet_.deleteRows(irFirstRowToDelete, sheet_.getMaxRows() - irFirstRowToDelete + 1);
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -797,7 +797,7 @@ function AgentConnection ()
             ;
 
       agentInstructionsText = '[' + agentInstructions.join(',') + ']';
-      self_.InteractiveLog('agentInstructionsText', agentInstructionsText);
+      //self_.InteractiveLog('agentInstructionsText', agentInstructionsText);
       return JSON.parse(agentInstructionsText);
       };
 
@@ -832,7 +832,7 @@ function AgentConnection ()
       var hasMergedCurrentSelection = false;
       var lastInstallUrl = null;
       var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['CHECKBOX', 'VALUE', 'TEXT', 'NOTE']);
-      var selectionTypeInstruction = null;
+      var selectionTypeInstruction = 'NONE';
       var sheetFromAlias = {};
       var kSelectedRangePropertyName = null;
       var currentAgentAlias = null;
@@ -840,10 +840,11 @@ function AgentConnection ()
       var importedValueFromPropertyNameFromAlias = {};
 
       var writeSelectionFunctionFromTypeName = {
-         NOTE: self_.WriteNote,
-         VALUE: self_.WriteValue,
-         CHECKBOX: self_.WriteCheckbox,
-         STACK: ((name, value) => stackValues.push(value))
+         'NONE': function () {},
+         'NOTE': self_.WriteNote,
+         'VALUE': self_.WriteValue,
+         'CHECKBOX': self_.WriteCheckbox,
+         'STACK': ((name, value) => stackValues.push(value))
       };
       
       for (var iInstruction = 1, nInstructionCount = instructions.length; iInstruction < nInstructionCount; iInstruction += 2)
@@ -866,8 +867,12 @@ function AgentConnection ()
             {
             selectionTypeInstruction = eInstruction;
             }
+         if (Lang.IsNotObjectP(selectedRange))
+            {
+            selectionTypeInstruction = 'NONE';
+            }
 
-         console.log(eInstruction);
+         //console.log(eInstruction);
          var writeSelection = (any) => writeSelectionFunctionFromTypeName[selectionTypeInstruction](kSelectedRangePropertyName, any);
 
          var popArgument = function (castFunction = null)
@@ -1194,13 +1199,16 @@ function AgentConnection ()
                      }
                   else
                      {
-                     selectedRange = sheet_.getRange(rangeIdentifier);
-                     if (null == selectedRange && GAS.IsValidRangeNameP(rangeIdentifier))
+                     if (GAS.IsValidRangeNameP(rangeIdentifier))
                         {
                         selectedRange = getRangeFromPropertyName(rangeIdentifier);
                         }
-                     selectionTypeInstruction = 'VALUE';
+                     if (null == selectedRange)
+                        {
+                        selectedRange = sheet_.getRange(rangeIdentifier);
+                        }
                      kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
+                     selectionTypeInstruction = 'VALUE';
                      }
                   })(popArgument(Lang.MakeStringUsingAnyP));
                break;
