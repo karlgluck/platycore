@@ -312,8 +312,8 @@ function AgentConnection ()
    this.ClearOutput = function ()
       {
       var irFirstRowToDelete = irNewMessage_ + 1;
-      sheet.insertRowsBefore(irNewMessage_, 1);
-      sheet.deleteRows(irFirstRowToDelete, sheet.getMaxRows() - irFirstRowToDelete + 2);
+      sheet_.insertRowsBefore(irNewMessage_, 1);
+      sheet_.deleteRows(irFirstRowToDelete, sheet_.getMaxRows() - irFirstRowToDelete + 2);
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
