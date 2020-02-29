@@ -111,7 +111,7 @@ Scripts
       EVAL  "---"
    ------------------------
    var sheet = GAS.OpenSheetUsingUrl(agent.ReadValue('SHEET'));
-   var dateTomorrow = Lang.MakeDateByDaysInFuture(1);
+   var dateTomorrow = Lang.MakeDateByDaysInFutureP(1);
    var processObject;
    if (agent.WhatIf)
       {
@@ -122,22 +122,22 @@ Scripts
       }
    else
       {
-      processObject = function (eNewObject) 
+      processObject = function (eNewObject)
          {
-         Calendar.createAllDayEvent(eNewObject.item, dateTomorrow, {
+         CalendarApp.createAllDayEvent(eNewObject.item, dateTomorrow, {
                description: eNewObject.email + '\n\n' + eNewObject.url + '\n\n' + eNewObject.details
                });
          };
       }
-   var newObjects = agent.ProcessEachNewObjectFromSheet(sheet, process);
+   var newObjects = agent.ProcessEachNewObjectFromSheet(sheet, processObject);
    if (0 < newObjects.length)
       {
       agent.Log('There were ' + newObjects.length + ' new record(s)');
       }
-   if (en)
-      {
-      agent.WriteValue('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadValue('PROCESSED')) + newObjects.length);
-      }
+      if (!agent.WhatIf)
+         {
+         agent.WriteValue('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadValue('PROCESSED')) + newObjects.length);
+         }
    ------------------------
       TURN_OFF
 ------------------------
