@@ -175,11 +175,6 @@ Scripts
       TURN_ON
       EVAL  "---"
    ------------------------
-   var en = agent.ReadCheckbox('EN');
-   if (!en)
-      {
-      agent.Log('[!EN]: Agent is disabled (to enable, set EN=TRUE)');
-      }
    var sheet = GAS.OpenSheetUsingUrl(agent.ReadValue('SHEET'));
    var records = GAS.MakeObjectsUsingSheetP(sheet);
    records.forEach(function (eRecord)
@@ -198,7 +193,7 @@ Scripts
             .filter(function (eLabelName) { return recordsFromLabelName.hasOwnProperty(eLabelName) });
       if (1 > processableLabels.length)
          {
-         if (!en) agent.Log('No labels matched thread with subject "' + eThread.getFirstMessageSubject() + '"');
+         agent.InteractiveLog('No labels matched thread with subject "' + eThread.getFirstMessageSubject() + '"');
          return;
          }
       processableLabels.forEach(function (eLabelName)
@@ -207,7 +202,7 @@ Scripts
          outputs.push({record: eRecord, label_name:eLabelName, object: eRecord.GetObjectFromGmailMessage(eThread.getMessages()[0])});
          });
       
-      if (en)
+      if (!agent.WhatIf)
          {
          eThread.removeLabel(inputLabel);
          }
@@ -221,30 +216,27 @@ Scripts
       var headers = GAS.MergeSheetHeaders(outputSheet, Object.keys(objects[0]));
       var table = Lang.MakeTableUsingObjectsP(objects, headers);
       var rows = Lang.GetRowsFromTableP(table);
-      if (en)
+      if (agent.WhatIf)
+         {
+         agent.Log('[WhatIf]: Would have processed ' + rows.length + ' email(s) from the label "' + eLabelName + '"');
+         }
+      else
          {
          GAS.AddRowsToJournalingSheet(rows.reverse(), outputSheet);
          GAS.TrimSheetRows(outputSheet);
          agent.Log('Added ' + rows.length + ' email(s) from the label "' + eLabelName + '"');
-         }
-      else
-         {
-         agent.Log('[!EN]: Would have processed ' + rows.length + ' email(s) from the label "' + eLabelName + '"');
          }
       });
    if (0 < threads.length)
       {
       agent.Log('There were ' + threads.length + ' email(s)');
       }
-   if (en)
+   if (!agent.WhatIf)
       {
-      agent.WriteValue('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadValue('PROCESSED')) + threads.length);
-      }
-   else
-      {
+      agent.WriteValue('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadValue('PROCESSED')) + outputs.length);
       agent.Snooze(15 * 60 * 1000);
       }
    ------------------------
       TURN_OFF
 ------------------------
-      TURN_OFF
+   TURN_OFF
