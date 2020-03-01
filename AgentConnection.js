@@ -283,7 +283,7 @@ function AgentConnection ()
       var searchWidth = range.getWidth();
       var searchHeight = range.getHeight();
 
-      var namedRanges = spreadsheet_.getNamedRanges();
+      var namedRanges = sheet_.getNamedRanges();
       for (var iRange = 0, nRangeCount = namedRanges.length; iRange < nRangeCount; ++iRange)
          {
          var eNamedRange = namedRanges[iRange];
@@ -825,6 +825,7 @@ function AgentConnection ()
             didTurnOn: false
             };
 
+      var isDebugging = false;
       var selectedRange = null;
       var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'CHECKBOX', 'EVALUE', 'VALUE', 'TEXT', 'NOTE', 'VALUE', 'LOAD']);
       var hasMergedCurrentSelection = false;
@@ -870,7 +871,7 @@ function AgentConnection ()
             selectionTypeInstruction = 'NONE';
             }
 
-         //console.log(eInstruction);
+         (isDebugging ? self_.Log : console.log)('{OUT:' + selectionTypeInstruction + ';RANGE:' + (Lang.IsObjectP(selectedRange) ? selectedRange.getA1Notation() : 'null') + '} ' + eInstruction, eArguments);
          var writeSelection = (any) => writeSelectionFunctionFromTypeName[selectionTypeInstruction](kSelectedRangePropertyName, any);
 
          var popArgument = function (castFunction = null)
@@ -900,6 +901,7 @@ function AgentConnection ()
                self_.Error('invalid instruction', eInstruction);
                break;
 
+            case 'DEBUG':     isDebugging = popArgument(Lang.IsAffirmativeStringP); break;
             case 'TURN_OFF':  self_.TurnOff(); break;
             case 'UNINSTALL': self_.Uninstall(); break;
             case 'INFO':      self_.Info(popArgument(Lang.MakeStringUsingAnyP)); break;
@@ -1197,24 +1199,27 @@ function AgentConnection ()
                (function (rangeIdentifier)
                   {
                   hasMergedCurrentSelection = false;
+                  selectedRange = null;
                   if ('STACK' === rangeIdentifier)
                      {
                      selectionTypeInstruction = 'STACK';
-                     kSelectedRangePropertyName = null;
                      }
                   else
                      {
-                     if (GAS.IsValidRangeNameP(rangeIdentifier))
-                        {
-                        selectedRange = getRangeFromPropertyName(rangeIdentifier);
-                        }
-                     if (null == selectedRange)
+                     try
                         {
                         selectedRange = sheet_.getRange(rangeIdentifier);
+                        if (isDebugging) self_.Log('getRange named "' + rangeIdentifier + '" => RANGE=' + GAS.FindDescriptiveNameOfRange(selectedRange));
                         }
-                     kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
+                     catch
+                        {
+                        selectedRange = getRangeFromPropertyName(rangeIdentifier);
+                        if (isDebugging) self_.Log('SELECT property named "' + rangeIdentifier + '" => RANGE=' + GAS.FindDescriptiveNameOfRange(selectedRange));
+                        }
                      selectionTypeInstruction = 'VALUE';
                      }
+                  kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
+                  if (isDebugging) self_.Log(null == kSelectedRangePropertyName ? 'selected range has no name' : ('selected range is known as "' + kSelectedRangePropertyName + '"'));
                   })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 

@@ -20,6 +20,39 @@ ns.DeleteTriggerByName = function (functionName)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+
+ns.FindDescriptiveNameOfRange = function (range)
+   {
+   if (Lang.IsNotObjectP(range))
+      {
+      return "(none)";
+      }
+
+   var rvDescriptiveName = range.getA1Notation();
+
+   var searchRow = range.getRow();
+   var searchColumn = range.getColumn();
+   var searchWidth = range.getWidth();
+   var searchHeight = range.getHeight();
+
+   var namedRanges = range.getSheet().getNamedRanges();
+   for (var iRange = 0, nRangeCount = namedRanges.length; iRange < nRangeCount; ++iRange)
+      {
+      var eNamedRange = namedRanges[iRange];
+      var eRange = eNamedRange.getRange();
+      if (eRange.getRow() == searchRow &&
+            eRange.getColumn() == searchColumn &&
+            eRange.getWidth() == searchWidth &&
+            eRange.getHeight() == searchHeight)
+         {
+         rvDescriptiveName += ' [' + eNamedRange.getName() + ']';
+         }
+      }
+
+   return rvDescriptiveName;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 //
 // 
 //
