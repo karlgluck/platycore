@@ -763,10 +763,7 @@ function AgentConnection ()
                   }
                else
                   {
-                  if (Platycore.IsVerbose)
-                     {
-                     self_.Warn('invalid line: ' + eLine);
-                     }
+                  self_.InteractiveWarn('invalid line: ' + eLine);
                   return ['REM', JSON.stringify(eLine)];
                   }
                })
@@ -789,7 +786,7 @@ function AgentConnection ()
             ;
 
       agentInstructionsText = '[' + agentInstructions.join(',') + ']';
-      //self_.InteractiveLog('agentInstructionsText', agentInstructionsText);
+      self_.InteractiveLog('agentInstructionsText', agentInstructionsText);
       return JSON.parse(agentInstructionsText);
       };
 
@@ -821,10 +818,10 @@ function AgentConnection ()
 
       var isDebugging = false;
       var selectedRange = null;
-      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'CHECKBOX', 'EVALUE', 'VALUE', 'TEXT', 'NOTE', 'VALUE', 'LOAD']);
+      var mergingInstructionsSet = Lang.MakeSetUsingObjectsP(['FORMULA', 'CHECKBOX', 'EVALUE', 'VALUE', 'NOTE', 'VALUE', 'LOAD']);
       var hasMergedCurrentSelection = false;
       var lastInstallUrl = null;
-      var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['CHECKBOX', 'VALUE', 'TEXT', 'NOTE']);
+      var selectionTypeInstructionsSet = Lang.MakeSetUsingObjectsP(['CHECKBOX', 'VALUE', 'NOTE']);
       var selectionTypeInstruction = 'NONE';
       var sheetFromAlias = {};
       var kSelectedRangePropertyName = null;
@@ -860,13 +857,17 @@ function AgentConnection ()
             {
             selectionTypeInstruction = eInstruction;
             }
-         if (Lang.IsNotObjectP(selectedRange))
+         if ('STACK' !== selectionTypeInstruction && Lang.IsNotObjectP(selectedRange))
             {
             selectionTypeInstruction = 'NONE';
             }
 
-         (isDebugging ? self_.Log : console.log)('OUT:' + selectionTypeInstruction + ';RANGE:' + (Lang.IsObjectP(selectedRange) ? selectedRange.getA1Notation() : 'null') + '  ' + eInstruction, eArguments);
-         var writeSelection = (any) => writeSelectionFunctionFromTypeName[selectionTypeInstruction](kSelectedRangePropertyName, any);
+         (isDebugging ? self_.Log : console.log)('OUT:' + selectionTypeInstruction + ';RANGE:' + (Lang.IsObjectP(selectedRange) ? selectedRange.getA1Notation() : 'null') + '  ' + eInstruction + JSON.stringify(eArguments));
+         var writeSelection = function (any)
+            {
+            if (isDebugging) self_.Log('write ' + kSelectedRangePropertyName + ' = ' + Lang.MakeStringUsingAnyP(any));
+            writeSelectionFunctionFromTypeName[selectionTypeInstruction](kSelectedRangePropertyName, any);
+            };
 
          var popArgument = function (castFunction = null)
             {
@@ -879,6 +880,7 @@ function AgentConnection ()
                   if (stackValues.length > 0)
                      {
                      rv = stackValues.shift();
+                     if (isDebugging) self_.Log('popArgument used stack value ' + JSON.stringify(rv));
                      }
                   }
                }
@@ -901,7 +903,6 @@ function AgentConnection ()
             case 'INFO':      self_.Info(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'WARN':      self_.Warn(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'ERROR':     self_.Error(popArgument(Lang.MakeStringUsingAnyP)); break;
-            case 'TEXT':      writeSelection(popArgument(Lang.MakeStringUsingAnyP)); break;
             case 'CLS':       self_.ClearOutput(); break;
             case 'CLEAR':     selectedRange.clear(); break;
             case 'NOTE':      selectedRange.setNote(popArgument(Lang.MakeStringUsingAnyP)); break;
@@ -1077,13 +1078,14 @@ function AgentConnection ()
             case 'EXPORT':
                (function ()
                   {
-                  if (isDebugging) self_.Log('EXPORTing');
                   if (Lang.IsNotStringP(currentAgentAlias))
                      {
                      self_.Error("Cannot EXPORT until the current agent connection is named with ALIAS");
                      return;
                      }
-                  var valueFromPropertyName = {};
+                  var valueFromPropertyName = {
+                        '$AGENT_ID': kAgentId_
+                        };
                   var qPrefixLength = getRangeNameFromPropertyName('').length;
                   sheet_.getNamedRanges().forEach(function (eRange)
                      {
@@ -1091,7 +1093,7 @@ function AgentConnection ()
                      var noteValue = range.getNote();
                      valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningfulP(noteValue) ? noteValue : range.getValue();
                      });
-                  if (isDebugging) self_.Log('EXPORT valueFromPropertyName = ' + JSON.stringify(valueFromPropertyName))
+                  if (isDebugging) self_.Log('EXPORT ' + JSON.stringify(valueFromPropertyName))
                   importedValueFromPropertyNameFromAlias[currentAgentAlias] = valueFromPropertyName;
                   })();
                break;
@@ -1214,7 +1216,6 @@ function AgentConnection ()
                      selectionTypeInstruction = 'VALUE';
                      }
                   kSelectedRangePropertyName = self_.FindNameUsingRangeP(selectedRange);
-                  if (isDebugging) self_.Log(null == kSelectedRangePropertyName ? 'selected range has no name' : ('selected range is known as "' + kSelectedRangePropertyName + '"'));
                   })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
@@ -1239,9 +1240,6 @@ function AgentConnection ()
                         ;
                      }
                   })(popArgument(Lang.IsAffirmativeStringP), Lang.IsContainedInSetP('READONLY', eArgumentSet));
-               break;
-
-            case 'TEXT':
                break;
 
             case 'LOAD':
@@ -1269,12 +1267,16 @@ function AgentConnection ()
                         {
                         switch (propertyName)
                            {
+                           case '$AGENT_ID':
+                              writeSelection(kAgentId_);
+                              break;
+
                            case '$LAST_INSTALL_URL':
-                              selectedRange.setValue(lastInstallUrl);
+                              writeSelection(lastInstallUrl);
                               break;
 
                            case '$NOW':
-                              selectedRange.setValue(new Date());
+                              writeSelection(new Date());
                               break;
 
                            default:
@@ -1299,7 +1301,7 @@ function AgentConnection ()
                      }
                   else
                      {
-                     if (Platycore.IsVerbose)
+                     if (isDebugging)
                         {
                         self_.Warn('LOAD: "' + kAlias + '" is not available');
                         }
