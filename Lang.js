@@ -349,13 +349,14 @@ ns.GetStackTraceP = function (qLevelsUp)
       }
    };
 
+
 //------------------------------------------------------------------------------------------------------------------------------------
 // http://community.facer.io/t/moon-phase-formula-updated/35691/5
 
 ns.GetMoonPhaseFromDateP = function  (date)
    {
    var moonPhases = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
-   var utc = date.getTime();
+   var utc = (Lang.IsDateP(date) ? date : new Date()).getTime();
 
    var phaseFraction = ns.fmodP(
          (utc/2551442844-0.228535)
@@ -367,6 +368,12 @@ ns.GetMoonPhaseFromDateP = function  (date)
          );
 
    return moonPhases[ns.GetLoopingIndexFromPercentP(moonPhases.length, phaseFraction)];
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+ns.GetMoonPhaseP = function  ()
+   {
+   return ns.GetMoonPhaseFromDateP(new Date());
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
