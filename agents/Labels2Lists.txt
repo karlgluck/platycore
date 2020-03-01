@@ -173,6 +173,7 @@ Scripts
 ------------------------
    <  ABORT_UNLESS_ACTIVATED
       TURN_ON
+      ENTER_WHAT_IF_MODE_UNLESS "EN"
       EVAL  "---"
    ------------------------
    var sheet = GAS.OpenSheetUsingUrl(agent.ReadValue('SHEET'));

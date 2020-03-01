@@ -516,7 +516,6 @@ function AgentConnection ()
                {
                self_.WriteValue('LOCK', Lang.GetTimestampNowP());
                self_.WriteCheckbox('ON', true);
-               self_.WhatIf = false === self_.ReadCheckbox('EN');
                GAS.LimitAndTrimSheetRows(sheet_,  irNewMessage_ + Platycore.MaximumAgentLogRows);
                isThisOn_ = true;
                }
@@ -674,7 +673,7 @@ function AgentConnection ()
    this.Snooze = function (dtMilliseconds)
       {
       var utsNow = Lang.GetTimestampNowP();
-      var dtMilliseconds = Math.max(15000, dtMilliseconds);
+      dtMilliseconds = Math.max(15000, dtMilliseconds);
       var maybePreviousWakeTime = self_.ReadValue('WAKE');
       var utsNewWakeTime = utsNow + dtMilliseconds;
       if (Lang.IsNumberP(maybePreviousWakeTime))
@@ -687,8 +686,7 @@ function AgentConnection ()
          }
       self_.WriteValue('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
       self_.InteractiveLog(
-            Lang.GetMoonPhaseFromDateP(new Date(utsNewWakeTime))
-            + ' snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNowP()) + ' from now at ' + Lang.MakeWallTimeStringUsingTimestampP(utsNewWakeTime)
+            Lang.GetMoonPhaseP() + ' snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNowP()) + ' from now at ' + Lang.MakeWallTimeStringUsingTimestampP(utsNewWakeTime)
             );
       };
 
@@ -696,7 +694,7 @@ function AgentConnection ()
 
    this.SnoozeForever = function ()
       {
-      self_.InteractiveLog(Lang.GetMoonPhaseFromDateP(Lang.GetTimestampNowP()) + 'Snoozing, no alarm... ');
+      self_.InteractiveLog(Lang.GetMoonPhaseP() + ' snoozing, no alarm... ');
       self_.WriteValue('WAKE', 'SNOOZE');
       };
 
@@ -960,6 +958,13 @@ function AgentConnection ()
                      self_.InteractiveLog('[WhatIf]: Agent is disabled (to enable, set EN=TRUE)');
                      }
                   }
+               break;
+            
+            case 'ENTER_WHAT_IF_MODE_UNLESS':
+               (function (kName)
+                  {
+                  self_.WhatIf = false === self_.ReadCheckbox(kName);
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'NAME':
