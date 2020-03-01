@@ -871,7 +871,7 @@ function AgentConnection ()
             selectionTypeInstruction = 'NONE';
             }
 
-         //(isDebugging ? self_.Log : console.log)('OUT:' + selectionTypeInstruction + ';RANGE:' + (Lang.IsObjectP(selectedRange) ? selectedRange.getA1Notation() : 'null') + '  ' + eInstruction, eArguments);
+         (isDebugging ? self_.Log : console.log)('OUT:' + selectionTypeInstruction + ';RANGE:' + (Lang.IsObjectP(selectedRange) ? selectedRange.getA1Notation() : 'null') + '  ' + eInstruction, eArguments);
          var writeSelection = (any) => writeSelectionFunctionFromTypeName[selectionTypeInstruction](kSelectedRangePropertyName, any);
 
          var popArgument = function (castFunction = null)

@@ -118,7 +118,7 @@ Scripts
       {
       processObject = function (eNewObject)
          {
-         agent.InteractiveLog('[!EN]: Would have made an all-day event named "' + eNewObject.item + '" tomorrow');
+         agent.InteractiveLog('[WhatIf]: Would have made an all-day event named "' + eNewObject.item + '" tomorrow');
          };
       }
    else
@@ -131,14 +131,14 @@ Scripts
          };
       }
    var newObjects = agent.ProcessEachNewObjectFromSheet(sheet, processObject);
-   if (0 < newObjects.length)
+   if (agent.WhatIf || 0 < newObjects.length)
       {
       agent.Log('There were ' + newObjects.length + ' new record(s)');
       }
-      if (!agent.WhatIf)
-         {
-         agent.WriteValue('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadValue('PROCESSED')) + newObjects.length);
-         }
+   if (!agent.WhatIf)
+      {
+      agent.WriteValue('PROCESSED', Lang.MakeIntUsingAnyP(agent.ReadValue('PROCESSED')) + newObjects.length);
+      }
    ------------------------
       TURN_OFF
 ------------------------
