@@ -326,6 +326,20 @@ ns.GetTimestampNowP = function ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.GetMidnightTimestampNowP = function ()
+   {
+   return ns.GetMidnightTimestampFromDateP(new Date());
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.GetMidnightTimestampFromDateP = function (date)
+   {
+   return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).getTime();
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.MakeLazyConstantMethodP = function (self, name, valueCallback)
    {
    self[name] = function ()
@@ -625,7 +639,7 @@ ns.AddToMultimap = function (dictionary, key, any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeDictionaryUsingObjectsP = function (objects, key)
+ns.MakeMapUsingObjectsP = function (objects, key)
    {
    if (objects.length === 0) return {};
 
@@ -641,7 +655,7 @@ ns.MakeDictionaryUsingObjectsP = function (objects, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeDictionaryUsingTableP = function (table, key)
+ns.MakeMapUsingTableP = function (table, key)
    {
    if (table.length === 0) return {};
   

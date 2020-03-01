@@ -65,14 +65,25 @@ Agent-specific
 
 --- RSS_SHEET ---
 
-   SELECT "M2:R2"
+   SELECT "N2:V2"
     VALUE "RSS Sheet:"
    HALIGN "right"
 
-   SELECT "S2:AH2"
+   SELECT "W2:AH2"
      NAME "RSS_SHEET"
     STYLE "FIELD"
      LOAD "RSS_SHEET", "OLD_AGENT"
+
+--- COLOR_OF_THE_DAY_SHEET ---
+
+   SELECT "M2:V2"
+    VALUE "color of the day:"
+   HALIGN "right"
+
+   SELECT "W2:AH2"
+     NAME "COLOR_OF_THE_DAY_SHEET"
+    STYLE "FIELD"
+     LOAD "COLOR_OF_THE_DAY_SHEET", "OLD_AGENT"
 
 
 ==================================================================
@@ -112,10 +123,25 @@ Main loop
       ENTER_WHAT_IF_MODE_UNLESS "EN"
       EVAL  "---"
    ------------------------
-   var rssSheet = GAS.OpenSheetUsingUrl(agent.ReadValue('RSS_SHEET'));
    var textToReadAloud = "Hello there! The time is currently ";
    textToReadAloud += Utilities.formatDate(new Date(), 'PST', 'HH:mm:ss');
    textToReadAloud += '.';
+
+   var colorOfTheDaySheet = GAS.OpenSheetUsingUrl(agent.ReadValue('COLOR_OF_THE_DAY_SHEET'));
+   var colors = GAS.MakeObjectsUsingSheetP(colorOfTheDaySheet);
+   colors.forEach(function (color) => color.utcMidnight = Lang.GetMidnightTimestampFromDateP(color.date));
+   var colorFromMidnight = Lang.MakeMapUsingObjectsP(colors, 'utcMidnight');
+   var utcMidnight = Lang.GetMidnightTimestampNowP();
+   if (colorFromMidnight.hasOwnProperty(utcMidnight))
+      {
+      textToReadAloud += ' The color of the day is ' + colorFromMidnight[utcMidnight] + '.';
+      }
+   else
+      {
+      textToReadAloud += ' I was unable to find today in the color of the day database.';
+      }
+
+   var rssSheet = GAS.OpenSheetUsingUrl(agent.ReadValue('RSS_SHEET'));
    var story = {
          title: 'Story No. ' + Utilities.getUuid().toString(),
          link: 'https://www.picuki.com/profile/thetreeclubhouse',

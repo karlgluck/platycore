@@ -174,9 +174,9 @@ ns.MakeObjectsUsingSheetP = function (sheet)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeDictionaryUsingSheetP = function (sheet, key)
+ns.MakeMapUsingSheetP = function (sheet, key)
    {
-   return Lang.MakeDictionaryUsingTableP(GAS.MakeTableUsingSheetP(sheet), key);
+   return Lang.MakeMapUsingTableP(GAS.MakeTableUsingSheetP(sheet), key);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
