@@ -871,7 +871,7 @@ function AgentConnection ()
             selectionTypeInstruction = 'NONE';
             }
 
-         (isDebugging ? self_.Log : console.log)('{OUT:' + selectionTypeInstruction + ';RANGE:' + (Lang.IsObjectP(selectedRange) ? selectedRange.getA1Notation() : 'null') + '} ' + eInstruction, eArguments);
+         //(isDebugging ? self_.Log : console.log)('OUT:' + selectionTypeInstruction + ';RANGE:' + (Lang.IsObjectP(selectedRange) ? selectedRange.getA1Notation() : 'null') + '  ' + eInstruction, eArguments);
          var writeSelection = (any) => writeSelectionFunctionFromTypeName[selectionTypeInstruction](kSelectedRangePropertyName, any);
 
          var popArgument = function (castFunction = null)
@@ -1209,12 +1209,12 @@ function AgentConnection ()
                      try
                         {
                         selectedRange = sheet_.getRange(rangeIdentifier);
-                        if (isDebugging) self_.Log('getRange named "' + rangeIdentifier + '" => RANGE=' + GAS.FindDescriptiveNameOfRange(selectedRange));
+                        if (isDebugging) self_.Log('getRange named "' + rangeIdentifier + '" = > RANGE=' + GAS.FindDescriptiveNameOfRange(selectedRange));
                         }
-                     catch
+                     catch (e)
                         {
                         selectedRange = getRangeFromPropertyName(rangeIdentifier);
-                        if (isDebugging) self_.Log('SELECT property named "' + rangeIdentifier + '" => RANGE=' + GAS.FindDescriptiveNameOfRange(selectedRange));
+                        if (isDebugging) self_.Log('SELECT property named "' + rangeIdentifier + '" = > RANGE=' + GAS.FindDescriptiveNameOfRange(selectedRange));
                         }
                      selectionTypeInstruction = 'VALUE';
                      }
