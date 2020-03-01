@@ -445,16 +445,10 @@ function AgentConnection ()
 
    this.Uninstall = function ()
       {
-      var valueFromPropertyName = {};
-      var qPrefixLength = getRangeNameFromPropertyName('').length;
       sheet_.getNamedRanges().forEach(function (eRange)
          {
-         var range = eRange.getRange();
-         var noteValue = range.getNote();
-         valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningfulP(noteValue) ? noteValue : range.getValue();
          eRange.remove();
          });
-
       spreadsheet_.deleteSheet(sheet_);
       self_.ConnectUsingSheet(null);
       };
@@ -1083,6 +1077,7 @@ function AgentConnection ()
             case 'EXPORT':
                (function ()
                   {
+                  if (isDebugging) self_.Log('EXPORTing');
                   if (Lang.IsNotStringP(currentAgentAlias))
                      {
                      self_.Error("Cannot EXPORT until the current agent connection is named with ALIAS");
@@ -1095,8 +1090,8 @@ function AgentConnection ()
                      var range = eRange.getRange();
                      var noteValue = range.getNote();
                      valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningfulP(noteValue) ? noteValue : range.getValue();
-                     eRange.remove();
                      });
+                  if (isDebugging) self_.Log('EXPORT valueFromPropertyName = ' + JSON.stringify(valueFromPropertyName))
                   importedValueFromPropertyNameFromAlias[currentAgentAlias] = valueFromPropertyName;
                   })();
                break;
