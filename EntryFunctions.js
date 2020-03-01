@@ -52,12 +52,59 @@ function onOpen()
          .addToUi();
 
    ui.createMenu('\u2800🐞 Debug\u2800')
+         //.addSubMenu(ui.createMenu('Force'))
+         //.addSeparator()
+         .addItem('✨ Force Off', 'menuForceAgentOff')
+         .addSubMenu(ui.createMenu('💤 Snooze Agent')
+               .addItem('For 5 minutes','menuSnoozeAgentFor5Minutes')
+               .addItem('Forever (disable wake timer)','menuSnoozeAgentForever')
+               )
          .addItem('✨ Clear output', 'menuClearAgentOutput')
+         //.addSeparator()
          .addItem('🔓 Unlock Document (LockService)', 'menuUnlockDocumentLockService')
          .addSeparator()
          .addItem('🔄 Update Drive file triggers...', 'menuUpdateDriveFileTriggers')
          .addToUi();
 
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuForceAgentOff()
+   {
+   Platycore.ConnectAndRun(
+         SpreadsheetApp.getActiveSheet(),
+         function (agentConnection)
+            {
+            agentConnection.WriteCheckbox('ON', false);
+            }
+         );
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuSnoozeAgentFor5Minutes()
+   {
+   Platycore.ConnectAndRun(
+         SpreadsheetApp.getActiveSheet(),
+         function (agentConnection)
+            {
+            agentConnection.Snooze(5 * 60 * 1000);
+            }
+         );
+   }
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+function menuSnoozeAgentForever()
+   {
+   Platycore.ConnectAndRun(
+         SpreadsheetApp.getActiveSheet(),
+         function (agentConnection)
+            {
+            agentConnection.SnoozeForever();
+            }
+         );
    }
 
 //------------------------------------------------------------------------------------------------------------------------------------

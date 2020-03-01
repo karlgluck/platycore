@@ -674,7 +674,7 @@ function AgentConnection ()
    this.Snooze = function (dtMilliseconds)
       {
       var utsNow = Lang.GetTimestampNowP();
-      dtMilliseconds = Math.max(15000, dtMilliseconds);
+      var dtMilliseconds = Math.max(15000, dtMilliseconds);
       var maybePreviousWakeTime = self_.ReadValue('WAKE');
       var utsNewWakeTime = utsNow + dtMilliseconds;
       if (Lang.IsNumberP(maybePreviousWakeTime))
@@ -696,7 +696,7 @@ function AgentConnection ()
 
    this.SnoozeForever = function ()
       {
-      self_.Log(Lang.GetMoonPhaseFromDateP(Lang.GetTimestampNowP()) + 'Snoozing, no alarm... ');
+      self_.InteractiveLog(Lang.GetMoonPhaseFromDateP(Lang.GetTimestampNowP()) + 'Snoozing, no alarm... ');
       self_.WriteValue('WAKE', 'SNOOZE');
       };
 
