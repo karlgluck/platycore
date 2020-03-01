@@ -474,7 +474,7 @@ ns.MakeObjectsUsingTableP = function (table)
      {
      if (!ns.IsArrayP(headers))
         {
-        headers = objects.length < 1 ? [] : objects[0];
+        headers = objects.length < 1 ? [] : Object.keys(objects[0]);
         }
      var rvTable =
         [headers]
