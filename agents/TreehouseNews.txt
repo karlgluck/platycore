@@ -1,0 +1,137 @@
+      TITLE  "Treehouse News"
+    RESERVE  7
+
+--- EN ---
+
+   SELECT  "C2"
+     NAME  "EN"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D2"
+    VALUE  "EN"
+
+--- ON ---
+
+   SELECT  "C3"
+     NAME  "ON"
+ CHECKBOX  "TRUE"
+        +  "READONLY"
+
+   SELECT  "D3"
+    VALUE  "ON"
+
+--- GO ---
+
+   SELECT  "C4"
+     NAME  "GO"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D4"
+    VALUE  "GO"
+
+--- WAKE ---
+
+   SELECT  "H2:L2"
+     NAME  "WAKE"
+    STYLE  "READONLY_FIELD"
+   EVALUE  "Lang.GetTimestampNowP() + 15000"
+     LOAD  "WAKE", "OLD_AGENT"
+
+   SELECT  "F2:G2"
+    VALUE  "WAKE"
+
+   SELECT  "F3:L3"
+  FORMULA  "=(H2-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+
+--- LOCK ---
+
+   SELECT  "H5:L5"
+     NAME  "LOCK"
+    STYLE  "READONLY_FIELD"
+   EVALUE  "Lang.GetTimestampNowP()"
+
+   SELECT  "F5:G5"
+    VALUE  "LOCK"
+
+   SELECT  "F6:L6"
+  FORMULA  "=(H5-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+
+
+
+==================================================================
+Agent-specific
+
+--- RSS_SHEET ---
+
+   SELECT "M2:R2"
+    VALUE "RSS Sheet:"
+   HALIGN "right"
+
+   SELECT "S2:AH2"
+     NAME "RSS_SHEET"
+    STYLE "FIELD"
+     LOAD "RSS_SHEET", "OLD_AGENT"
+
+
+==================================================================
+Manual Actions
+
+--- [Reinstall] ---
+
+   SELECT "AS6:AV6"
+    VALUE "[Reinstall]"
+    STYLE "BUTTON"
+     NOTE "---"
+------------------------
+      ALIAS "OLD_AGENT"
+      EXPORT
+      UNINSTALL
+      NEW_AGENT "NEW_AGENT"
+      SELECT "STACK"
+      LOAD "REINSTALL_URL", "OLD_AGENT"
+      INSTALL null
+------------------------
+
+   SELECT "AJ6:AR6"
+     NAME "REINSTALL_URL"
+    STYLE "FIELD"
+     LOAD "$LAST_INSTALL_URL"
+
+
+
+==================================================================
+Main loop
+
+   SELECT  "A1"
+     NOTE  "---"
+------------------------
+   <  ABORT_UNLESS_ACTIVATED
+      TURN_ON
+      ENTER_WHAT_IF_MODE_UNLESS "EN"
+      EVAL  "---"
+   ------------------------
+   var rssSheet = GAS.OpenSheetUsingUrl(agent.ReadValue('RSS_SHEET'));
+   var textToReadAloud = "Hello there! The time is currently ";
+   textToReadAloud += Utilities.formatDate(new Date(), 'PST', 'HH:mm:ss');
+   textToReadAloud += '.';
+   var story = {
+         title: 'Story No. ' + Utilities.getUuid().toString(),
+         link: 'https://www.picuki.com/profile/thetreeclubhouse',
+         description: textToReadAloud,
+         pubDate: new Date()
+         };
+   if (agent.WhatIf)
+      {
+      agent.Log('[WhatIf] story = ' + JSON.stringify(story));
+      }
+   else
+      {
+      GAS.WriteSheetUsingObjects(rssSheet, [story]);
+      agent.Snooze(1000*60*15);
+      }
+   ------------------------
+      TURN_OFF
+------------------------
+   TURN_OFF
