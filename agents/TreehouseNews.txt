@@ -76,11 +76,11 @@ Agent-specific
 
 --- COLOR_OF_THE_DAY_SHEET ---
 
-   SELECT "M2:V2"
+   SELECT "N3:V3"
     VALUE "color of the day:"
    HALIGN "right"
 
-   SELECT "W2:AH2"
+   SELECT "W3:AH3"
      NAME "COLOR_OF_THE_DAY_SHEET"
     STYLE "FIELD"
      LOAD "COLOR_OF_THE_DAY_SHEET", "OLD_AGENT"
