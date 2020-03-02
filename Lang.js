@@ -627,12 +627,11 @@ ns.MakeMultimapUsingObjectsByCallbackP = function (objects, getKeyFromObjectCall
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeMultimapUsingObjectsByMidnightTimestampP(objects, kDateProperty)
+ns.MakeMultimapUsingObjectsByMidnightTimestampP = function (objects, kDateProperty)
    {
    return ns.MakeMultimapUsingObjectsByCallbackP(
          objects,
-         (eObject) => ns.GetMidnightTimestampFromDateP(eObject[kDateProperty]),
-         knownDates.map(ns.GetMidnightTimestampFromDateP)
+         (eObject) => ns.GetMidnightTimestampFromDateP(eObject[kDateProperty])
          );
    };
 
