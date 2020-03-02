@@ -111,7 +111,7 @@ Scripts
       ENTER_WHAT_IF_MODE_UNLESS "EN"
       EVAL  "---"
    ------------------------
-   var sheet = GAS.OpenSheetUsingUrl(agent.ReadValue('SHEET'));
+   var sheet = agent.OpenSheetUsingUrlFromValue('SHEET');
    var dateTomorrow = Lang.MakeDateByDaysInFutureP(1);
    var processObject;
    if (agent.WhatIf)

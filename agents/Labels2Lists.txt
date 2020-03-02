@@ -151,7 +151,7 @@ agent.ExecuteRoutineUsingNoteName('REFRESH_LABELS');
     STYLE "BUTTON"
      CODE "---"
 ------------------------
-var sheet = GAS.OpenSheetUsingUrl(agent.ReadValue('SHEET'));
+var sheet = agent.OpenSheetUsingUrlFromValue('SHEET');
 var headers = GAS.MergeSheetHeaders(sheet, ['input_label']);
 var ciInputLabelColumn = 1 + headers.indexOf('input_label');
 var labels = GmailApp.getUserLabels().map(function (eLabel) { return eLabel.getName() }).sort();
@@ -176,7 +176,7 @@ Scripts
       ENTER_WHAT_IF_MODE_UNLESS "EN"
       EVAL  "---"
    ------------------------
-   var sheet = GAS.OpenSheetUsingUrl(agent.ReadValue('SHEET'));
+   var sheet = agent.OpenSheetUsingUrlFromValue('SHEET');
    var records = GAS.MakeObjectsUsingSheetP(sheet);
    records.forEach(function (eRecord)
       {

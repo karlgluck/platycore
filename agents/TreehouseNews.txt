@@ -141,7 +141,7 @@ Main loop
       textToReadAloud += ' I was unable to find today in the color of the day database.';
       }
 
-   var rssSheet = GAS.OpenSheetUsingUrl(agent.ReadValue('RSS_SHEET'));
+   var rssSheet = agent.OpenSheetUsingUrlFromValue('RSS_SHEET');
    var story = {
          title: 'Story No. ' + Utilities.getUuid().toString(),
          link: 'https://www.picuki.com/profile/thetreeclubhouse',

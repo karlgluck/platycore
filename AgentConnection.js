@@ -1381,6 +1381,15 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+   this.OpenSheetUsingUrlFromValue = function (propertyName)
+      {
+      var url = agent.ReadValue(propertyName);
+      var rvSheet = GAS.OpenSheetUsingUrl(url);
+      return rvSheet;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.MakeMultimapUsingObjectsInSheetFromValueByMidnightTimestampP = function (propertyName, kDateColumn)
       {
       var url = agent.ReadValue(propertyName);
