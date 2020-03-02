@@ -87,6 +87,18 @@ Agent-specific
    HALIGN "right"
      LOAD "COLOR_OF_THE_DAY_SHEET", "OLD_AGENT"
 
+--- DAILY_PHRASES_SHEET ---
+
+   SELECT "N4:V4"
+    VALUE "daily phrases:"
+   HALIGN "right"
+
+   SELECT "W4:AH4"
+     NAME "DAILY_PHRASES_SHEET"
+    STYLE "FIELD"
+   HALIGN "right"
+     LOAD "DAILY_PHRASES_SHEET", "OLD_AGENT"
+
 
 ==================================================================
 Manual Actions
@@ -130,8 +142,8 @@ Main loop
    textToReadAloud += Utilities.formatDate(new Date(), 'PST', 'HH:mm:ss');
    textToReadAloud += '.';
 
-   var utsMidnight = ns.GetMidnightTimestampNowP();
-   var colorsFromMidnight = agent.MakeMultimapUsingObjectsInSheetFromValueByMidnightTimestampP('COLOR_OF_THE_DAY_SHEET', 'date')
+   var utsMidnight = Lang.GetMidnightTimestampNowP();
+   var colorsFromMidnight = agent.MakeMultimapUsingObjectsInSheetFromValueByMidnightTimestampP('COLOR_OF_THE_DAY_SHEET', 'date');
    if (colorsFromMidnight.hasOwnProperty(utsMidnight))
       {
       textToReadAloud += ' The color of the day is ' + colorsFromMidnight[utsMidnight][0].color + '.';
@@ -139,6 +151,12 @@ Main loop
    else
       {
       textToReadAloud += ' I was unable to find today in the color of the day database.';
+      }
+
+   var phrasesFromMidnight = agent.MakeMultimapUsingObjectsInSheetFromValueByMidnightTimestampP('DAILY_PHRASES_SHEET', 'date');
+   if (phrasesFromMidnight.hasOwnProperty(utsMidnight))
+      {
+      textToReadAloud += phrasesFromMidnight[utsMidnight].map(eObject => eObject.phrase).join(' ');
       }
 
    var rssSheet = agent.OpenSheetUsingUrlFromValue('RSS_SHEET');

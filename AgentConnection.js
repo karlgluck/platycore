@@ -1383,7 +1383,7 @@ function AgentConnection ()
 
    this.OpenSheetUsingUrlFromValue = function (propertyName)
       {
-      var url = agent.ReadValue(propertyName);
+      var url = self_.ReadValue(propertyName);
       var rvSheet = GAS.OpenSheetUsingUrl(url);
       return rvSheet;
       };
@@ -1392,7 +1392,7 @@ function AgentConnection ()
 
    this.MakeMultimapUsingObjectsInSheetFromValueByMidnightTimestampP = function (propertyName, kDateColumn)
       {
-      var url = agent.ReadValue(propertyName);
+      var url = self_.ReadValue(propertyName);
       var sheet = GAS.OpenSheetUsingUrl(url);
       var objects = GAS.MakeObjectsUsingSheetP(sheet);
       var rvObjectsFromMidnight = Lang.MakeMultimapUsingObjectsByMidnightTimestampP(objects, kDateColumn);
