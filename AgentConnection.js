@@ -1380,6 +1380,17 @@ function AgentConnection ()
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
+
+   this.MakeMultimapUsingObjectsInSheetFromValueByMidnightTimestampP = function (propertyName, kDateColumn)
+      {
+      var url = agent.ReadValue(propertyName);
+      var sheet = GAS.OpenSheetUsingUrl(url);
+      var objects = GAS.MakeObjectsUsingSheetP(sheet);
+      var rvObjectsFromMidnight = Lang.MakeMultimapUsingObjectsByMidnightTimestampP(objects, kDateColumn);
+      return rvObjectsFromMidnight;
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
 // If an argument was provided to the constructor, try
 // to Connect using it.
 

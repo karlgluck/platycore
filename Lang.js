@@ -333,6 +333,13 @@ ns.GetMidnightTimestampNowP = function ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.GetMidnightTimestampByDaysInFutureP = function (days)
+   {
+   return ns.GetMidnightTimestampFromDateP(ns.MakeDateByDaysInFutureP(days));
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.GetMidnightTimestampFromDateP = function (date)
    {
    return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).getTime();
@@ -620,6 +627,17 @@ ns.MakeMultimapUsingObjectsByCallbackP = function (objects, getKeyFromObjectCall
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.MakeMultimapUsingObjectsByMidnightTimestampP(objects, kDateProperty)
+   {
+   return ns.MakeMultimapUsingObjectsByCallbackP(
+         objects,
+         (eObject) => ns.GetMidnightTimestampFromDateP(eObject[kDateProperty]),
+         knownDates.map(ns.GetMidnightTimestampFromDateP)
+         );
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.SplitArrayP = function (objects, getBoolFromObjectCallback)
    {
    var multimap = ns.MakeMultimapUsingObjectsByCallbackP(objects, getBoolFromObjectCallback, [true, false]);
@@ -639,7 +657,7 @@ ns.AddToMultimap = function (dictionary, key, any)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeMapUsingObjectsP = function (objects, key)
+ns.MakeDictionaryUsingObjectsP = function (objects, key)
    {
    if (objects.length === 0) return {};
 

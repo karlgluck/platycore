@@ -72,6 +72,7 @@ Agent-specific
    SELECT "W2:AH2"
      NAME "RSS_SHEET"
     STYLE "FIELD"
+   HALIGN "right"
      LOAD "RSS_SHEET", "OLD_AGENT"
 
 --- COLOR_OF_THE_DAY_SHEET ---
@@ -83,6 +84,7 @@ Agent-specific
    SELECT "W3:AH3"
      NAME "COLOR_OF_THE_DAY_SHEET"
     STYLE "FIELD"
+   HALIGN "right"
      LOAD "COLOR_OF_THE_DAY_SHEET", "OLD_AGENT"
 
 
@@ -108,6 +110,7 @@ Manual Actions
    SELECT "AJ6:AR6"
      NAME "REINSTALL_URL"
     STYLE "FIELD"
+   HALIGN "right"
      LOAD "$LAST_INSTALL_URL"
 
 
@@ -127,14 +130,11 @@ Main loop
    textToReadAloud += Utilities.formatDate(new Date(), 'PST', 'HH:mm:ss');
    textToReadAloud += '.';
 
-   var colorOfTheDaySheet = GAS.OpenSheetUsingUrl(agent.ReadValue('COLOR_OF_THE_DAY_SHEET'));
-   var colors = GAS.MakeObjectsUsingSheetP(colorOfTheDaySheet);
-   colors.forEach(function (color) => color.utcMidnight = Lang.GetMidnightTimestampFromDateP(color.date));
-   var colorFromMidnight = Lang.MakeMapUsingObjectsP(colors, 'utcMidnight');
-   var utcMidnight = Lang.GetMidnightTimestampNowP();
-   if (colorFromMidnight.hasOwnProperty(utcMidnight))
+   var utsMidnight = ns.GetMidnightTimestampNowP();
+   var colorsFromMidnight = agent.MakeMultimapUsingObjectsInSheetFromValueByMidnightTimestampP('COLOR_OF_THE_DAY_SHEET', 'date')
+   if (colorsFromMidnight.hasOwnProperty(utsMidnight))
       {
-      textToReadAloud += ' The color of the day is ' + colorFromMidnight[utcMidnight] + '.';
+      textToReadAloud += ' The color of the day is ' + colorsFromMidnight[utsMidnight][0].color + '.';
       }
    else
       {
