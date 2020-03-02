@@ -138,25 +138,25 @@ Main loop
       ENTER_WHAT_IF_MODE_UNLESS "EN"
       EVAL  "---"
    ------------------------
-   var textToReadAloud = "Hello there! The time is currently ";
-   textToReadAloud += Utilities.formatDate(new Date(), 'PST', 'HH:mm:ss');
+   var textToReadAloud = "As of ";
+   textToReadAloud += Utilities.formatDate(new Date(), 'PST', 'h:mm a');
    textToReadAloud += '.';
 
    var utsMidnight = Lang.GetMidnightTimestampNowP();
    var colorsFromMidnight = agent.MakeMultimapUsingObjectsInSheetFromValueByMidnightTimestampP('COLOR_OF_THE_DAY_SHEET', 'date');
    if (colorsFromMidnight.hasOwnProperty(utsMidnight))
       {
-      textToReadAloud += ' The color of the day is ' + colorsFromMidnight[utsMidnight][0].color + '.';
+      textToReadAloud += ' The color of the day is ' + colorsFromMidnight[utsMidnight][0].color + '. ';
       }
    else
       {
-      textToReadAloud += ' I was unable to find today in the color of the day database.';
+      textToReadAloud += ' I was unable to find today in the color of the day database. ';
       }
 
    var phrasesFromMidnight = agent.MakeMultimapUsingObjectsInSheetFromValueByMidnightTimestampP('DAILY_PHRASES_SHEET', 'date');
    if (phrasesFromMidnight.hasOwnProperty(utsMidnight))
       {
-      textToReadAloud += phrasesFromMidnight[utsMidnight].map(eObject => eObject.phrase).join(' ');
+      textToReadAloud += phrasesFromMidnight[utsMidnight].map(eObject => eObject.phrase).join(' ') + ' ';
       }
 
    var rssSheet = agent.OpenSheetUsingUrlFromValue('RSS_SHEET');
@@ -173,7 +173,7 @@ Main loop
    else
       {
       GAS.WriteSheetUsingObjects(rssSheet, [story]);
-      agent.Snooze(1000*60*15);
+      agent.Snooze(1000*60*60*2);
       }
    ------------------------
       TURN_OFF
