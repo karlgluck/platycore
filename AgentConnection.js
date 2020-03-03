@@ -107,7 +107,12 @@ function AgentConnection ()
             {
             irNewMessage_ = 1 + range.getMergedRanges()[0].getNumRows();
             }
-         rvIsConnected = true === range.isChecked() && Lang.IsMeaningfulP(range.getNote());
+         var isChecked = range.isChecked();
+         if (false === isChecked)   // all connection while unchecked ONLY if the user
+            {                       // is interactively running this agent specifically
+            isChecked = Platycore.IsInteractive && !Platycore.IsMainLoop;
+            }
+         rvIsConnected = true === isChecked && Lang.IsMeaningfulP(range.getNote());
          }
 
       if (!rvIsConnected)
@@ -686,6 +691,15 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+   this.SnoozeUntilDate = function (date)
+      {
+      var utsWakeTime = date.getTime();
+      self_.WriteValue('WAKE', utsWakeTime);
+      self_.InteractiveLog(Lang.GetMoonPhaseP() + ' snoozing until ' + date);
+      };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
    this.SnoozeForever = function ()
       {
       self_.InteractiveLog(Lang.GetMoonPhaseP() + ' snoozing, no alarm... ');
@@ -1024,19 +1038,25 @@ function AgentConnection ()
                break;
 
             case 'INSTALL':
-               isThisOn_ = true;
-               lastInstallUrl = popArgument(Lang.MakeStringUsingAnyP);
-               try
+               (function (installUrl)
                   {
-                  instructions = instructions.concat(makeRoutineUsingText(getRoutineTextFromUrl(lastInstallUrl)));
-                  nInstructionCount = instructions.length;
-                  }
-               catch (e)
-                  {
-                  self_.Error('Unable to INSTALL:' + String(e), e.stack);
-                  rvExecutionDetails.didAbort = true;
-                  nInstructionCount = 0;
-                  }
+                  isThisOn_ = true;
+                  lastInstallUrl = installUrl;
+                  try
+                     {
+                     var iNextInstruction = iInstruction + 1;
+                     var routineToInstall = makeRoutineUsingText(getRoutineTextFromUrl(lastInstallUrl));
+                     if (isDebugging) self_.Log('routineToInstall = ' + JSON.stringify(routineToInstall));
+                     instructions = instructions.slice(0, iNextInstruction).concat(routineToInstall, instructions.slice(iNextInstruction));
+                     nInstructionCount = instructions.length;
+                     }
+                  catch (e)
+                     {
+                     self_.Error('Unable to INSTALL:' + String(e), e.stack);
+                     rvExecutionDetails.didAbort = true;
+                     nInstructionCount = 0;
+                     }
+                  })(popArgument(Lang.MakeStringUsingAnyP));
                break;
 
             case 'NEW_AGENT':

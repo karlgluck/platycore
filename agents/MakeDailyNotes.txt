@@ -1,0 +1,76 @@
+      TITLE  "Make Daily Notes"
+    RESERVE  7
+
+--- EN ---
+
+   SELECT  "C2"
+     NAME  "EN"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D2"
+    VALUE  "EN"
+
+--- ON ---
+
+   SELECT  "C3"
+     NAME  "ON"
+ CHECKBOX  "TRUE"
+        +  "READONLY"
+
+   SELECT  "D3"
+    VALUE  "ON"
+
+--- GO ---
+
+   SELECT  "C4"
+     NAME  "GO"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D4"
+    VALUE  "GO"
+
+--- WAKE ---
+
+   SELECT  "H2:L2"
+     NAME  "WAKE"
+    STYLE  "READONLY_FIELD"
+   EVALUE  "Lang.GetTimestampNowP() + 15000"
+     LOAD  "WAKE", "OLD_AGENT"
+
+   SELECT  "F2:G2"
+    VALUE  "WAKE"
+
+   SELECT  "F3:L3"
+  FORMULA  "=(H2-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+
+--- LOCK ---
+
+   SELECT  "H5:L5"
+     NAME  "LOCK"
+    STYLE  "READONLY_FIELD"
+   EVALUE  "Lang.GetTimestampNowP()"
+
+   SELECT  "F5:G5"
+    VALUE  "LOCK"
+
+   SELECT  "F6:L6"
+  FORMULA  "=(H5-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+
+==================================================================
+Agent-specific
+
+
+
+--- COLOR_OF_THE_DAY_SHEET ---
+
+   SELECT "N3:V3"
+    VALUE "color of the day:"
+   HALIGN "right"
+
+   SELECT "W3:AH3"
+     NAME "COLOR_OF_THE_DAY_SHEET"
+    STYLE "FIELD"
+   HALIGN "right"
+     LOAD "COLOR_OF_THE_DAY_SHEET", "OLD_AGENT"
