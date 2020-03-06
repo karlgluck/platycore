@@ -431,6 +431,20 @@ ns.GetUnicodeAstralCodePointFromSurrogatePairP = function (highSurrogate, lowSur
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.MakeDayCodeStringUsingDate = function (date)
+   {
+   return Utilities.formatDate(date, Session.getScriptTimeSonze(), "yyww'.'u'-'MMdd");
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.MakeDayCodeStringUsingNow = function ()
+   {
+   return ns.MakeDayCodeStringUsingDate(new Date());
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.MakeStringUsingTimestampP = function (utsTime)
    {
    var date = new Date(utsTime);

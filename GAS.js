@@ -1,10 +1,58 @@
 var GAS = (function (ns) {
 
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.CopyFileToFolderByUrl = function (fileUrl, folderUrl)
+   {
+   var file = DriveApp.getFileById(ns.getFileById(fileUrl));
+   var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
+   var copiedFile = file.makeCopy(folder);
+   return copiedFile;
+   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-//
-// 
-//
+
+ns.CopyDocumentToFolderByUrl = function (documentUrl, fileName, folderUrl)
+   {
+   var file = DriveApp.getFileById(ns.getFileById(documentUrl));
+   var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
+   var copiedFile = file.makeCopy(folder);
+   copiedFile.setName(fileName);
+   return DocumentApp.openById(copiedFile.getId());
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.CopyPresentationToFolderByUrl = function (presentationUrl, fileName, folderUrl)
+   {
+   var file = DriveApp.getFileById(ns.getFileById(presentationUrl));
+   var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
+   var copiedFile = file.makeCopy(folder);
+   copiedFile.setName(fileName);
+   return SlidesApp.openById(copiedFile.getId());
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.CreateDocumentInFolderByUrl = function (name, folderUrl)
+   {
+   var document = DocumentApp.create(name);
+   var file = DriveApp.getFileById(document.getId());
+   var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
+   folder.addFile(file);
+   DriveApp.getRootFolder().removeFile(file);
+   return document;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.GetFileIdFromUrl = function (gsuiteUrl)
+   {
+   return gsuiteUrl.match(/[-\w]{25,}/);
+   };
+
+
+//------------------------------------------------------------------------------------------------------------------------------------
 
 ns.DeleteTriggerByName = function (functionName)
    {

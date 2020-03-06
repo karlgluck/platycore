@@ -1110,8 +1110,10 @@ function AgentConnection ()
                   sheet_.getNamedRanges().forEach(function (eRange)
                      {
                      var range = eRange.getRange();
+                     var formulaValue = range.getFormula();
                      var noteValue = range.getNote();
-                     valueFromPropertyName[eRange.getName().substring(qPrefixLength)] = Lang.IsMeaningfulP(noteValue) ? noteValue : range.getValue();
+                     valueFromPropertyName[eRange.getName().substring(qPrefixLength)]
+                           = Lang.IsMeaningfulP(noteValue) ? noteValue : (Lang.IsMeaningfulP(formulaValue) ? formulaValue : range.getValue());
                      });
                   if (isDebugging) self_.Log('EXPORT ' + JSON.stringify(valueFromPropertyName))
                   importedValueFromPropertyNameFromAlias[currentAgentAlias] = valueFromPropertyName;

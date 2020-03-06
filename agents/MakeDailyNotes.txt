@@ -61,16 +61,150 @@
 ==================================================================
 Agent-specific
 
+This sets up a week with checkboxes
+
+   SELECT "N2"
+    VALUE "S"
+   HALIGN "center"
+   SELECT "N3"
+     NAME "SCHEDULE_0S"
+  CHECKBOX "FALSE"
+     LOAD  "SCHEDULE_0S", "OLD_AGENT"
+
+   SELECT "O2"
+    VALUE "M"
+   HALIGN "center"
+   SELECT "O3"
+     NAME "SCHEDULE_1M"
+  CHECKBOX "TRUE"
+     LOAD  "SCHEDULE_1M", "OLD_AGENT"
+
+   SELECT "P2"
+    VALUE "T"
+   HALIGN "center"
+   SELECT "P3"
+     NAME "SCHEDULE_2T"
+  CHECKBOX "TRUE"
+     LOAD  "SCHEDULE_2T", "OLD_AGENT"
+
+   SELECT "Q2"
+    VALUE "W"
+   HALIGN "center"
+   SELECT "Q3"
+     NAME "SCHEDULE_3w"
+  CHECKBOX "TRUE"
+     LOAD  "SCHEDULE_3w", "OLD_AGENT"
+
+   SELECT "R2"
+    VALUE "R"
+   HALIGN "center"
+   SELECT "R3"
+     NAME "SCHEDULE_4R"
+  CHECKBOX "TRUE"
+     LOAD  "SCHEDULE_4R", "OLD_AGENT"
+
+   SELECT "S2"
+    VALUE "F"
+   HALIGN "center"
+   SELECT "S3"
+     NAME "SCHEDULE_5F"
+  CHECKBOX "TRUE"
+     LOAD  "SCHEDULE_5F", "OLD_AGENT"
+
+   SELECT "T2"
+    VALUE "S"
+   HALIGN "center"
+   SELECT "T3"
+     NAME "SCHEDULE_6S"
+  CHECKBOX "FALSE"
+     LOAD  "SCHEDULE_6S", "OLD_AGENT"
 
 
---- COLOR_OF_THE_DAY_SHEET ---
+--- PRESENTATION_TEMPLATE_URL ---
 
-   SELECT "N3:V3"
-    VALUE "color of the day:"
+   SELECT "V2:AD2"
+    VALUE "presentation template:"
    HALIGN "right"
 
-   SELECT "W3:AH3"
-     NAME "COLOR_OF_THE_DAY_SHEET"
+   SELECT "AE2:AV2"
+     NAME "PRESENTATION_TEMPLATE_URL"
     STYLE "FIELD"
    HALIGN "right"
-     LOAD "COLOR_OF_THE_DAY_SHEET", "OLD_AGENT"
+     LOAD "PRESENTATION_TEMPLATE_URL", "OLD_AGENT"
+
+--- INPUT_SHEET_URL ---
+
+   SELECT "V3:AD3"
+    VALUE "input sheet:"
+   HALIGN "right"
+
+   SELECT "AE3:AV3"
+     NAME "INPUT_SHEET_URL"
+    STYLE "FIELD"
+   HALIGN "right"
+     LOAD "INPUT_SHEET_URL", "OLD_AGENT"
+
+--- OUTPUT_FOLDER_URL ---
+
+   SELECT "V4:AD4"
+    VALUE "output folder:"
+   HALIGN "right"
+
+   SELECT "AE4:AV4"
+     NAME "OUTPUT_FOLDER_URL"
+    STYLE "FIELD"
+   HALIGN "right"
+     LOAD "OUTPUT_FOLDER_URL", "OLD_AGENT"
+
+--- OUTPUT_TITLE ---
+
+   SELECT "V5:AD5"
+    VALUE "output title:"
+   HALIGN "right"
+
+   SELECT "AE5:AV5"
+     NAME "OUTPUT_TITLE"
+    STYLE "FIELD"
+   HALIGN "right"
+  FORMULA "=TEXT(NOW(),\"yy\")&TEXT(WEEKNUM(NOW()),\"00\")&\".\"&WEEKDAY(NOW())&\"-\"&TEXT(NOW(),\"mmdd\")"
+     LOAD "OUTPUT_TITLE", "OLD_AGENT"
+
+
+--- [Reinstall] ---
+
+   SELECT "AS6:AV6"
+    VALUE "[Reinstall]"
+    STYLE "BUTTON"
+     NOTE "---"
+------------------------
+      ALIAS "OLD_AGENT"
+      EXPORT
+      UNINSTALL
+      NEW_AGENT "NEW_AGENT"
+      SELECT "STACK"
+      LOAD "REINSTALL_URL", "OLD_AGENT"
+      INSTALL null
+------------------------
+
+   SELECT "AJ6:AR6"
+     NAME "REINSTALL_URL"
+    STYLE "FIELD"
+     LOAD "$LAST_INSTALL_URL"
+
+
+
+--- [Create] ---
+
+   SELECT "O5:S5"
+    VALUE "[Create]"
+    STYLE "BUTTON"
+     NOTE "---"
+------------------------
+   <   CODE "---"
+   ------------------------
+      var inputSheet = agent.OpenSheetUsingUrlFromValue('INPUT_SHEET_URL');
+      var inputRecords = GAS.MakeObjectsUsingSheetP(inputSheet);
+      var outputTitle = Lang.MakeStringFromAnyP(agent.ReadValue('OUTPUT_TITLE'));
+      var presentation = GAS.CopyPresentationToFolderByUrl(agent.ReadValue('PRESENTATION_TEMPLATE_URL'), outputTitle, agent.ReadValue('OUTPUT_FOLDER_URL'))
+   ------------------------
+------------------------
