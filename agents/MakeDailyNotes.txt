@@ -216,6 +216,8 @@ This sets up a week with checkboxes
    dayNumber.asShape().getText().setText(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'd'));
    monthAndYear.asShape().getText().setText(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'MMM yyyy').toUpperCase());
    var calendarEvents = CalendarApp.getEventsForDay(new Date());
+   var allDayEvents = calendarEvents.filter((e) => e.isAllDayEvent());
+   calendarEvents = calendarEvents.filter((e) => !e.isAllDayEvent());
    var agendaText = calendarEvents.map(function (e) {
       var rvString = '\t' + e.getTitle();
       if (!e.isAllDayEvent()) rvString = Utilities.formatDate(e.getStartTime(), Session.getScriptTimeZone(), 'HH:mm') + rvString;
