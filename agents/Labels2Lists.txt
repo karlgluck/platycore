@@ -138,7 +138,7 @@ Read the value REINSTALL_URL from OLD_AGENT and add it to the stack
 ------------------------
 var sheet = SpreadsheetApp.create("🏭 Labels2Lists", 1, 1).getSheets()[0];
 var headers = GAS.MergeSheetHeaders(sheet, ['input_label', 'object_from_gmail_message_function', 'sheet_url']);
-var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-script/reference/gmail/gmail-message\nfunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Lang.FindUrlsInString(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Lang.FindUrlsInString(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS.GetUrlFromGmailMessage(gmailMessage)\n  };\n}";
+var stringOfGetObjectFromGmailMessage = "// https://developers.google.com/apps-script/reference/gmail/gmail-message\nfunction (gmailMessage) {\n  var subject = gmailMessage.getSubject().trim();\n  var subjectUrls = Lang.FindUrlsInStringP(subject);\n  var body = gmailMessage.getPlainBody().trim();\n  var bodyUrls = Lang.FindUrlsInStringP(body);\n  return {\n    'item': subject.trim(),\n    'url': subjectUrls.concat(bodyUrls).concat([''])[0],\n    'details': body,\n    'email': GAS.GetUrlFromGmailMessage(gmailMessage)\n  };\n}";
 GAS.AddRowsToJournalingSheet(
       [['<Gmail Label>', stringOfGetObjectFromGmailMessage, '<sheet url>']],
       sheet);

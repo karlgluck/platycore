@@ -200,16 +200,37 @@ This sets up a week with checkboxes
     STYLE "BUTTON"
      NOTE "---"
 ------------------------
-   <      EVAL "---"
-   ------------------------
-   var presentation = SlidesApp.openByUrl('https://docs.google.com/presentation/d/1tyIfi-c8bUjrJvkaS22r23K6to1Sj6r52H8o8PZRFKU/edit#slide=id.SLIDES_API16818846_0')
-   var agendaSlide = presentation.insertSlide(0, presentation.getLayouts()[2]);
+   <         EVAL "---"
+------------------------
+   var inputSheet = agent.OpenSheetUsingUrlFromValue('INPUT_SHEET_URL');
+   var inputRecords = GAS.MakeObjectsUsingSheetP(inputSheet);
+   var outputTitle = Lang.MakeStringUsingAnyP(agent.ReadValue('OUTPUT_TITLE'));
+   agent.Info(outputTitle);
+   var presentation = GAS.CopyPresentationToFolderByUrl(agent.ReadValue('PRESENTATION_TEMPLATE_URL'), outputTitle, agent.ReadValue('OUTPUT_FOLDER_URL'));
+   agent.Info(presentation.getUrl());
+   presentation.setName(outputTitle);
+
+   var [notesLayout, titleOnlyLayout, agendaLayout] = presentation.getLayouts();
+   var agendaSlide = presentation.insertSlide(0, agendaLayout);
    var [dayNumber, monthAndYear, agenda] = agendaSlide.getPageElements();
-   dayNumber.asShape().getText().setText(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd'));
+   dayNumber.asShape().getText().setText(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'd'));
    monthAndYear.asShape().getText().setText(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'MMM yyyy').toUpperCase());
    var calendarEvents = CalendarApp.getEventsForDay(new Date());
-   var agendaText = calendarEvents.map((e) => Utilities.formatDate(getStartTime(), Session.getScriptTimeZone(), 'HH:mm') + '\t' + e.getTitle()).join('\n');
+   var agendaText = calendarEvents.map(function (e) {
+      var rvString = '\t' + e.getTitle();
+      if (!e.isAllDayEvent()) rvString = Utilities.formatDate(e.getStartTime(), Session.getScriptTimeZone(), 'HH:mm') + rvString;
+      return rvString;
+      }).join('\n');
    agenda.asShape().getText().setText(agendaText);
+   calendarEvents.forEach(function (eEvent) {
+      var slide = presentation.appendSlide(notesLayout);
+      var [body, title, info] = slide.getPageElements();
+      var eventUrl = "https://www.google.com/calendar/event?eid=" + Utilities.base64Encode(eEvent.getId().split('@')[0] + " " + eEvent.getOriginalCalendarId()).toString().replace('=','');
+      title.asShape().getText().setText(eEvent.getTitle());
+      title.asShape().setLinkUrl(eventUrl);
+      body.asShape().getText().setText(eEvent.getDescription());
+      info.asShape().getText().setText(Utilities.formatDate(eEvent.getStartTime(), Session.getScriptTimeZone(), 'HH:mm'));
+      });
    presentation.saveAndClose();
-   ------------------------
+------------------------
 ------------------------

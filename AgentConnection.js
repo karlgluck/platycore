@@ -685,7 +685,7 @@ function AgentConnection ()
          }
       self_.WriteValue('WAKE', utsNewWakeTime); // note the lack of protection for only incrementing or decrementing this value. It just does whatever!
       self_.InteractiveLog(
-            Lang.GetMoonPhaseP() + ' snoozing for ' + Lang.stopwatchStringFromDuration(dtMilliseconds) + ' until ' + Lang.stopwatchStringFromDuration(utsNewWakeTime - Lang.GetTimestampNowP()) + ' from now at ' + Lang.MakeWallTimeStringUsingTimestampP(utsNewWakeTime)
+            Lang.GetMoonPhaseP() + ' snoozing for ' + Lang.MakeStopwatchStringUsingMillis(dtMilliseconds) + ' until ' + Lang.MakeStopwatchStringUsingMillis(utsNewWakeTime - Lang.GetTimestampNowP()) + ' from now at ' + Lang.MakeWallTimeStringUsingTimestampP(utsNewWakeTime)
             );
       };
 

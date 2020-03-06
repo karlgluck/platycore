@@ -86,25 +86,11 @@ ns.IsNotNumberP = function (any)
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
-
-ns.stopwatchStringFromDuration = function (dtDuration)
-   {
-   return ns.stopwatchStringFromDurationInSeconds(dtDuration / 1000);
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.stopwatchStringFromDurationInMillis = function (dtMilliseconds)
-   {
-   return ns.stopwatchStringFromDurationInSeconds(dtMilliseconds / 1000);
-   };
-
-//------------------------------------------------------------------------------------------------------------------------------------
 // https://stackoverflow.com/questions/6312993/javascript-seconds-to-time-string-with-format-hhmmss
 
-ns.stopwatchStringFromDurationInSeconds = function (dtSeconds)
+ns.MakeStopwatchStringUsingMillis = function (dtMilliseconds)
    {
-    var s = parseInt(dtSeconds, 10);
+    var s = parseInt(dtMilliseconds, 10) / 1000;
     if (s < 0)
       {
       var prefix = '-';
@@ -675,18 +661,18 @@ ns.SplitArrayP = function (objects, getBoolFromObjectCallback)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.AddToMultimap = function (dictionary, key, any)
+ns.AddToMultimap = function (multimap, key, any)
    {
-   if (!dictionary.hasOwnProperty(key))
+   if (!multimap.hasOwnProperty(key))
       {
-      dictionary[key] = [];
+      multimap[key] = [];
       }
-   dictionary[key].push(any);
+   multimap[key].push(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.MakeDictionaryUsingObjectsP = function (objects, key)
+ns.MakeMapUsingObjectsP = function (objects, key)
    {
    if (objects.length === 0) return {};
 
@@ -731,7 +717,7 @@ ns.MakeMapUsingTableP = function (table, key)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.TransposeTableP = function (rows)
+ns.TransposeRowsP = function (rows)
    {
    return rows[0].map(function (x,i) { return rows.map(function (x) { return x[i]; }); });
    };
@@ -854,7 +840,7 @@ ns.MakeWallTimeStringUsingTimestampP = function  (utsTimestamp)
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-ns.FindUrlsInString = function  (text)
+ns.FindUrlsInStringP = function  (text)
    {
       var urls = [];
       var re = /(http|ftp|https):\/\/([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?/g;
@@ -865,13 +851,6 @@ ns.FindUrlsInString = function  (text)
          }
       return urls;
    };
-
-//------------------------------------------------------------------------------------------------------------------------------------
-
-// ns.intersect3 = function (list, searchItem)
-//    {
-//    return list.indexOf(searchItem) < 0;
-//    };
 
 return ns;
 })(Lang || {});
