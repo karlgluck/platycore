@@ -641,6 +641,22 @@ ns.MakeMultimapUsingObjectsByCallbackP = function (objects, getKeyFromObjectCall
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
+ns.MakeMapUsingObjectsByCallbackP = function (objects, getKeyFromObjectCallback)
+   {
+   if (objects.length === 0) return {};
+
+   var retval = {};
+   for (var iObject = 0, nObjectCount = objects.length; iObject < nObjectCount; ++iObject)
+      {
+      var eObject = objects[iObject];
+      retval[getKeyFromObjectCallback(eObject)] = eObject;
+      }
+
+   return retval;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
 ns.MakeMultimapUsingObjectsByMidnightTimestampP = function (objects, kDateProperty)
    {
    return ns.MakeMultimapUsingObjectsByCallbackP(

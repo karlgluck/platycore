@@ -1,20 +1,11 @@
 var GAS = (function (ns) {
 
-//------------------------------------------------------------------------------------------------------------------------------------
-
-ns.CopyFileToFolderByUrl = function (fileUrl, folderUrl)
-   {
-   var file = DriveApp.getFileById(ns.getFileById(fileUrl));
-   var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
-   var copiedFile = file.makeCopy(folder);
-   return copiedFile;
-   };
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
 ns.CopyDocumentToFolderByUrl = function (documentUrl, fileName, folderUrl)
    {
-   var file = DriveApp.getFileById(ns.getFileById(documentUrl));
+   var file = DriveApp.getFileById(ns.GetFileIdFromUrl(documentUrl));
    var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
    var copiedFile = file.makeCopy(folder);
    copiedFile.setName(fileName);
@@ -25,7 +16,7 @@ ns.CopyDocumentToFolderByUrl = function (documentUrl, fileName, folderUrl)
 
 ns.CopyPresentationToFolderByUrl = function (presentationUrl, fileName, folderUrl)
    {
-   var file = DriveApp.getFileById(ns.getFileById(presentationUrl));
+   var file = DriveApp.getFileById(ns.GetFileIdFromUrl(presentationUrl));
    var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
    var copiedFile = file.makeCopy(folder);
    copiedFile.setName(fileName);

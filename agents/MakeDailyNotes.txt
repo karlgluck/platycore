@@ -200,11 +200,16 @@ This sets up a week with checkboxes
     STYLE "BUTTON"
      NOTE "---"
 ------------------------
-   <   CODE "---"
+   <      EVAL "---"
    ------------------------
-      var inputSheet = agent.OpenSheetUsingUrlFromValue('INPUT_SHEET_URL');
-      var inputRecords = GAS.MakeObjectsUsingSheetP(inputSheet);
-      var outputTitle = Lang.MakeStringFromAnyP(agent.ReadValue('OUTPUT_TITLE'));
-      var presentation = GAS.CopyPresentationToFolderByUrl(agent.ReadValue('PRESENTATION_TEMPLATE_URL'), outputTitle, agent.ReadValue('OUTPUT_FOLDER_URL'))
+   var presentation = SlidesApp.openByUrl('https://docs.google.com/presentation/d/1tyIfi-c8bUjrJvkaS22r23K6to1Sj6r52H8o8PZRFKU/edit#slide=id.SLIDES_API16818846_0')
+   var agendaSlide = presentation.insertSlide(0, presentation.getLayouts()[2]);
+   var [dayNumber, monthAndYear, agenda] = agendaSlide.getPageElements();
+   dayNumber.asShape().getText().setText(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'dd'));
+   monthAndYear.asShape().getText().setText(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'MMM yyyy').toUpperCase());
+   var calendarEvents = CalendarApp.getEventsForDay(new Date());
+   var agendaText = calendarEvents.map((e) => Utilities.formatDate(getStartTime(), Session.getScriptTimeZone(), 'HH:mm') + '\t' + e.getTitle()).join('\n');
+   agenda.asShape().getText().setText(agendaText);
+   presentation.saveAndClose();
    ------------------------
 ------------------------
