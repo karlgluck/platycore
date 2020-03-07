@@ -120,17 +120,17 @@ This sets up a week with checkboxes
      LOAD  "SCHEDULE_6S", "OLD_AGENT"
 
 
---- PRESENTATION_TEMPLATE_URL ---
+--- TEMPLATE_URL ---
 
    SELECT "V2:AD2"
-    VALUE "presentation template:"
+    VALUE "template:"
    HALIGN "right"
 
    SELECT "AE2:AV2"
-     NAME "PRESENTATION_TEMPLATE_URL"
+     NAME "TEMPLATE_URL"
     STYLE "FIELD"
    HALIGN "right"
-     LOAD "PRESENTATION_TEMPLATE_URL", "OLD_AGENT"
+     LOAD "TEMPLATE_URL", "OLD_AGENT"
 
 --- INPUT_SHEET_URL ---
 
@@ -166,7 +166,7 @@ This sets up a week with checkboxes
      NAME "OUTPUT_TITLE"
     STYLE "FIELD"
    HALIGN "right"
-  FORMULA "=TEXT(NOW(),\"yy\")&TEXT(WEEKNUM(NOW()),\"00\")&\".\"&WEEKDAY(NOW())&\"-\"&TEXT(NOW(),\"mmdd\")"
+  FORMULA "=TEXT(NOW(),\"yy\")&TEXT(WEEKNUM(NOW()),\"00\")&\".\"&WEEKDAY(NOW()-1)&\"-\"&TEXT(NOW(),\"mmdd\")"
      LOAD "OUTPUT_TITLE", "OLD_AGENT"
 
 
@@ -201,38 +201,61 @@ This sets up a week with checkboxes
      NOTE "---"
 ------------------------
    <         EVAL "---"
-------------------------
+   ------------------------
    var inputSheet = agent.OpenSheetUsingUrlFromValue('INPUT_SHEET_URL');
    var inputRecords = GAS.MakeObjectsUsingSheetP(inputSheet);
    var outputTitle = Lang.MakeStringUsingAnyP(agent.ReadValue('OUTPUT_TITLE'));
    agent.Info(outputTitle);
-   var presentation = GAS.CopyPresentationToFolderByUrl(agent.ReadValue('PRESENTATION_TEMPLATE_URL'), outputTitle, agent.ReadValue('OUTPUT_FOLDER_URL'));
-   agent.Info(presentation.getUrl());
-   presentation.setName(outputTitle);
+   var spreadsheet = GAS.CopySpreadsheetToFolderByUrl(agent.ReadValue('TEMPLATE_URL'), outputTitle, agent.ReadValue('OUTPUT_FOLDER_URL'));
+   agent.Info(spreadsheet.getUrl());
 
-   var [notesLayout, titleOnlyLayout, agendaLayout] = presentation.getLayouts();
-   var agendaSlide = presentation.insertSlide(0, agendaLayout);
-   var [dayNumber, monthAndYear, agenda] = agendaSlide.getPageElements();
-   dayNumber.asShape().getText().setText(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'd'));
-   monthAndYear.asShape().getText().setText(Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'MMM yyyy').toUpperCase());
+   var agendaSheet = spreadsheet.getSheetByName('Agenda');
+   var now = new Date();
+   agendaSheet.getRange('B2').setValue(Utilities.formatDate(now, Session.getScriptTimeZone(), 'MMM').toUpperCase());
+   agendaSheet.getRange('B3').setValue(Utilities.formatDate(now, Session.getScriptTimeZone(), 'd'));
+   agendaSheet.getRange('F2').setValue(Utilities.formatDate(now, Session.getScriptTimeZone(), 'yy'));
+   agendaSheet.getRange('J2').setValue(Utilities.formatDate(now, Session.getScriptTimeZone(), 'ww'));
+   agendaSheet.getRange('N2').setValue(Utilities.formatDate(now, Session.getScriptTimeZone(), 'u'));
+
    var calendarEvents = CalendarApp.getEventsForDay(new Date());
+   var validResponsesSet = Lang.MakeSetUsingObjectsP(['OWNER','YES','INVITED']);
+   calendarEvents = calendarEvents.filter((e) => Lang.IsContainedInSetP(e.getMyStatus().toString(), validResponsesSet));
+
    var allDayEvents = calendarEvents.filter((e) => e.isAllDayEvent());
-   calendarEvents = calendarEvents.filter((e) => !e.isAllDayEvent());
-   var agendaText = calendarEvents.map(function (e) {
-      var rvString = '\t' + e.getTitle();
-      if (!e.isAllDayEvent()) rvString = Utilities.formatDate(e.getStartTime(), Session.getScriptTimeZone(), 'HH:mm') + rvString;
-      return rvString;
-      }).join('\n');
-   agenda.asShape().getText().setText(agendaText);
-   calendarEvents.forEach(function (eEvent) {
-      var slide = presentation.appendSlide(notesLayout);
-      var [body, title, info] = slide.getPageElements();
+   var scheduledEvents = calendarEvents.filter((e) => !e.isAllDayEvent());
+   var eventTemplateSheet = spreadsheet.getSheetByName('AgendaItem');
+
+   calendarEvents.forEach(function (eEvent, iEvent) {
+      var riRow = iEvent + 7;
+      agendaSheet.getRange(riRow, 2).insertCheckboxes();
       var eventUrl = "https://www.google.com/calendar/event?eid=" + Utilities.base64Encode(eEvent.getId().split('@')[0] + " " + eEvent.getOriginalCalendarId()).toString().replace('=','');
-      title.asShape().getText().setText(eEvent.getTitle());
-      title.asShape().setLinkUrl(eventUrl);
-      body.asShape().getText().setText(eEvent.getDescription());
-      info.asShape().getText().setText(Utilities.formatDate(eEvent.getStartTime(), Session.getScriptTimeZone(), 'HH:mm'));
+      var imageFormula = '=HYPERLINK("'+eventUrl+'",IMAGE("https://ssl.gstatic.com/calendar/images/dynamiclogo/2x/cal_12_v1.png",1))';
+      agendaSheet.getRange(riRow, 3, 1, 1).setFormula(imageFormula);
+      if (!eEvent.isAllDayEvent())
+         {
+         var sheet = spreadsheet.insertSheet(Lang.ClampStringLengthP(eEvent.getTitle(), 20), {template:eventTemplateSheet});
+         sheet.getRange('B2').setValue(eEvent.getTitle());
+         var eventUrl = "https://www.google.com/calendar/event?eid=" + Utilities.base64Encode(eEvent.getId().split('@')[0] + " " + eEvent.getOriginalCalendarId()).toString().replace('=','');
+         var formula = '=HYPERLINK("'+eventUrl+'",IMAGE("https://ssl.gstatic.com/calendar/images/dynamiclogo/2x/cal_12_v1.png",4,32,32))';
+         sheet.getRange('AG2').setFormula(formula);
+         sheet.getRange('AI2').setValue(eEvent.getStartTime());
+         sheet.getRange('AI3').setValue(eEvent.getEndTime());
+
+         var sheetUrl = GAS.GetUrlFromSheet(sheet);
+         var titleFormula = '=HYPERLINK("'+sheetUrl+'","'+eEvent.getTitle().replace(/"/g,'""')+'")';
+         agendaSheet.getRange(riRow, 4, 1, 13).merge().setFormula(titleFormula);
+         agendaSheet.getRange(riRow, 17, 1, 3).merge().setValue(Utilities.formatDate(eEvent.getStartTime(), Session.getScriptTimeZone(), 'HH:mm'));
+         agendaSheet.getRange(riRow, 20, 1, 3).merge().setValue(Utilities.formatDate(eEvent.getEndTime(), Session.getScriptTimeZone(), 'HH:mm'));
+         }
+      else
+         {
+         agendaSheet.getRange(riRow, 4, 1, 13).merge().setValue(eEvent.getTitle());
+         }
       });
-   presentation.saveAndClose();
+
+
+   /*info.asShape().getText().setText(Utilities.formatDate(eEvent.getStartTime(), Session.getScriptTimeZone(), 'HH:mm'));*/
+   ------------------------
 ------------------------
-------------------------
+
+    TURN_OFF

@@ -9,7 +9,9 @@ ns.CopyDocumentToFolderByUrl = function (documentUrl, fileName, folderUrl)
    var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
    var copiedFile = file.makeCopy(folder);
    copiedFile.setName(fileName);
-   return DocumentApp.openById(copiedFile.getId());
+   var rvDocument = DocumentApp.openById(copiedFile.getId());
+   rvDocument.setName(fileName);
+   return rvDocument;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -20,7 +22,22 @@ ns.CopyPresentationToFolderByUrl = function (presentationUrl, fileName, folderUr
    var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
    var copiedFile = file.makeCopy(folder);
    copiedFile.setName(fileName);
-   return SlidesApp.openById(copiedFile.getId());
+   var rvPresentation = SlidesApp.openById(copiedFile.getId());
+   rvPresentation.setName(fileName);
+   return rvPresentation;
+   };
+
+//------------------------------------------------------------------------------------------------------------------------------------
+
+ns.CopySpreadsheetToFolderByUrl = function (spreadsheetUrl, fileName, folderUrl)
+   {
+   var file = DriveApp.getFileById(ns.GetFileIdFromUrl(spreadsheetUrl));
+   var folder = DriveApp.getFolderById(ns.GetFileIdFromUrl(folderUrl));
+   var copiedFile = file.makeCopy(folder);
+   copiedFile.setName(fileName);
+   var rvSpreadsheet = SpreadsheetApp.openById(copiedFile.getId());
+   rvSpreadsheet.setName(fileName);
+   return rvSpreadsheet;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
