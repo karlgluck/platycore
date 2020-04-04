@@ -328,7 +328,7 @@ ns.GetMidnightTimestampByDaysInFutureP = function (days)
 
 ns.GetMidnightTimestampFromDateP = function (date)
    {
-   return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).getTime();
+   return ns.IsDateP(date) ? new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())).getTime() : null;
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
