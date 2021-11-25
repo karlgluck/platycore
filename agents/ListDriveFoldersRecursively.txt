@@ -1,0 +1,223 @@
+   TITLE "ListDriveFoldersRecursively"
+ RESERVE 7
+
+   SELECT "H2:L2"
+     NAME "WAKE"
+    STYLE "READONLY_FIELD"
+   EVALUE "Lang.GetTimestampNowP() + 15000"
+     LOAD "WAKE", "OLD_AGENT"
+
+Label
+  SELECT "F2:G2"
+   VALUE "WAKE"
+
+Display the wake value as text
+   SELECT  "F3:L3"
+  FORMULA  "=(H2-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+
+
+--- EN ---
+
+   SELECT  "C2"
+     NAME  "EN"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D2"
+    VALUE  "EN"
+
+--- ON ---
+
+   SELECT  "C3"
+     NAME  "ON"
+ CHECKBOX  "FALSE"
+        +  "READONLY"
+
+   SELECT  "D3"
+    VALUE  "ON"
+
+--- GO ---
+
+   SELECT  "C4"
+     NAME  "GO"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D4"
+    VALUE  "GO"
+
+--- LOCK ---
+
+   SELECT  "H5:L5"
+     NAME  "LOCK"
+    STYLE  "READONLY_FIELD"
+   EVALUE  "Lang.GetTimestampNowP()"
+
+   SELECT  "F5:G5"
+    VALUE  "LOCK"
+
+   SELECT  "F6:L6"
+  FORMULA  "=(H5-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+
+
+--- ROOT_DIRECTORY_URL ---
+
+   SELECT "V3:AD3"
+    VALUE "root dir:"
+   HALIGN "right"
+
+   SELECT "AE3:AV3"
+     NAME "ROOT_DIRECTORY_URL"
+    STYLE "FIELD"
+   HALIGN "right"
+     LOAD "ROOT_DIRECTORY_URL", "OLD_AGENT"
+
+--- WORKING_SHEET_URL ---
+
+   SELECT "V4:AD4"
+    VALUE "working sheet:"
+   HALIGN "right"
+
+   SELECT "AE4:AV4"
+     NAME "WORKING_SHEET_URL"
+    STYLE "FIELD"
+   HALIGN "right"
+     LOAD "WORKING_SHEET_URL", "OLD_AGENT"
+
+
+--- [Reinstall] ---
+
+   SELECT "AS6:AV6"
+    VALUE "[Reinstall]"
+    STYLE "BUTTON"
+     NOTE "---"
+------------------------
+      ALIAS "OLD_AGENT"
+      EXPORT
+      UNINSTALL
+      NEW_AGENT "NEW_AGENT"
+      SELECT "STACK"
+      LOAD "REINSTALL_URL", "OLD_AGENT"
+      INSTALL null
+------------------------
+
+   SELECT "AJ6:AR6"
+     NAME "REINSTALL_URL"
+    STYLE "FIELD"
+   HALIGN "right"
+     LOAD "$LAST_INSTALL_URL"
+
+
+
+
+
+--- [Make Sheet] ---
+
+   SELECT "AJ2:AN2"
+    VALUE "[Make Sheet]"
+    STYLE "BUTTON"
+     CODE "---"
+------------------------
+var sheet = SpreadsheetApp.create("FoldersList", 1, 1).getSheets()[0];
+var headers = GAS.WriteSheetUsingTable(sheet, ['drive_id', 'last_found_date', 'last_scanned_date']);
+agent.WriteValue('SHEET', GAS.GetUrlFromSheet(sheet));
+------------------------
+
+
+
+
+====================================
+Main Script
+====================================
+
+
+   SELECT  "A1"
+     NOTE  "---"
+------------------------
+   <  ABORT_UNLESS_ACTIVATED
+      TURN_ON
+      ENTER_WHAT_IF_MODE_UNLESS "EN"
+      EVAL  "---"
+   ------------------------
+   var sheet = agent.OpenSheetUsingUrlFromValue('WORKING_SHEET_URL');
+   var defaultHeaders = ['drive_id', 'last_found_date', 'last_scanned_date'];
+   var headers = GAS.MergeSheetHeaders(sheet, defaultHeaders);
+   var records = GAS.MakeObjectsUsingSheetP(sheet);
+
+   // Remove any records for entries that are too old
+   var filterFn = (function (recentlyFoundCutoffDate) {
+      return function (eRecord) { return Lang.MakeDateUsingAnyP(eRecord.last_found_date) > recentlyFoundCutoffDate; } 
+      })(new Date(new Date().getTime() - 1 * 24*60*60*1000));
+   var consolidatedRecords = records.filter(filterFn);
+   //if (consolidatedRecords.length != records.length) // optimization
+      {
+      agent.InteractiveLog('Removed ' + (records.length - consolidatedRecords.length) + ' old record(s)');
+      records = consolidatedRecords;
+      GAS.WriteSheetUsingObjects(sheet, records, headers);
+      }
+
+   // Clean up any duplicates in the sheet that occur due to journaling
+   consolidatedRecords = records;
+   consolidatedRecords.reverse(); // apply records backward so that new (lower-numbered rows) overwrites old
+   var recordsMap = Lang.MakeMapUsingObjectsP(consolidatedRecords, 'drive_id');
+   consolidatedRecords = Object.values(recordsMap);
+
+   //if (consolidatedRecords.length != records.length) // optimization
+      {
+      agent.InteractiveLog('Consolidated ' + (records.length - consolidatedRecords.length) + ' record(s)');
+      records = consolidatedRecords;
+      GAS.WriteSheetUsingObjects(sheet, records, headers);
+      }
+
+   // Iterate all the records that are out of date until we run out of time
+   var utsCutoff = Lang.GetTimestampNowP() + 3 * 60 * 1000;
+   records.forEach(function (eRecord)
+      {
+         if (Lang.GetTimestampNowP() > utsCutoff) return;
+
+         eRecord.last_found_date = Lang.MakeDateUsingAnyP(eRecord.last_found_date);
+         eRecord.last_scanned_date = Lang.MakeDateUsingAnyP(eRecord.last_scanned_date);
+         var isScannable = eRecord.last_found_date > eRecord.last_scanned_date;
+         if (isScannable)
+            {
+            var folder = DriveApp.getFolderById(eRecord.drive_id);
+            eRecord.last_scanned_date = new Date();
+            var objects = [eRecord];
+
+            // If valid, scan for subfolders and list them
+            if (Lang.IsObjectP(folder))
+               {
+               var subfolders = folder.getFolders();
+               while (subfolders.hasNext())
+                  {
+                  var subfolder = subfolders.next();
+                  objects.push({
+                     drive_id: subfolder.getId(),
+                     last_found_date: new Date(),
+                     name: subfolder.getName()
+                  });
+                  }
+               }
+
+            // Record subfolders at the top so the next pass consolidates them
+            var rows = Lang.GetRowsFromTableP(
+                  Lang.MakeTableUsingObjectsP(objects, headers)
+                  );
+            agent.InteractiveLog('Scanned ' + rows.length + ' records');
+            GAS.AddRowsToJournalingSheet(rows, sheet);
+            }
+      });
+
+   // If we actually make it to the end, refresh the root for the next run
+   var defaultRootObject = {'drive_id': GAS.GetFileIdFromUrl(agent.ReadValue('ROOT_DIRECTORY_URL')), 'last_found_date': new Date()};
+   var table = Lang.MakeTableUsingObjectsP([defaultRootObject], headers);
+   GAS.AddRowsToJournalingSheet(Lang.GetRowsFromTableP(table), sheet);
+
+   if (!agent.WhatIf)
+      {
+      agent.Snooze(11 * 60 * 1000);
+      }
+   ------------------------
+      TURN_OFF
+------------------------
+   TURN_OFF

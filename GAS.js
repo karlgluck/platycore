@@ -298,7 +298,7 @@ ns.WriteSheetUsingTable = function (sheet, table)
 
 ns.SetSheetTableSize = function (sheet, qrRows, qcColumns)
    {
-   var irHeaderRow = sheet.getFrozenRows();
+   var irHeaderRow = Math.max(1, sheet.getFrozenRows());
    var irFirstDataRow = irHeaderRow + 1;
 
    var mrMaxRows = sheet.getMaxRows();
