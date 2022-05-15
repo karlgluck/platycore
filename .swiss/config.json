@@ -1,7 +1,7 @@
 {
     "OperatingSystem": {
         "Name": "Windows 11",
-        "Version": "Windows 11 Pro"
+        "Version": "Windows 11 Pro",
         "Release": "21H2",
         "Edition": "Windows 11 Home/Pro",
         "Language": "English",
