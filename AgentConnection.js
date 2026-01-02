@@ -351,7 +351,14 @@ function AgentConnection ()
       values[0] = badge;
       for (var iArg = nArgCount - 1; iArg >= 0; --iArg)
          {
-         values[starts[iArg]-1] = String(args[iArg]).replace(/\r?\n/g, '⏎');
+         var str = String(args[iArg]).replace(/\r?\n/g, '⏎');
+         // Escape strings that start with formula trigger characters (=, +, -, @)
+         // by prefixing with a single quote to force Google Sheets to treat as text
+         if (/^[=+\-@]/.test(str))
+            {
+            str = "'" + str;
+            }
+         values[starts[iArg]-1] = str;
          }
       var range = sheet_.getRange(irNewMessage_, 1, 1, 49);
       var notes = Lang.MakeArray(49, null);
