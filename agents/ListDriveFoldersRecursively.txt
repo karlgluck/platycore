@@ -125,6 +125,19 @@ var headers = GAS.MergeSheetHeaders(sheet, ['drive_id', 'last_found_date', 'last
 agent.WriteValue('WORKING_SHEET_URL', GAS.GetUrlFromSheet(sheet));
 ------------------------
 
+--- [Use My Drive Root] ---
+
+   SELECT "AO2:AT2"
+    VALUE "[Use My Drive Root]"
+    STYLE "BUTTON"
+     CODE "---"
+------------------------
+var rootFolder = DriveApp.getRootFolder();
+var rootUrl = 'https://drive.google.com/drive/folders/' + rootFolder.getId();
+agent.WriteValue('ROOT_DIRECTORY_URL', rootUrl);
+agent.Info('Set root to My Drive: ' + rootUrl);
+------------------------
+
 
 
 
@@ -180,40 +193,63 @@ Main Script
          eRecord.last_found_date = Lang.MakeDateUsingAnyP(eRecord.last_found_date);
          eRecord.last_scanned_date = Lang.MakeDateUsingAnyP(eRecord.last_scanned_date);
          var isScannable = eRecord.last_found_date > eRecord.last_scanned_date;
-         if (isScannable)
+         if (isScannable && Lang.IsMeaningfulP(eRecord.drive_id))
             {
-            var folder = DriveApp.getFolderById(eRecord.drive_id);
-            eRecord.last_scanned_date = new Date();
-            var objects = [eRecord];
-
-            // If valid, scan for subfolders and list them
-            if (Lang.IsObjectP(folder))
+            try
                {
-               var subfolders = folder.getFolders();
-               while (subfolders.hasNext())
-                  {
-                  var subfolder = subfolders.next();
-                  objects.push({
-                     drive_id: subfolder.getId(),
-                     last_found_date: new Date(),
-                     name: subfolder.getName()
-                  });
-                  }
-               }
+               var folder = DriveApp.getFolderById(eRecord.drive_id);
+               eRecord.last_scanned_date = new Date();
+               var objects = [eRecord];
 
-            // Record subfolders at the top so the next pass consolidates them
-            var rows = Lang.GetRowsFromTableP(
-                  Lang.MakeTableUsingObjectsP(objects, headers)
-                  );
-            agent.InteractiveLog('Scanned ' + rows.length + ' records');
-            GAS.AddRowsToJournalingSheet(rows, sheet);
+               // If valid, scan for subfolders and list them
+               if (Lang.IsObjectP(folder))
+                  {
+                  var subfolders = folder.getFolders();
+                  while (subfolders.hasNext())
+                     {
+                     var subfolder = subfolders.next();
+                     objects.push({
+                        drive_id: subfolder.getId(),
+                        last_found_date: new Date(),
+                        name: subfolder.getName()
+                     });
+                     }
+                  }
+
+               // Record subfolders at the top so the next pass consolidates them
+               var rows = Lang.GetRowsFromTableP(
+                     Lang.MakeTableUsingObjectsP(objects, headers)
+                     );
+               agent.InteractiveLog('Scanned ' + rows.length + ' records');
+               GAS.AddRowsToJournalingSheet(rows, sheet);
+               }
+            catch (e)
+               {
+               agent.Warn('Failed to scan folder ' + eRecord.drive_id + ': ' + e.message);
+               }
             }
       });
 
    // If we actually make it to the end, refresh the root for the next run
-   var defaultRootObject = {'drive_id': GAS.GetFileIdFromUrl(agent.ReadValue('ROOT_DIRECTORY_URL')), 'last_found_date': new Date()};
-   var table = Lang.MakeTableUsingObjectsP([defaultRootObject], headers);
-   GAS.AddRowsToJournalingSheet(Lang.GetRowsFromTableP(table), sheet);
+   var rootUrl = agent.ReadValue('ROOT_DIRECTORY_URL');
+   if (Lang.IsMeaningfulP(rootUrl))
+      {
+      var rootId = GAS.GetFileIdFromUrl(rootUrl);
+      if (Lang.IsMeaningfulP(rootId))
+         {
+         var defaultRootObject = {'drive_id': rootId, 'last_found_date': new Date()};
+         var table = Lang.MakeTableUsingObjectsP([defaultRootObject], headers);
+         GAS.AddRowsToJournalingSheet(Lang.GetRowsFromTableP(table), sheet);
+         }
+      else
+         {
+         agent.Warn('Invalid ROOT_DIRECTORY_URL: could not extract folder ID');
+         }
+      }
+   else
+      {
+      agent.Warn('ROOT_DIRECTORY_URL not set');
+      }
 
    if (!agent.WhatIf)
       {
