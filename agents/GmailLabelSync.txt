@@ -1,14 +1,16 @@
 INSTALL "https://raw.githubusercontent.com/karlgluck/platycore/master/agents/GmailLabelSync.txt"
 
-This agent syncs Gmail labels to a spreadsheet table and
-allows deletion of labels marked "DELETE" in the operation_to_perform column.
+This agent syncs Gmail labels to a separate spreadsheet and allows
+deletion of labels marked "DELETE" in the operation column.
+
+The [Make Sheet] button creates the data sheet where labels are stored.
 
 The [Sync From Gmail] button reads all Gmail labels and writes them
-to the spreadsheet starting at row 8, showing label name, unread count,
-and total thread count.
+to the data sheet, showing label name, unread count, and total thread count.
 
-The [Delete Labels] button runs in WhatIf mode unless EN is checked,
-protecting against accidental deletions.
+The [Delete Labels] button reads the data sheet and deletes any labels
+marked "DELETE" in the operation column. Runs in WhatIf mode unless EN
+is checked, protecting against accidental deletions.
 
 ==================================================================
 Common Initialization
@@ -77,31 +79,16 @@ Common Initialization
 ==================================================================
 Agent-specific
 
---- Table Headers ---
+--- LABELS_SHEET ---
 
-   SELECT "N7"
-    VALUE "Label Name"
-       BG "#434343"
-       FG "#FFFFFF"
-   HALIGN "center"
+   SELECT "N2:R2"
+    VALUE "Labels Sheet:"
+   HALIGN "right"
 
-   SELECT "O7"
-    VALUE "Unread Count"
-       BG "#434343"
-       FG "#FFFFFF"
-   HALIGN "center"
-
-   SELECT "P7"
-    VALUE "Total Threads"
-       BG "#434343"
-       FG "#FFFFFF"
-   HALIGN "center"
-
-   SELECT "Q7"
-    VALUE "Operation"
-       BG "#434343"
-       FG "#FFFFFF"
-   HALIGN "center"
+   SELECT "S2:AH2"
+     NAME "LABELS_SHEET"
+    STYLE "FIELD"
+     LOAD "LABELS_SHEET", "OLD_AGENT"
 
 --- Synced Count ---
    SELECT "C6:D6"
@@ -129,45 +116,65 @@ Agent-specific
 ==================================================================
 Manual Actions
 
+--- [Make Sheet] ---
+
+   SELECT "AJ2:AN2"
+    VALUE "[Make Sheet]"
+    STYLE "BUTTON"
+     CODE "---"
+------------------------
+var sheet = SpreadsheetApp.create("Gmail Labels", 1, 1).getSheets()[0];
+var headers = GAS.MergeSheetHeaders(sheet, ['label_name', 'unread_count', 'total_threads', 'operation']);
+GAS.AddRowsToJournalingSheet(
+   [['<Label Name>', 0, 0, '']],
+   sheet);
+agent.WriteValue('LABELS_SHEET', GAS.GetUrlFromSheet(sheet));
+agent.Info('Created labels sheet: ' + GAS.GetUrlFromSheet(sheet));
+------------------------
+
 --- [Sync From Gmail] ---
 
-   SELECT "N2:R2"
+   SELECT "N3:R3"
     VALUE "[Sync From Gmail]"
     STYLE "BUTTON"
      NOTE "---"
 ------------------------
    <         EVAL "---"
    ------------------------
+   var labelsSheetUrl = agent.ReadValue('LABELS_SHEET');
+   if (!Lang.IsMeaningfulP(labelsSheetUrl)) {
+      agent.Error('No labels sheet configured. Click [Make Sheet] first.');
+      return;
+   }
+
+   var sheet = agent.OpenSheetUsingUrlFromValue('LABELS_SHEET');
    var labels = GmailApp.getUserLabels();
 
    agent.Info("=== Syncing Gmail Labels ===");
    agent.Info("Found " + labels.length + " labels");
 
-   // Clear existing data (rows 8 and below)
-   var sheet = agent.Sheet;
-   var lastRow = sheet.getLastRow();
-   if (lastRow >= 8) {
-      sheet.getRange(8, 14, lastRow - 7, 4).clearContent();
-   }
-
-   // Build data array
+   // Build array of label data
    var data = [];
    labels.forEach(function(label) {
       var name = label.getName();
       var unread = label.getUnreadCount();
       var totalThreads = label.getThreads().length;
 
-      data.push([name, unread, totalThreads, ""]);
+      data.push({
+         label_name: name,
+         unread_count: unread,
+         total_threads: totalThreads,
+         operation: ''
+      });
 
       agent.Info(name + " | Unread: " + unread + " | Threads: " + totalThreads);
    });
 
-   // Write to sheet starting at row 8, column N (14)
-   if (data.length > 0) {
-      sheet.getRange(8, 14, data.length, 4).setValues(data);
-      agent.WriteValue('SYNCED_COUNT', data.length);
-   }
+   // Write to sheet using GAS utilities
+   var headers = ['label_name', 'unread_count', 'total_threads', 'operation'];
+   GAS.WriteSheetUsingObjects(sheet, data, headers);
 
+   agent.WriteValue('SYNCED_COUNT', data.length);
    agent.Info("=== Sync Complete ===");
    agent.Info("Synced " + data.length + " labels to spreadsheet");
    ------------------------
@@ -177,7 +184,7 @@ Manual Actions
 
 --- [Delete Labels] ---
 
-   SELECT "N3:R3"
+   SELECT "N4:R4"
     VALUE "[Delete Labels]"
     STYLE "BUTTON"
      NOTE "---"
@@ -185,55 +192,54 @@ Manual Actions
    <      ENTER_WHAT_IF_MODE_UNLESS "EN"
           EVAL "---"
    ------------------------
-   var sheet = agent.Sheet;
-   var lastRow = sheet.getLastRow();
-
-   if (lastRow < 8) {
-      agent.Info("No data found. Please sync from Gmail first.");
+   var labelsSheetUrl = agent.ReadValue('LABELS_SHEET');
+   if (!Lang.IsMeaningfulP(labelsSheetUrl)) {
+      agent.Error('No labels sheet configured. Click [Make Sheet] first.');
       return;
    }
 
-   // Read data from table starting at row 8
-   var dataRange = sheet.getRange(8, 14, lastRow - 7, 4);
-   var data = dataRange.getValues();
+   var sheet = agent.OpenSheetUsingUrlFromValue('LABELS_SHEET');
+   var objects = GAS.MakeObjectsUsingSheetP(sheet);
 
    agent.Info("=== Scanning for Labels to Delete ===");
 
    var deleteCount = 0;
-   var rowsToDelete = [];
+   var remainingObjects = [];
 
-   // Scan for "DELETE" in operation column (index 3)
-   for (var i = 0; i < data.length; i++) {
-      var labelName = data[i][0];
-      var operation = Lang.MakeStringUsingAnyP(data[i][3]).toUpperCase().trim();
+   objects.forEach(function(obj) {
+      var labelName = Lang.MakeStringUsingAnyP(obj.label_name).trim();
+      var operation = Lang.MakeStringUsingAnyP(obj.operation).toUpperCase().trim();
 
-      if (operation === "DELETE" && labelName) {
+      if (operation === "DELETE" && Lang.IsMeaningfulP(labelName)) {
          if (agent.WhatIf) {
             agent.Info("[WhatIf]: Would delete label: " + labelName);
+            remainingObjects.push(obj);
          } else {
             try {
                var label = GmailApp.getUserLabelByName(labelName);
                if (label) {
                   label.deleteLabel();
                   agent.Info("Deleted label: " + labelName);
-                  rowsToDelete.push(i + 8); // Store row number for clearing
                   deleteCount++;
+                  // Don't add to remainingObjects - it's deleted
                } else {
                   agent.Warn("Label not found in Gmail: " + labelName);
+                  remainingObjects.push(obj);
                }
             } catch (e) {
                agent.Error("Failed to delete label '" + labelName + "': " + e.message);
+               remainingObjects.push(obj);
             }
          }
-         deleteCount++;
+      } else {
+         remainingObjects.push(obj);
       }
-   }
+   });
 
-   // Clear the deleted rows from spreadsheet
-   if (!agent.WhatIf && rowsToDelete.length > 0) {
-      rowsToDelete.reverse().forEach(function(rowNum) {
-         sheet.getRange(rowNum, 14, 1, 4).clearContent();
-      });
+   // Write back the remaining objects (with deleted ones removed)
+   if (!agent.WhatIf) {
+      var headers = ['label_name', 'unread_count', 'total_threads', 'operation'];
+      GAS.WriteSheetUsingObjects(sheet, remainingObjects, headers);
    }
 
    agent.Info("=== Delete Operation Complete ===");

@@ -5,6 +5,28 @@ Platycore agents are defined in plain-text installer scripts using indented decl
 
 Multiline code blocks use `"< EVAL "---"` (or similar) where `<` triggers de-indentation: the parser trims the exact leading whitespace count from the `<` line on all subsequent lines until the closing `---`.
 
+## Architecture Principles
+
+**CRITICAL:** Platycore agents follow strict architectural rules:
+
+1. **Never use direct sheet access on the agent sheet**
+   - NO `getActiveSheet()`, `getRange()`, or direct SpreadsheetApp calls on the agent's own sheet
+   - This breaks when viewers have different sheets selected
+
+2. **Use named properties for all agent configuration**
+   - Define properties with SELECT + NAME commands
+   - Access via `agent.ReadValue()`, `agent.WriteValue()`, `agent.ReadCheckbox()`, `agent.WriteCheckbox()`
+
+3. **Store data in separate sheets**
+   - Create data sheets using `SpreadsheetApp.create()`
+   - Store the data sheet URL in a named property
+   - Access data sheets using `agent.OpenSheetUsingUrlFromValue()`
+
+4. **Use GAS utilities for data manipulation**
+   - `GAS.MakeObjectsUsingSheetP()` to read data as objects
+   - `GAS.WriteSheetUsingObjects()` to write data
+   - `GAS.AddRowsToJournalingSheet()` for append operations
+
 ## Core Commands (alphabetical)
 
 - **ABORT_UNLESS_ACTIVATED**
@@ -141,7 +163,6 @@ Within EVAL blocks, the `agent` variable provides access to the AgentConnection 
 
 ### Properties
 - **`agent.WhatIf`** (boolean) - True when agent is in dry-run mode (set via ENTER_WHAT_IF_MODE_UNLESS)
-- **`agent.Sheet`** - Direct access to the Google Apps Script Sheet object for the current agent
 
 ### Output Methods
 - **`agent.Info(message, ...)`** - Logs informational messages (white text on black background)
@@ -425,56 +446,93 @@ Typical agent flow:
 4. Agent-specific logic
 5. TURN_OFF
 
-## Accessing the Sheet Directly
+## Platycore Architecture Pattern
 
-Use `agent.Sheet` to access the Google Apps Script Sheet object:
+**IMPORTANT:** Platycore agents follow a specific architecture to ensure reliability:
 
+### Agent Sheet vs Data Sheet
+
+1. **Agent Sheet** (the sheet with the agent controls)
+   - Contains configuration: EN, ON, GO, WAKE, LOCK checkboxes
+   - Contains named properties for settings (URLs, counters, etc.)
+   - Access ONLY via named properties using `agent.ReadValue/WriteValue` and `agent.ReadCheckbox/WriteCheckbox`
+   - **NEVER use direct sheet access** (`getActiveSheet()`, `getRange()`, etc.) on the agent sheet
+
+2. **Data Sheet** (separate sheet for data)
+   - Store the data sheet URL in a named property on the agent sheet
+   - Access using `agent.OpenSheetUsingUrlFromValue('PROPERTY_NAME')`
+   - Manipulate using GAS utilities (`GAS.MakeObjectsUsingSheetP`, `GAS.WriteSheetUsingObjects`, etc.)
+
+### Proper Pattern Example
+
+**Setup (create data sheet and store URL):**
 ```
-   <         EVAL "---"
-   ------------------------
-   var sheet = agent.Sheet;
-
-   // Read data from specific range
-   var lastRow = sheet.getLastRow();
-   var data = sheet.getRange(8, 14, lastRow - 7, 4).getValues();
-
-   // Write data to range
-   var newData = [["A", "B", "C"], ["D", "E", "F"]];
-   sheet.getRange(10, 1, newData.length, 3).setValues(newData);
-
-   // Clear content
-   sheet.getRange(5, 1, 10, 5).clearContent();
-
-   // Format cells
-   sheet.getRange(1, 1, 1, 5)
-      .setBackground("#434343")
-      .setFontColor("#FFFFFF")
-      .setHorizontalAlignment("center");
-   ------------------------
+--- [Make Sheet] ---
+   SELECT "AJ2:AN2"
+    VALUE "[Make Sheet]"
+    STYLE "BUTTON"
+     CODE "---"
+------------------------
+var sheet = SpreadsheetApp.create("My Data", 1, 1).getSheets()[0];
+var headers = GAS.MergeSheetHeaders(sheet, ['name', 'value']);
+agent.WriteValue('DATA_SHEET', GAS.GetUrlFromSheet(sheet));
+agent.Info('Created data sheet');
+------------------------
 ```
 
-**When to use direct sheet access vs commands:**
-- Use commands (VALUE, FORMULA, etc.) for setup and configuration
-- Use `agent.Sheet` in EVAL blocks for dynamic data manipulation
-- Use `agent.ReadValue/WriteValue` to interact with named properties from code
-
-## Working with Sheets and Tables
-
-**Converting sheet to objects:**
+**Read data from data sheet:**
 ```
-var sheet = agent.OpenSheetUsingUrlFromValue('SHEET_URL');
+var sheet = agent.OpenSheetUsingUrlFromValue('DATA_SHEET');
 var objects = GAS.MakeObjectsUsingSheetP(sheet);
-
-// objects is now array like:
-// [{col1: "value1", col2: "value2"}, ...]
-
-objects.forEach(function(row) {
-   agent.Info(row.col1 + ": " + row.col2);
+objects.forEach(function(obj) {
+   agent.Info(obj.name + ": " + obj.value);
 });
 ```
 
-**Writing objects to sheet:**
+**Write data to data sheet:**
 ```
+var sheet = agent.OpenSheetUsingUrlFromValue('DATA_SHEET');
+var data = [{name: "Alice", value: 42}, {name: "Bob", value: 99}];
+var headers = ['name', 'value'];
+GAS.WriteSheetUsingObjects(sheet, data, headers);
+```
+
+**Read/write agent configuration:**
+```
+// Read from named properties
+var count = agent.ReadValue('PROCESSED_COUNT');
+var isEnabled = agent.ReadCheckbox('EN');
+
+// Write to named properties
+agent.WriteValue('PROCESSED_COUNT', count + 1);
+agent.WriteCheckbox('GO', false);
+```
+
+## Working with Data Sheets
+
+**Creating a data sheet:**
+```
+var sheet = SpreadsheetApp.create("My Data Sheet", 1, 1).getSheets()[0];
+var headers = GAS.MergeSheetHeaders(sheet, ['column1', 'column2']);
+agent.WriteValue('MY_DATA_SHEET', GAS.GetUrlFromSheet(sheet));
+```
+
+**Reading data from data sheet:**
+```
+var sheet = agent.OpenSheetUsingUrlFromValue('MY_DATA_SHEET');
+var objects = GAS.MakeObjectsUsingSheetP(sheet);
+
+// objects is now array like:
+// [{column1: "value1", column2: "value2"}, ...]
+
+objects.forEach(function(row) {
+   agent.Info(row.column1 + ": " + row.column2);
+});
+```
+
+**Writing objects to data sheet:**
+```
+var sheet = agent.OpenSheetUsingUrlFromValue('MY_DATA_SHEET');
 var data = [
    {name: "Alice", age: 30},
    {name: "Bob", age: 25}
@@ -484,12 +542,14 @@ var headers = ["name", "age"];
 GAS.WriteSheetUsingObjects(sheet, data, headers);
 ```
 
-**Adding rows to journaling sheet:**
+**Adding rows to journaling sheet (newest first):**
 ```
-// Adds rows to TOP of sheet (newest first)
+var sheet = agent.OpenSheetUsingUrlFromValue('MY_DATA_SHEET');
 var rows = [["value1", "value2"], ["value3", "value4"]];
 GAS.AddRowsToJournalingSheet(rows, sheet);
 ```
+
+**REMEMBER:** Always access data sheets via `agent.OpenSheetUsingUrlFromValue()`, never via `getActiveSheet()`.
 
 ## Error Handling in EVAL Blocks
 
@@ -515,12 +575,18 @@ GAS.AddRowsToJournalingSheet(rows, sheet);
 ```
    <         EVAL "---"
    ------------------------
-   var sheet = agent.Sheet;
-   var lastRow = sheet.getLastRow();
-
-   if (lastRow < 8) {
-      agent.Info("No data found. Please sync first.");
+   var dataSheetUrl = agent.ReadValue('DATA_SHEET');
+   if (!Lang.IsMeaningfulP(dataSheetUrl)) {
+      agent.Error('No data sheet configured. Click [Make Sheet] first.');
       return;  // Early exit from EVAL block
+   }
+
+   var sheet = agent.OpenSheetUsingUrlFromValue('DATA_SHEET');
+   var objects = GAS.MakeObjectsUsingSheetP(sheet);
+
+   if (objects.length === 0) {
+      agent.Info("No data found. Please sync first.");
+      return;
    }
 
    // Proceed with operations...
