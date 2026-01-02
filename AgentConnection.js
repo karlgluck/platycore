@@ -461,6 +461,7 @@ function AgentConnection ()
          eRange.remove();
          });
       spreadsheet_.deleteSheet(sheet_);
+      SpreadsheetApp.flush(); // Force all pending changes to complete before continuing
       self_.ConnectUsingSheet(null);
       };
 
