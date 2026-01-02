@@ -50,7 +50,7 @@ function AgentConnection ()
       var rvConnected = false;
       if (agentId.match(/^A\d+$/))
          {
-         rvConnected = self_.ConnectUsingSheetId(Lang.MakeIntUsingAnyP(sheet.slice(1)));
+         rvConnected = self_.ConnectUsingSheetId(Lang.MakeIntUsingAnyP(agentId.slice(1)));
          }
       return rvConnected;
       };
@@ -73,7 +73,7 @@ function AgentConnection ()
 
    this.ConnectUsingSheetId = function (sheetId)
       {
-      return self_.ConnectUsingSheet(GAS.OpenSheetUsingSheetId(sheet));
+      return self_.ConnectUsingSheet(GAS.OpenSheetUsingSheetId(sheetId));
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -93,7 +93,6 @@ function AgentConnection ()
       isThisOn_ = false;
       spreadsheet_ = null;
       irNewMessage_ = 2;
-      readonlyNames_ = [];
       sheet_ = null;
 
       if (Lang.IsObjectP(sheet))
@@ -249,7 +248,7 @@ function AgentConnection ()
 
 //------------------------------------------------------------------------------------------------------------------------------------
 
-   this.ReadNote = function (name, ignoreCache)
+   this.ReadNote = function (name)
       {
       var range = getRangeFromPropertyName(name);
       return Lang.IsObjectP(range) ? range.getNote() : undefined;
@@ -392,7 +391,7 @@ function AgentConnection ()
    this.LogWithBadge = function (badge, message)
       {
       console.log.apply(console, arguments);
-      writeOutput_(badge, [Array(arguments).slice(1)]).setFontColor('#b7b7b7').setBackground('black');
+      writeOutput_(badge, Array.prototype.slice.call(arguments, 1)).setFontColor('#b7b7b7').setBackground('black');
       };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -1087,11 +1086,11 @@ function AgentConnection ()
                   var didConnect = false;
                   if (sheetFromAlias.hasOwnProperty(identifier))
                      {
-                     didConnect = self.ConnectUsingSheet(sheetFromAlias[identifier]);
+                     didConnect = self_.ConnectUsingSheet(sheetFromAlias[identifier]);
                      }
                   else
                      {
-                     didConnect = self.Connect(identifier);
+                     didConnect = self_.Connect(identifier);
                      }
                   if (!didConnect)
                      {

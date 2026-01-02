@@ -82,7 +82,7 @@ ns.IsNumberP = function (any)
 
 ns.IsNotNumberP = function (any)
    {
-   return !ns.IsNotNumberP(any);
+   return !ns.IsNumberP(any);
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
@@ -419,7 +419,7 @@ ns.GetUnicodeAstralCodePointFromSurrogatePairP = function (highSurrogate, lowSur
 
 ns.MakeDayCodeStringUsingDate = function (date)
    {
-   return Utilities.formatDate(date, Session.getScriptTimeSonze(), "yyww'.'u'-'MMdd");
+   return Utilities.formatDate(date, Session.getScriptTimeZone(), "yyww'.'u'-'MMdd");
    };
 
 //------------------------------------------------------------------------------------------------------------------------------------
