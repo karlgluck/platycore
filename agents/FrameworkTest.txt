@@ -1,0 +1,402 @@
+INSTALL "https://raw.githubusercontent.com/karlgluck/platycore/master/agents/FrameworkTest.txt"
+
+This agent tests Platycore framework features including:
+- Lang utility functions (type checking, date/time, string manipulation)
+- GAS utility functions (sheet operations, data formatting)
+- Agent features (checkboxes, buttons, fields, logging)
+- Data operations (creating sheets, reading/writing data)
+- Flow control (what-if mode, conditionals)
+
+The [Run Tests] button executes all tests and cleans up temporary resources.
+
+==================================================================
+Common Initialization
+
+      TITLE  "Framework Test"
+    RESERVE  9
+
+--- EN ---
+
+   SELECT  "C2"
+     NAME  "EN"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D2"
+    VALUE  "EN"
+
+--- ON ---
+
+   SELECT  "C3"
+     NAME  "ON"
+ CHECKBOX  "TRUE"
+        +  "READONLY"
+
+   SELECT  "D3"
+    VALUE  "ON"
+
+--- GO ---
+
+   SELECT  "C4"
+     NAME  "GO"
+ CHECKBOX  "FALSE"
+
+   SELECT  "D4"
+    VALUE  "GO"
+
+--- WAKE ---
+
+   SELECT  "H2:L2"
+     NAME  "WAKE"
+    STYLE  "READONLY_FIELD"
+   EVALUE  "Lang.GetTimestampNowP() + 15000"
+     LOAD  "WAKE", "OLD_AGENT"
+
+   SELECT  "F2:G2"
+    VALUE  "WAKE"
+
+   SELECT  "F3:L3"
+  FORMULA  "=(H2-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+
+--- LOCK ---
+
+   SELECT  "H5:L5"
+     NAME  "LOCK"
+    STYLE  "READONLY_FIELD"
+   EVALUE  "Lang.GetTimestampNowP()"
+
+   SELECT  "F5:G5"
+    VALUE  "LOCK"
+
+   SELECT  "F6:L6"
+  FORMULA  "=(H5-(60*2+4)*1000)/1000/60/60/24+25568.6681"
+   FORMAT  "DATETIME"
+
+
+==================================================================
+Agent-specific
+
+--- Test Sheet URL ---
+
+   SELECT "N2:R2"
+    VALUE "Test Sheet:"
+   HALIGN "right"
+
+   SELECT "S2:AH2"
+     NAME "TEST_SHEET_URL"
+    STYLE "FIELD"
+     LOAD "TEST_SHEET_URL", "OLD_AGENT"
+
+--- Test Counters ---
+
+   SELECT "C7:D7"
+    VALUE 0
+     NAME "TESTS_RUN"
+    STYLE "READONLY_FIELD"
+     LOAD "TESTS_RUN", "OLD_AGENT"
+   HALIGN "center"
+
+   SELECT "E7:G7"
+    VALUE "tests run"
+
+   SELECT "C8:D8"
+    VALUE 0
+     NAME "TESTS_PASSED"
+    STYLE "READONLY_FIELD"
+     LOAD "TESTS_PASSED", "OLD_AGENT"
+   HALIGN "center"
+
+   SELECT "E8:G8"
+    VALUE "tests passed"
+
+   SELECT "C9:D9"
+    VALUE 0
+     NAME "TESTS_FAILED"
+    STYLE "READONLY_FIELD"
+     LOAD "TESTS_FAILED", "OLD_AGENT"
+   HALIGN "center"
+
+   SELECT "E9:G9"
+    VALUE "tests failed"
+
+--- Status ---
+
+   SELECT "N3:AH3"
+     NAME "STATUS"
+    STYLE "READONLY_FIELD"
+    VALUE "Ready to run tests"
+     LOAD "STATUS", "OLD_AGENT"
+
+
+==================================================================
+Manual Actions
+
+--- [Run Tests] ---
+
+   SELECT "N4:R4"
+    VALUE "[Run Tests]"
+    STYLE "BUTTON"
+     CODE "---"
+------------------------
+var testsRun = 0;
+var testsPassed = 0;
+var testsFailed = 0;
+
+// Helper functions
+function assert(condition, testName) {
+   testsRun++;
+   if (condition) {
+      testsPassed++;
+      agent.Info("✓ " + testName);
+   } else {
+      testsFailed++;
+      agent.Error("✗ " + testName);
+   }
+}
+
+function assertEquals(actual, expected, testName) {
+   testsRun++;
+   if (actual === expected) {
+      testsPassed++;
+      agent.Info("✓ " + testName);
+   } else {
+      testsFailed++;
+      agent.Error("✗ " + testName + " (expected: " + expected + ", got: " + actual + ")");
+   }
+}
+
+agent.WriteValue('STATUS', 'Running tests...');
+
+agent.Info("=== STARTING FRAMEWORK TESTS ===");
+
+// ==============================
+// Lang Utility Function Tests
+// ==============================
+
+agent.Info("=== Testing Lang Utilities ===");
+
+// Type checking
+assert(Lang.IsStringP("hello"), "IsStringP with string");
+assert(!Lang.IsStringP(123), "IsStringP with number");
+assert(Lang.IsNumberP(42), "IsNumberP with number");
+assert(Lang.IsNotNumberP("text"), "IsNotNumberP with string");
+assert(Lang.IsObjectP({}), "IsObjectP with object");
+assert(Lang.IsArrayP([1,2,3]), "IsArrayP with array");
+assert(Lang.IsDateP(new Date()), "IsDateP with date");
+assert(Lang.IsMeaningfulP("text"), "IsMeaningfulP with text");
+assert(!Lang.IsMeaningfulP(""), "IsMeaningfulP with empty string");
+assert(!Lang.IsMeaningfulP(null), "IsMeaningfulP with null");
+
+// String operations
+assertEquals(Lang.MakeStringUsingAnyP(123), "123", "MakeStringUsingAnyP with number");
+assertEquals(Lang.ClampStringLengthP("hello world", 5), "he...", "ClampStringLengthP");
+
+// Number operations
+assertEquals(Lang.MakeIntUsingAnyP("42"), 42, "MakeIntUsingAnyP");
+assertEquals(Lang.MakeBoolUsingAnyP(1), true, "MakeBoolUsingAnyP with 1");
+assertEquals(Lang.MakeBoolUsingAnyP(0), false, "MakeBoolUsingAnyP with 0");
+
+// Array operations
+var testArray = [1, 2, 3];
+assert(Lang.IsArrayP(testArray), "Array creation");
+assertEquals(Lang.MakeArray(3, "x").length, 3, "MakeArray length");
+
+// Set operations
+var testSet = Lang.MakeSetUsingObjectsP(['a', 'b', 'c']);
+assert(Lang.IsContainedInSetP('b', testSet), "IsContainedInSetP with contained item");
+assert(Lang.IsNotContainedInSetP('d', testSet), "IsNotContainedInSetP with missing item");
+
+// Date/Time operations
+var now = new Date();
+assert(Lang.IsDateP(now), "Date creation");
+var timestamp = Lang.GetTimestampNowP();
+assert(Lang.IsNumberP(timestamp), "GetTimestampNowP returns number");
+var moonPhase = Lang.GetMoonPhaseP();
+assert(Lang.IsStringP(moonPhase), "GetMoonPhaseP returns string");
+
+// Object operations
+var testObjs = [{id: 1, name: 'a'}, {id: 2, name: 'b'}];
+var map = Lang.MakeMapUsingObjectsP(testObjs, 'id');
+assert(map[1].name === 'a', "MakeMapUsingObjectsP");
+
+var multimap = Lang.MakeMultimapUsingObjectsP(testObjs, 'id');
+assert(multimap[1].length === 1, "MakeMultimapUsingObjectsP");
+
+// Table operations
+var table = [['name', 'age'], ['Alice', 30], ['Bob', 25]];
+var objects = Lang.MakeObjectsUsingTableP(table);
+assert(objects.length === 2, "MakeObjectsUsingTableP length");
+assert(objects[0].name === 'Alice', "MakeObjectsUsingTableP content");
+
+var backToTable = Lang.MakeTableUsingObjectsP(objects, ['name', 'age']);
+assert(backToTable.length === 3, "MakeTableUsingObjectsP length");
+assert(backToTable[0][0] === 'name', "MakeTableUsingObjectsP headers");
+
+// ==============================
+// GAS Utility Function Tests
+// ==============================
+
+agent.Info("=== Testing GAS Utilities ===");
+
+// Create a temporary test sheet
+var testSheet = SpreadsheetApp.create("PlatycoreFrameworkTest_" + Lang.GetTimestampNowP()).getSheets()[0];
+agent.WriteValue('TEST_SHEET_URL', GAS.GetUrlFromSheet(testSheet));
+agent.Info("Created test sheet: " + GAS.GetUrlFromSheet(testSheet));
+
+// Test sheet header merging
+var headers = GAS.MergeSheetHeaders(testSheet, ['col1', 'col2', 'col3']);
+assert(headers.length === 3, "MergeSheetHeaders creates headers");
+
+// Test writing objects to sheet
+var testData = [
+   {col1: 'a', col2: 1, col3: true},
+   {col1: 'b', col2: 2, col3: false},
+   {col1: 'c', col2: 3, col3: true}
+];
+GAS.WriteSheetUsingObjects(testSheet, testData, headers);
+assert(testSheet.getLastRow() === 4, "WriteSheetUsingObjects row count");
+
+// Test reading objects from sheet
+var readObjects = GAS.MakeObjectsUsingSheetP(testSheet);
+assert(readObjects.length === 3, "MakeObjectsUsingSheetP count");
+assert(readObjects[0].col1 === 'a', "MakeObjectsUsingSheetP content");
+
+// Test journaling sheet
+GAS.AddRowsToJournalingSheet([['new', 99, false]], testSheet);
+assert(testSheet.getLastRow() === 5, "AddRowsToJournalingSheet adds row");
+
+// Test map from sheet
+var mapFromSheet = GAS.MakeMapUsingSheetP(testSheet, 'col1');
+assert(mapFromSheet['a'].col2 === 1, "MakeMapUsingSheetP");
+
+// Test A1 address generation
+var a1Address = GAS.MakeA1AddressFromCoordinatesP(5, 3);
+assertEquals(a1Address, "$$C$5", "MakeA1AddressFromCoordinatesP");
+
+// Test file ID extraction
+var testUrl = "https://docs.google.com/spreadsheets/d/1234567890abcdefghijklmno/edit";
+var fileId = GAS.GetFileIdFromUrl(testUrl);
+assert(fileId !== null, "GetFileIdFromUrl extracts ID");
+
+// Test range name validation
+assert(GAS.IsValidRangeNameP("valid_name_123"), "IsValidRangeNameP with valid name");
+assert(!GAS.IsValidRangeNameP("invalid-name"), "IsValidRangeNameP with invalid name");
+assert(!GAS.IsValidRangeNameP("true"), "IsValidRangeNameP rejects 'true'");
+
+// ==============================
+// Agent Feature Tests
+// ==============================
+
+agent.Info("=== Testing Agent Features ===");
+
+// Test value read/write
+agent.WriteValue('TESTS_RUN', 999);
+var readValue = agent.ReadValue('TESTS_RUN');
+assertEquals(readValue, 999, "WriteValue/ReadValue");
+
+// Test checkbox read/write
+var enState = agent.ReadCheckbox('EN');
+assert(Lang.IsBoolUsingAnyP(enState) || Lang.IsUndefinedP(enState), "ReadCheckbox returns boolean");
+
+// Test WhatIf mode
+var originalWhatIf = agent.WhatIf;
+agent.WhatIf = true;
+assert(agent.WhatIf === true, "WhatIf mode can be set");
+agent.WhatIf = originalWhatIf;
+
+// Test logging functions (already demonstrated throughout)
+agent.Log("Log message test");
+agent.Warn("Warning message test");
+// Note: agent.Error would show as error, so we just confirm it exists
+assert(Lang.IsFunctionP(agent.Error), "Error logging function exists");
+
+// ==============================
+// Data Operations Tests
+// ==============================
+
+agent.Info("=== Testing Data Operations ===");
+
+// Test sheet size adjustment
+GAS.SetSheetTableSize(testSheet, 10, 5);
+assert(testSheet.getMaxRows() >= 10, "SetSheetTableSize sets rows");
+
+// Test trimming
+GAS.TrimSheetRows(testSheet);
+assert(testSheet.getMaxRows() < 100, "TrimSheetRows reduces empty rows");
+
+// ==============================
+// Cleanup
+// ==============================
+
+agent.Info("=== Cleaning Up ===");
+
+// Delete the test sheet
+try {
+   var testSpreadsheet = testSheet.getParent();
+   var testFile = DriveApp.getFileById(testSpreadsheet.getId());
+   testFile.setTrashed(true);
+   agent.Info("Deleted test spreadsheet");
+   agent.WriteValue('TEST_SHEET_URL', '');
+} catch (e) {
+   agent.Warn("Failed to delete test spreadsheet: " + e.message);
+}
+
+// ==============================
+// Report Results
+// ==============================
+
+agent.WriteValue('TESTS_RUN', testsRun);
+agent.WriteValue('TESTS_PASSED', testsPassed);
+agent.WriteValue('TESTS_FAILED', testsFailed);
+
+agent.Info("=== TEST RESULTS ===");
+agent.Info("Tests Run: " + testsRun);
+agent.Info("Tests Passed: " + testsPassed);
+agent.Info("Tests Failed: " + testsFailed);
+
+if (testsFailed === 0) {
+   agent.WriteValue('STATUS', 'All tests passed! ✓');
+   agent.Info("🎉 ALL TESTS PASSED!");
+} else {
+   agent.WriteValue('STATUS', testsFailed + ' test(s) failed');
+   agent.Warn("Some tests failed. Review the log above.");
+}
+
+agent.Info("=== TESTS COMPLETE ===");
+------------------------
+
+    TURN_OFF
+
+--- [Clear Output] ---
+
+   SELECT "S4:W4"
+    VALUE "[Clear Output]"
+    STYLE "BUTTON"
+     CODE "---"
+------------------------
+agent.ClearOutput();
+agent.Info("Output cleared");
+------------------------
+
+    TURN_OFF
+
+--- [Reinstall] ---
+
+   SELECT "AS9:AV9"
+    VALUE "[Reinstall]"
+    STYLE "BUTTON"
+     NOTE "---"
+------------------------
+      ALIAS "OLD_AGENT"
+      EXPORT
+      UNINSTALL
+      NEW_AGENT "NEW_AGENT"
+      SELECT "STACK"
+      LOAD "REINSTALL_URL", "OLD_AGENT"
+      INSTALL null
+------------------------
+
+   SELECT "AJ9:AR9"
+     NAME "REINSTALL_URL"
+    STYLE "FIELD"
+     LOAD "$LAST_INSTALL_URL"
