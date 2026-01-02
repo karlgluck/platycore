@@ -1,3 +1,5 @@
+INSTALL "https://raw.githubusercontent.com/karlgluck/platycore/master/agents/ListDriveFoldersRecursively.txt"
+
    TITLE "ListDriveFoldersRecursively"
  RESERVE 7
 
@@ -119,8 +121,8 @@ Display the wake value as text
      CODE "---"
 ------------------------
 var sheet = SpreadsheetApp.create("FoldersList", 1, 1).getSheets()[0];
-var headers = GAS.WriteSheetUsingTable(sheet, ['drive_id', 'last_found_date', 'last_scanned_date']);
-agent.WriteValue('SHEET', GAS.GetUrlFromSheet(sheet));
+var headers = GAS.MergeSheetHeaders(sheet, ['drive_id', 'last_found_date', 'last_scanned_date']);
+agent.WriteValue('WORKING_SHEET_URL', GAS.GetUrlFromSheet(sheet));
 ------------------------
 
 

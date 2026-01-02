@@ -276,7 +276,7 @@ assertEquals(a1Address, "$C$5", "MakeA1AddressFromCoordinatesP");
 // Test file ID extraction
 var testUrl = "https://docs.google.com/spreadsheets/d/1234567890abcdefghijklmno/edit";
 var fileId = GAS.GetFileIdFromUrl(testUrl);
-assert(fileId !== null, "GetFileIdFromUrl extracts ID");
+assert(fileId === "1234567890abcdefghijklmno", "GetFileIdFromUrl extracts ID");
 
 // Test range name validation
 assert(GAS.IsValidRangeNameP("valid_name_123"), "IsValidRangeNameP with valid name");

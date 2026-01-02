@@ -56,7 +56,8 @@ ns.CreateDocumentInFolderByUrl = function (name, folderUrl)
 
 ns.GetFileIdFromUrl = function (gsuiteUrl)
    {
-   return gsuiteUrl.match(/[-\w]{25,}/);
+   var match = gsuiteUrl.match(/[-\w]{25,}/);
+   return match ? match[0] : null;
    };
 
 
