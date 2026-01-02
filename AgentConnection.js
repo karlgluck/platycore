@@ -989,7 +989,7 @@ function AgentConnection ()
             case 'CODE':
                (function (code)
                   {
-                  var value = '  TURN_ON\n  EVAL "---"\n--------\n   <' + code.replace(/\n/g, /\n   /) + '\n--------\n  TURN_OFF';
+                  var value = "  TURN_ON\n  EVAL \"---\"\n--------\n" + code + "\n--------\n  TURN_OFF";
                   selectedRange.setNote(value);
                   })(popArgument(Lang.MakeStringUsingAnyP));
                break;
