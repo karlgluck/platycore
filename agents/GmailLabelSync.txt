@@ -148,7 +148,7 @@ agent.Info('Created labels sheet: ' + GAS.GetUrlFromSheet(sheet));
       var sheet = agent.OpenSheetUsingUrlFromValue('LABELS_SHEET');
       var labels = GmailApp.getUserLabels();
 
-      agent.Info("=== Syncing Gmail Labels ===");
+      agent.Info("--- Syncing Gmail Labels ---");
       agent.Info("Found " + labels.length + " labels");
 
       // Build array of label data
@@ -173,7 +173,7 @@ agent.Info('Created labels sheet: ' + GAS.GetUrlFromSheet(sheet));
       GAS.WriteSheetUsingObjects(sheet, data, headers);
 
       agent.WriteValue('SYNCED_COUNT', data.length);
-      agent.Info("=== Sync Complete ===");
+      agent.Info("--- Sync Complete ---");
       agent.Info("Synced " + data.length + " labels to spreadsheet");
    }
    ------------------------
@@ -198,7 +198,7 @@ agent.Info('Created labels sheet: ' + GAS.GetUrlFromSheet(sheet));
       var sheet = agent.OpenSheetUsingUrlFromValue('LABELS_SHEET');
       var objects = GAS.MakeObjectsUsingSheetP(sheet);
 
-      agent.Info("=== Scanning for Labels to Delete ===");
+      agent.Info("--- Scanning for Labels to Delete ---");
 
       var deleteCount = 0;
       var remainingObjects = [];
@@ -210,6 +210,7 @@ agent.Info('Created labels sheet: ' + GAS.GetUrlFromSheet(sheet));
          if (operation === "DELETE" && Lang.IsMeaningfulP(labelName)) {
             if (agent.WhatIf) {
                agent.Info("[WhatIf]: Would delete label: " + labelName);
+               deleteCount++;
                remainingObjects.push(obj);
             } else {
                try {
@@ -239,7 +240,7 @@ agent.Info('Created labels sheet: ' + GAS.GetUrlFromSheet(sheet));
          GAS.WriteSheetUsingObjects(sheet, remainingObjects, headers);
       }
 
-      agent.Info("=== Delete Operation Complete ===");
+      agent.Info("--- Delete Operation Complete ---");
       if (agent.WhatIf) {
          agent.Info("[WhatIf]: Would have deleted " + deleteCount + " label(s)");
          agent.Info("[WhatIf]: Set EN=TRUE to actually delete labels");
