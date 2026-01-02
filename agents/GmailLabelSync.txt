@@ -144,39 +144,38 @@ agent.Info('Created labels sheet: ' + GAS.GetUrlFromSheet(sheet));
    var labelsSheetUrl = agent.ReadValue('LABELS_SHEET');
    if (!Lang.IsMeaningfulP(labelsSheetUrl)) {
       agent.Error('No labels sheet configured. Click [Make Sheet] first.');
-      return;
-   }
+   } else {
+      var sheet = agent.OpenSheetUsingUrlFromValue('LABELS_SHEET');
+      var labels = GmailApp.getUserLabels();
 
-   var sheet = agent.OpenSheetUsingUrlFromValue('LABELS_SHEET');
-   var labels = GmailApp.getUserLabels();
+      agent.Info("=== Syncing Gmail Labels ===");
+      agent.Info("Found " + labels.length + " labels");
 
-   agent.Info("=== Syncing Gmail Labels ===");
-   agent.Info("Found " + labels.length + " labels");
+      // Build array of label data
+      var data = [];
+      labels.forEach(function(label) {
+         var name = label.getName();
+         var unread = label.getUnreadCount();
+         var totalThreads = label.getThreads().length;
 
-   // Build array of label data
-   var data = [];
-   labels.forEach(function(label) {
-      var name = label.getName();
-      var unread = label.getUnreadCount();
-      var totalThreads = label.getThreads().length;
+         data.push({
+            label_name: name,
+            unread_count: unread,
+            total_threads: totalThreads,
+            operation: ''
+         });
 
-      data.push({
-         label_name: name,
-         unread_count: unread,
-         total_threads: totalThreads,
-         operation: ''
+         agent.Info(name + " | Unread: " + unread + " | Threads: " + totalThreads);
       });
 
-      agent.Info(name + " | Unread: " + unread + " | Threads: " + totalThreads);
-   });
+      // Write to sheet using GAS utilities
+      var headers = ['label_name', 'unread_count', 'total_threads', 'operation'];
+      GAS.WriteSheetUsingObjects(sheet, data, headers);
 
-   // Write to sheet using GAS utilities
-   var headers = ['label_name', 'unread_count', 'total_threads', 'operation'];
-   GAS.WriteSheetUsingObjects(sheet, data, headers);
-
-   agent.WriteValue('SYNCED_COUNT', data.length);
-   agent.Info("=== Sync Complete ===");
-   agent.Info("Synced " + data.length + " labels to spreadsheet");
+      agent.WriteValue('SYNCED_COUNT', data.length);
+      agent.Info("=== Sync Complete ===");
+      agent.Info("Synced " + data.length + " labels to spreadsheet");
+   }
    ------------------------
 ------------------------
 
@@ -195,62 +194,61 @@ agent.Info('Created labels sheet: ' + GAS.GetUrlFromSheet(sheet));
    var labelsSheetUrl = agent.ReadValue('LABELS_SHEET');
    if (!Lang.IsMeaningfulP(labelsSheetUrl)) {
       agent.Error('No labels sheet configured. Click [Make Sheet] first.');
-      return;
-   }
+   } else {
+      var sheet = agent.OpenSheetUsingUrlFromValue('LABELS_SHEET');
+      var objects = GAS.MakeObjectsUsingSheetP(sheet);
 
-   var sheet = agent.OpenSheetUsingUrlFromValue('LABELS_SHEET');
-   var objects = GAS.MakeObjectsUsingSheetP(sheet);
+      agent.Info("=== Scanning for Labels to Delete ===");
 
-   agent.Info("=== Scanning for Labels to Delete ===");
+      var deleteCount = 0;
+      var remainingObjects = [];
 
-   var deleteCount = 0;
-   var remainingObjects = [];
+      objects.forEach(function(obj) {
+         var labelName = Lang.MakeStringUsingAnyP(obj.label_name).trim();
+         var operation = Lang.MakeStringUsingAnyP(obj.operation).toUpperCase().trim();
 
-   objects.forEach(function(obj) {
-      var labelName = Lang.MakeStringUsingAnyP(obj.label_name).trim();
-      var operation = Lang.MakeStringUsingAnyP(obj.operation).toUpperCase().trim();
-
-      if (operation === "DELETE" && Lang.IsMeaningfulP(labelName)) {
-         if (agent.WhatIf) {
-            agent.Info("[WhatIf]: Would delete label: " + labelName);
-            remainingObjects.push(obj);
-         } else {
-            try {
-               var label = GmailApp.getUserLabelByName(labelName);
-               if (label) {
-                  label.deleteLabel();
-                  agent.Info("Deleted label: " + labelName);
-                  deleteCount++;
-                  // Don't add to remainingObjects - it's deleted
-               } else {
-                  agent.Warn("Label not found in Gmail: " + labelName);
+         if (operation === "DELETE" && Lang.IsMeaningfulP(labelName)) {
+            if (agent.WhatIf) {
+               agent.Info("[WhatIf]: Would delete label: " + labelName);
+               remainingObjects.push(obj);
+            } else {
+               try {
+                  var label = GmailApp.getUserLabelByName(labelName);
+                  if (label) {
+                     label.deleteLabel();
+                     agent.Info("Deleted label: " + labelName);
+                     deleteCount++;
+                     // Don't add to remainingObjects - it's deleted
+                  } else {
+                     agent.Warn("Label not found in Gmail: " + labelName);
+                     remainingObjects.push(obj);
+                  }
+               } catch (e) {
+                  agent.Error("Failed to delete label '" + labelName + "': " + e.message);
                   remainingObjects.push(obj);
                }
-            } catch (e) {
-               agent.Error("Failed to delete label '" + labelName + "': " + e.message);
-               remainingObjects.push(obj);
             }
+         } else {
+            remainingObjects.push(obj);
          }
-      } else {
-         remainingObjects.push(obj);
+      });
+
+      // Write back the remaining objects (with deleted ones removed)
+      if (!agent.WhatIf) {
+         var headers = ['label_name', 'unread_count', 'total_threads', 'operation'];
+         GAS.WriteSheetUsingObjects(sheet, remainingObjects, headers);
       }
-   });
 
-   // Write back the remaining objects (with deleted ones removed)
-   if (!agent.WhatIf) {
-      var headers = ['label_name', 'unread_count', 'total_threads', 'operation'];
-      GAS.WriteSheetUsingObjects(sheet, remainingObjects, headers);
-   }
-
-   agent.Info("=== Delete Operation Complete ===");
-   if (agent.WhatIf) {
-      agent.Info("[WhatIf]: Would have deleted " + deleteCount + " label(s)");
-      agent.Info("[WhatIf]: Set EN=TRUE to actually delete labels");
-   } else {
-      agent.Info("Deleted " + deleteCount + " label(s)");
-      if (deleteCount > 0) {
-         var currentDeleted = Lang.MakeIntUsingAnyP(agent.ReadValue('DELETED_COUNT'));
-         agent.WriteValue('DELETED_COUNT', currentDeleted + deleteCount);
+      agent.Info("=== Delete Operation Complete ===");
+      if (agent.WhatIf) {
+         agent.Info("[WhatIf]: Would have deleted " + deleteCount + " label(s)");
+         agent.Info("[WhatIf]: Set EN=TRUE to actually delete labels");
+      } else {
+         agent.Info("Deleted " + deleteCount + " label(s)");
+         if (deleteCount > 0) {
+            var currentDeleted = Lang.MakeIntUsingAnyP(agent.ReadValue('DELETED_COUNT'));
+            agent.WriteValue('DELETED_COUNT', currentDeleted + deleteCount);
+         }
       }
    }
    ------------------------
