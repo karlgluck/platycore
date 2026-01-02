@@ -182,9 +182,8 @@ Manual Actions
     STYLE "BUTTON"
      NOTE "---"
 ------------------------
-   <         EVAL "---"
-   ------------------------
-      ENTER_WHAT_IF_MODE_UNLESS "EN"
+   <      ENTER_WHAT_IF_MODE_UNLESS "EN"
+          EVAL "---"
    ------------------------
    var sheet = agent.Sheet;
    var lastRow = sheet.getLastRow();
