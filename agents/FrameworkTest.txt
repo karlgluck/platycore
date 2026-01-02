@@ -271,7 +271,7 @@ assert(mapFromSheet['a'].col2 === 1, "MakeMapUsingSheetP");
 
 // Test A1 address generation
 var a1Address = GAS.MakeA1AddressFromCoordinatesP(5, 3);
-assertEquals(a1Address, "$$C$5", "MakeA1AddressFromCoordinatesP");
+assertEquals(a1Address, "$C$5", "MakeA1AddressFromCoordinatesP");
 
 // Test file ID extraction
 var testUrl = "https://docs.google.com/spreadsheets/d/1234567890abcdefghijklmno/edit";
@@ -296,7 +296,7 @@ assertEquals(readValue, 999, "WriteValue/ReadValue");
 
 // Test checkbox read/write
 var enState = agent.ReadCheckbox('EN');
-assert(Lang.IsBoolUsingAnyP(enState) || Lang.IsUndefinedP(enState), "ReadCheckbox returns boolean");
+assert(typeof enState === 'boolean' || Lang.IsUndefinedP(enState), "ReadCheckbox returns boolean");
 
 // Test WhatIf mode
 var originalWhatIf = agent.WhatIf;
