@@ -56,7 +56,9 @@ ns.CreateDocumentInFolderByUrl = function (name, folderUrl)
 
 ns.GetFileIdFromUrl = function (gsuiteUrl)
    {
-   var match = gsuiteUrl.match(/[-\w]{25,}/);
+   // Match Google Drive file IDs which are typically 19-44 characters long
+   // and contain alphanumeric characters, hyphens, and underscores
+   var match = gsuiteUrl.match(/[-\w]{15,}/);
    return match ? match[0] : null;
    };
 
